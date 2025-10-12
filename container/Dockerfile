@@ -18,6 +18,7 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
 
 COPY src ./src
 COPY setup.py .
+COPY README.md .
 
 RUN pip install -e .
 

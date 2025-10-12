@@ -1,0 +1,45 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run data collection (if API keys available)
+      run: |
+        if [ -n "$TMDB_API_KEY" ] && [ -n "$NASA_API_KEY" ]; then
+          python -m src.data_fetcher
+        else
+          echo "API keys not available, skipping data collection"
+        fi
+      env:
+        TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+
+    - name: Run e2e tests
+      run: python -m pytest tests/test_e2e.py -v
+
+    - name: Test full application flow
+      run: |
+        echo "Testing full app with simulated inputs..."
+        echo -e "hello\ncalculate 2+3\nhelp\nexit" | python -m src.main | grep -E "(Hello|Result|This is an Agentic|Exiting)"

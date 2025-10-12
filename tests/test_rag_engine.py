@@ -20,12 +20,12 @@ def mock_config():
     return config
 
 
-@patch('src.rag_engine.Config')
-@patch('src.rag_engine.ToolExecutor')
-@patch('src.rag_engine.SentenceTransformer')
-@patch('src.rag_engine.AutoTokenizer')
-@patch('src.rag_engine.AutoModelForSeq2SeqLM')
-@patch('src.rag_engine.faiss.IndexFlatL2')  # Patch faiss for CI
+@patch('src.rag.rag_engine.Config')
+@patch('src.rag.rag_engine.ToolExecutor')
+@patch('src.rag.rag_engine.SentenceTransformer')
+@patch('src.rag.rag_engine.AutoTokenizer')
+@patch('src.rag.rag_engine.AutoModelForSeq2SeqLM')
+@patch('src.rag.rag_engine.faiss.IndexFlatL2')  # Patch faiss for CI
 def test_rag_engine_init(mock_faiss, mock_model, mock_tokenizer, mock_embed, mock_tool, mock_config_class, mock_config):
     mock_config_class.return_value = mock_config
     mock_embedding_model = Mock()
@@ -41,8 +41,8 @@ def test_rag_engine_init(mock_faiss, mock_model, mock_tokenizer, mock_embed, moc
     mock_model.from_pretrained.assert_called_once_with('test-gen')
 
 
-@patch('src.rag_engine.Config')
-@patch('src.rag_engine.ToolExecutor')
+@patch('src.rag.rag_engine.Config')
+@patch('src.rag.rag_engine.ToolExecutor')
 def test_generate_response_greeting(mock_tool, mock_config_class):
     mock_config = Mock()
     mock_config.MAX_ITERATIONS = 1
@@ -56,8 +56,8 @@ def test_generate_response_greeting(mock_tool, mock_config_class):
         assert "Hello! I'm an agentic AI assistant" in result
 
 
-@patch('src.rag_engine.Config')
-@patch('src.rag_engine.ToolExecutor')
+@patch('src.rag.rag_engine.Config')
+@patch('src.rag.rag_engine.ToolExecutor')
 def test_generate_response_calc(mock_tool, mock_config_class):
     mock_config = Mock()
     mock_config.MAX_ITERATIONS = 1
@@ -72,11 +72,11 @@ def test_generate_response_calc(mock_tool, mock_config_class):
         assert "Result: 5" in result
 
 
-@patch('src.rag_engine.Config')
-@patch('src.rag_engine.ToolExecutor')
-@patch('src.rag_engine.SentenceTransformer')
-@patch('src.rag_engine.AutoTokenizer')
-@patch('src.rag_engine.AutoModelForSeq2SeqLM')
+@patch('src.rag.rag_engine.Config')
+@patch('src.rag.rag_engine.ToolExecutor')
+@patch('src.rag.rag_engine.SentenceTransformer')
+@patch('src.rag.rag_engine.AutoTokenizer')
+@patch('src.rag.rag_engine.AutoModelForSeq2SeqLM')
 def test_retrieve_context(mock_model, mock_tokenizer, mock_embed, mock_tool, mock_config_class):
     mock_config = Mock()
     mock_config.TOP_K_RETRIEVAL = 2
@@ -88,7 +88,7 @@ def test_retrieve_context(mock_model, mock_tokenizer, mock_embed, mock_tool, moc
 
     mock_index = Mock()
     mock_index.search.return_value = ([0.1, 0.2], [[0, 1]])
-    with patch('src.rag_engine.faiss.IndexFlatL2', return_value=mock_index):
+    with patch('src.rag.rag_engine.faiss.IndexFlatL2', return_value=mock_index):
         with patch.object(RAGEngine, '__init__', lambda self: None):
             engine = RAGEngine()
             engine.embedding_model = mock_embedding_model

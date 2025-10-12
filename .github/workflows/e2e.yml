@@ -38,7 +38,7 @@ jobs:
           NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
 
       - name: Run e2e tests
-        run: python -m pytest tests/test_e2e.py -v
+        run: python -m pytest tests/integration/test_e2e.py -v
 
       - name: Test full application flow
         run: |

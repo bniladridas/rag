@@ -12,7 +12,7 @@ def test_config_defaults():
 
     assert config.EMBEDDING_MODEL == 'all-MiniLM-L6-v2'
     assert config.GENERATOR_MODEL == 'google/flan-t5-small'
-    assert config.DATASET_DIR.endswith('datasets')
+    assert config.DATASET_DIR.name == 'datasets'
     assert config.KNOWLEDGE_BASE_FILE == 'knowledge_base.json'
     assert config.MAX_WORKERS == 5
     assert config.TOP_K_RETRIEVAL == 3

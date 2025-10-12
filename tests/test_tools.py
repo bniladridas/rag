@@ -32,7 +32,7 @@ def test_execute_calc(tool_executor):
     assert "Invalid calculation" in result
 
 
-@patch('src.tools.requests.Session.get')
+@patch('src.rag.tools.requests.Session.get')
 def test_execute_wiki(mock_get, tool_executor):
     mock_response = Mock()
     mock_response.status_code = 200
@@ -44,7 +44,7 @@ def test_execute_wiki(mock_get, tool_executor):
     assert "Test summary" in result
 
 
-@patch('src.tools.requests.Session.get')
+@patch('src.rag.tools.requests.Session.get')
 def test_execute_wiki_not_found(mock_get, tool_executor):
     mock_response = Mock()
     mock_response.status_code = 404

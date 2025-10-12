@@ -34,4 +34,4 @@ jobs:
       - name: Run semantic release
         run: semantic-release version --push --tag --changelog --vcs-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.HARPER_RELEASE_BOT_TOKEN }}

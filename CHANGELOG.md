@@ -1,6 +1,34 @@
 # CHANGELOG
 
+## v0.3.0 (2025-10-12)
+
+### Chore
+
+* chore: merge remote changes ([`e1d8cff`](https://github.com/bniladridas/rag/commit/e1d8cff4a16f450ea6e8df5ceb3c92e695d7babb))
+
+### Documentation
+
+* docs: add release process section ([`23fd6b2`](https://github.com/bniladridas/rag/commit/23fd6b2bef29b3d6a508f4604adfa5dce120f010))
+
+### Feature
+
+* feat: add pages workflow ([`a50777d`](https://github.com/bniladridas/rag/commit/a50777d2bdcd0b1f228bce2a961e4fffb0f85d57))
+
+### Fix
+
+* fix: create _site dir ([`4700f69`](https://github.com/bniladridas/rag/commit/4700f69d6311bf0c34f7fb6f49371d7fc9574607))
+
+* fix: enable pages auto ([`fdf41b0`](https://github.com/bniladridas/rag/commit/fdf41b01a290eabb37fc6d0ad45e360d3fdcaea9))
+
 ## v0.2.7 (2025-10-12)
+
+### Chore
+
+* chore(release): 0.2.7 ([`31a83c7`](https://github.com/bniladridas/rag/commit/31a83c74bc480c5bd7c062a1f737779034a63c3a))
+
+### Documentation
+
+* docs: refine release webpage ([`34f79be`](https://github.com/bniladridas/rag/commit/34f79be87debf33051505c15aa82c37408c86107))
 
 ### Fix
 

@@ -1,6 +1,16 @@
 # CHANGELOG
 
+## v0.2.7 (2025-10-12)
+
+### Fix
+
+* fix: use bot token ([`c4f6e6c`](https://github.com/bniladridas/rag/commit/c4f6e6c0050e20109b084fb7afba48af1c91dd32))
+
 ## v0.2.6 (2025-10-12)
+
+### Chore
+
+* chore(release): 0.2.6 ([`71f4ddd`](https://github.com/bniladridas/rag/commit/71f4ddd84ec22ec3f3dca20b9c39c4babd05bf57))
 
 ### Fix
 

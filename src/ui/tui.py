@@ -6,13 +6,14 @@ from rich.prompt import Prompt
 from rich.panel import Panel
 from ..rag.rag_engine import RAGEngine
 import sys
+import os
 
 
 def run_tui():
     """Run the Text User Interface"""
 
-    # Skip TUI in non-interactive environments (CI/Docker)
-    if not sys.stdin.isatty():
+    # Skip TUI in non-interactive environments (CI/Docker), unless forced for testing
+    if not sys.stdin.isatty() and not os.getenv('FORCE_TUI'):
         print("Non-interactive environment detected. Skipping TUI.")
         return
 

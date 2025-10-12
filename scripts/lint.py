@@ -21,7 +21,7 @@ def run_command(command, description):
 
 def main():
     """Main linting function"""
-    os.chdir(os.path.dirname(os.path.dirname(__file__)))  # Go to project root
+    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # Go to project root
 
     success = True
 

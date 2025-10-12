@@ -27,6 +27,9 @@ jobs:
     - name: Run linting script
       run: python scripts/lint.py
 
+    - name: Run tests
+      run: python scripts/test.py
+
     - name: Run additional checks
       run: |
         # Check if setup.py works

@@ -16,3 +16,5 @@ memory-profiler==0.61.0
 line-profiler==4.1.2
 networkx
 matplotlib
+pytest==7.4.0
+pytest-cov==4.1.0

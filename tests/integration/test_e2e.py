@@ -4,7 +4,7 @@ End-to-end tests for the application
 import pytest
 from unittest.mock import patch, Mock
 from src.rag.__main__ import main
-from src.ui.tui import run_tui
+from src.rag.ui.tui import run_tui
 
 
 @patch('sys.stdin.isatty', return_value=True)
@@ -52,10 +52,10 @@ def test_main_help_flow(mock_rag, mock_print, mock_input, mock_isatty):
 
 
 @patch('sys.stdin.isatty', return_value=True)
-@patch('src.ui.tui.Prompt.ask', side_effect=['hello', 'exit'])
-@patch('src.ui.tui.Console.print')
-@patch('src.ui.tui.RAGEngine')
-@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+@patch('src.rag.ui.tui.Prompt.ask', side_effect=['hello', 'exit'])
+@patch('src.rag.ui.tui.Console.print')
+@patch('src.rag.ui.tui.RAGEngine')
+@patch('src.rag.ui.tui.Panel')  # Mock Panel for CI-safe test
 def test_tui_greeting_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
     """Test TUI function with greeting and exit"""
     mock_engine = Mock()

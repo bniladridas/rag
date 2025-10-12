@@ -4,6 +4,7 @@ import torch
 import faiss
 import numpy as np
 import re
+import math
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -117,8 +118,18 @@ class RAGTransformer:
         if tool_call.startswith("CALC:"):
             expr = tool_call[5:].strip()
             try:
-                # Safe eval for simple math
-                allowed_names = {"__builtins__": None}
+                # Safe eval for simple math with basic functions
+                allowed_names = {
+                    "__builtins__": None,
+                    "sqrt": math.sqrt,
+                    "sin": math.sin,
+                    "cos": math.cos,
+                    "tan": math.tan,
+                    "log": math.log,
+                    "exp": math.exp,
+                    "pi": math.pi,
+                    "e": math.e
+                }
                 result = eval(expr, allowed_names)
                 return f"Calculation result: {result}"
             except Exception as e:
@@ -159,10 +170,17 @@ class RAGTransformer:
         Returns:
             str: Generated response
         """
+        # Clean the query
+        query = query.strip().strip('"').strip("'")
+
         # Handle greeting-like queries
         greetings = ['hi', 'hello', 'hey', 'greetings']
         if query.lower().split()[0] in greetings:
             return "Hello! I'm an agentic AI assistant with knowledge about machine learning, sci-fi movies, and cosmos. I can use tools like calculations. How can I help you today?"
+
+        # Handle direct tool calls
+        if query.upper().startswith("CALC:"):
+            return self.execute_tool(query)
 
         # Handle direct calculation queries
         if 'calculate' in query.lower() or re.search(r'\d+\s*[\+\-\*/]\s*\d+', query):

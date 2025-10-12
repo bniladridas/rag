@@ -10,15 +10,20 @@ from pathlib import Path
 class Config:
     """Project configuration for RAG Transformer."""
 
-
     def __init__(self):
         # Models
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
         self.GENERATOR_MODEL = os.getenv("GENERATOR_MODEL", "google/flan-t5-small")
 
+        # API Keys
+        self.TMDB_API_KEY = os.getenv("TMDB_API_KEY", "")
+        self.NASA_API_KEY = os.getenv("NASA_API_KEY", "")
+
         # Dataset and knowledge base
         self.DATASET_DIR = Path(os.getenv("DATASET_DIR", "datasets"))
         self.KNOWLEDGE_BASE_FILE = Path(os.getenv("KNOWLEDGE_BASE_FILE", "knowledge_base.json"))
+        self.MOVIE_PAGES = self._get_int_env("MOVIE_PAGES", 5)
+        self.COSMOS_DAYS = self._get_int_env("COSMOS_DAYS", 7)
 
         # Output and cache directories
         self.OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "outputs"))

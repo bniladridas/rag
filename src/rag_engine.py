@@ -135,7 +135,9 @@ class RAGEngine:
             )
 
             # Generate response
-            inputs = self.tokenizer(input_text, return_tensors="pt", max_length=512, truncation=True)
+            inputs = self.tokenizer(
+                input_text, return_tensors="pt", max_length=512, truncation=True
+            )
             outputs = self.generator.generate(
                 **inputs,
                 max_length=self.config.MAX_LENGTH,

@@ -44,3 +44,8 @@ jobs:
       run: |
         echo "Testing full app with simulated inputs..."
         echo -e "hello\ncalculate 2+3\nhelp\nexit" | python -m src.main | grep -E "(Hello|Result|This is an Agentic|Exiting)"
+
+    - name: Test TUI application flow
+      run: |
+        echo "Testing TUI with simulated inputs..."
+        echo -e "hello\nexit" | python -c "from src.ui.tui import run_tui; run_tui()" | grep -E "(Query|Response|Goodbye)"

@@ -53,12 +53,28 @@ pip install rag-transformer
 
 ## Configuration
 
+### Local Development
+
 Create a `.env` file in the project root and add your API keys:
 
 ```env
 TMDB_API_KEY=your_tmdb_api_key_here
 NASA_API_KEY=your_nasa_api_key_here
 ```
+
+### Docker
+
+Pass API keys as environment variables:
+
+```bash
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag-transformer
+```
+
+### GitHub Actions
+
+For CI/CD, set repository secrets in GitHub:
+- `TMDB_API_KEY`
+- `NASA_API_KEY`
 
 You can get the keys from:
 

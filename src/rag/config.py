@@ -4,15 +4,15 @@ Configuration settings for the RAG Transformer
 import os
 from dotenv import load_dotenv
 
-
-# Load environment variables
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
-
+# Safely load .env if it exists
+env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+if os.path.exists(env_path):
+    load_dotenv(dotenv_path=env_path)
 
 class Config:
     """Configuration class for API keys and settings"""
 
-    # API Keys
+    # API Keys (empty defaults for CI and Docker)
     TMDB_API_KEY = os.getenv('TMDB_API_KEY', '')
     NASA_API_KEY = os.getenv('NASA_API_KEY', '')
 
@@ -21,8 +21,12 @@ class Config:
     GENERATOR_MODEL = 'google/flan-t5-small'
 
     # Data settings
-    DATASET_DIR = os.path.join(os.path.dirname(__file__), 'datasets')
-    KNOWLEDGE_BASE_FILE = 'knowledge_base.json'
+    BASE_DIR = os.path.dirname(__file__)
+    DATASET_DIR = os.path.join(BASE_DIR, 'datasets')
+    KNOWLEDGE_BASE_FILE = os.path.join(DATASET_DIR, 'knowledge_base.json')
+
+    # Ensure directories exist
+    os.makedirs(DATASET_DIR, exist_ok=True)
 
     # Fetching settings
     MAX_WORKERS = 5

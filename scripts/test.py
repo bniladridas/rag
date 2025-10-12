@@ -26,12 +26,14 @@ def main():
     success = True
 
     # Run pytest
-    success &= run_command("python3 -m pytest tests/ -v", "Unit and E2E tests")
+    if not run_command(f"{sys.executable} -m pytest tests/ -v", "Unit and E2E tests"):
+        success = False
 
-    # Run with coverage if available
+    # Run with coverage if installed
     try:
-        import pytest_cov
-        success &= run_command("python3 -m pytest tests/ --cov=src --cov-report=term", "Tests with coverage")
+        import pytest_cov  # noqa: F401
+        if not run_command(f"{sys.executable} -m pytest tests/ --cov=src --cov-report=term", "Tests with coverage"):
+            success = False
     except ImportError:
         print("pytest-cov not installed, skipping coverage...")
 

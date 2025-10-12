@@ -2,7 +2,7 @@
 Unit tests for config.py
 """
 import os
-import tempfile
+import pytest
 from src.config import Config
 
 
@@ -20,8 +20,10 @@ def test_config_defaults():
     assert config.MAX_LENGTH == 150
 
 
-import pytest
-
-def test_config_env_vars():
+def test_config_env_vars(monkeypatch):
     """Test Config loading from environment variables"""
-    pytest.skip("Skipping env var test due to existing .env file")
+    monkeypatch.setenv('TMDB_API_KEY', 'dummy_tmdb')
+    monkeypatch.setenv('NASA_API_KEY', 'dummy_nasa')
+    config = Config()
+    assert config.TMDB_API_KEY == 'dummy_tmdb'
+    assert config.NASA_API_KEY == 'dummy_nasa'

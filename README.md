@@ -1,7 +1,21 @@
 # RAG
 
 A friendly **AI assistant** that understands **machine learning**, **science fiction movies**, and the **cosmos**.
-It can **answer questions**, **do calculations**, and **search Wikipedia** — all from your **terminal**.
+It can **answer questions**, **perform calculations**, and **search Wikipedia** — all from your **terminal**.
+
+## Quick Start
+
+```bash
+# Run with Docker (basic knowledge without API keys)
+docker build -f container/Dockerfile -t rag .
+docker run -it rag
+
+# Run with API keys
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
+
+# Run data collection
+docker run -it rag rag-collect
+```
 
 ## What It Can Do
 
@@ -12,8 +26,6 @@ It can **answer questions**, **do calculations**, and **search Wikipedia** — a
 * **Smart Search:** Uses FAISS for fast document retrieval
 
 ## Before You Start
-
-You’ll need:
 
 * Python 3.8 or higher
 * (Optional) API keys for TMDB and NASA
@@ -38,7 +50,7 @@ docker build -f container/Dockerfile -t rag .
 # Run the assistant
 docker run -it rag
 
-# Run with API keys
+# With API keys
 docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
 
 # Run data collection
@@ -55,7 +67,7 @@ pip install rag
 
 ### Local Development
 
-Create a `.env` file in the project root and add your API keys:
+Create a `.env` file in the project root:
 
 ```env
 TMDB_API_KEY=your_tmdb_api_key_here
@@ -72,24 +84,25 @@ docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
 
 ### GitHub Actions
 
-For CI/CD, set repository secrets in GitHub:
-- `TMDB_API_KEY`
-- `NASA_API_KEY`
+Set repository secrets:
 
-You can get the keys from:
+* `TMDB_API_KEY`
+* `NASA_API_KEY`
+
+Keys available from:
 
 * [TMDB API](https://www.themoviedb.org/settings/api)
 * [NASA API](https://api.nasa.gov/)
 
 ## Data Collection
 
-Before starting the assistant, collect its knowledge base:
+Populate the knowledge base:
 
 ```bash
 rag-collect
 ```
 
-This command gathers:
+Collects:
 
 * Machine learning documentation
 * Sci-fi movie data (TMDB)
@@ -103,7 +116,7 @@ This command gathers:
 rag
 ```
 
-Then you can ask:
+You can then ask:
 
 * “What is deep learning?”
 * “Tell me about the movie Interstellar”
@@ -121,11 +134,11 @@ Then you can ask:
 
 ```
 src/
-├── 🧩 config.py          → Handles configuration and API keys
-├── 🚀 data_fetcher.py    → Collects data from APIs
-├── 💬 main.py            → CLI entry point
-├── 🧠 rag_engine.py      → Core RAG logic
-└── 🛠️ tools.py           → Tools like calculator and wiki search
+├── config.py          → Handles configuration and API keys
+├── data_fetcher.py    → Collects data from APIs
+├── main.py            → CLI entry point
+├── rag_engine.py      → Core RAG logic
+└── tools.py           → Tools like calculator and wiki search
 ```
 
 ## Development
@@ -148,20 +161,20 @@ python scripts/lint.py
 python setup.py sdist bdist_wheel
 ```
 
-### Automated Updates
+## Automated Updates
 
-This project uses [Dependabot](https://github.com/dependabot) for automatic dependency updates. Dependabot creates pull requests weekly to keep dependencies up-to-date and secure. All updates are automatically tested and validated.
+This project uses [Dependabot](https://github.com/dependabot) to keep dependencies updated. All updates are automatically tested.
 
-### Git Hooks
+## Git Hooks
 
-This project uses conventional commits. To enable commit message validation:
+Enable commit message validation:
 
 ```bash
 cp scripts/commit-msg .git/hooks/
 chmod +x .git/hooks/commit-msg
 ```
 
-For cleaning up commit messages in history:
+Rewrite commit messages:
 
 ```bash
 # Rewrite specific range
@@ -171,7 +184,7 @@ For cleaning up commit messages in history:
 ./scripts/rewrite_msg.sh --all
 ```
 
-Commit messages must be lowercase, ≤40 characters, and start with types like `feat:`, `fix:`, `docs:`, etc.
+Commit messages must be lowercase, ≤40 characters, starting with `feat:`, `fix:`, `docs:`, etc.
 
 ## Contributing
 
@@ -183,11 +196,11 @@ Commit messages must be lowercase, ≤40 characters, and start with types like `
 
 ## Security
 
-Please see our [Security Policy](SECURITY.md) for information on reporting security vulnerabilities.
+See [Security Policy](SECURITY.md) for reporting vulnerabilities.
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+Apache License 2.0 — see [LICENSE](LICENSE)
 
 ## Support
 

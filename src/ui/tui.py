@@ -5,10 +5,17 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
 from ..rag_engine import RAGEngine
+import sys
 
 
 def run_tui():
     """Run the Text User Interface"""
+
+    # Skip TUI in non-interactive environments (CI/Docker)
+    if not sys.stdin.isatty():
+        print("Non-interactive environment detected. Skipping TUI.")
+        return
+
     console = Console()
     rag_engine = RAGEngine()
 

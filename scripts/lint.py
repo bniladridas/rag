@@ -26,19 +26,22 @@ def main():
     success = True
 
     # Check Python syntax
-    success &= run_command("python3 -m py_compile src/*.py", "Python syntax check")
+    if not run_command(f"{sys.executable} -m py_compile src/*.py", "Python syntax check"):
+        success = False
 
-    # Install and run flake8 if available
+    # Run flake8 if installed
     try:
-        import flake8
-        success &= run_command("python3 -m flake8 src/ --max-line-length=100 --ignore=E203,W503", "Flake8 linting")
+        import flake8  # noqa: F401
+        if not run_command(f"{sys.executable} -m flake8 src/ --max-line-length=100 --ignore=E203,W503", "Flake8 linting"):
+            success = False
     except ImportError:
         print("Flake8 not installed, skipping...")
 
-    # Run mypy if available
+    # Run mypy if installed
     try:
-        import mypy
-        success &= run_command("python3 -m mypy src/ --ignore-missing-imports", "MyPy type checking")
+        import mypy  # noqa: F401
+        if not run_command(f"{sys.executable} -m mypy src/ --ignore-missing-imports", "MyPy type checking"):
+            success = False
     except ImportError:
         print("MyPy not installed, skipping...")
 

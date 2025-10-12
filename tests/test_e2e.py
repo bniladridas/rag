@@ -17,7 +17,6 @@ def test_main_greeting_flow(mock_rag, mock_print, mock_input):
     mock_rag.return_value = mock_engine
 
     main()
-
     mock_print.assert_any_call("Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
     mock_print.assert_any_call("\nResponse: Hello response")
 
@@ -32,7 +31,6 @@ def test_main_calc_flow(mock_rag, mock_print, mock_input):
     mock_rag.return_value = mock_engine
 
     main()
-
     mock_engine.generate_response.assert_called_with('calculate 2+3')
     mock_print.assert_any_call("\nResponse: Calculation result: 5")
 
@@ -46,7 +44,6 @@ def test_main_help_flow(mock_rag, mock_print, mock_input):
     mock_rag.return_value = mock_engine
 
     main()
-
     help_calls = [call for call in mock_print.call_args_list if "This is an Agentic AI Assistant" in str(call)]
     assert len(help_calls) > 0
 
@@ -54,14 +51,13 @@ def test_main_help_flow(mock_rag, mock_print, mock_input):
 @patch('src.ui.tui.Prompt.ask', side_effect=['hello', 'exit'])
 @patch('src.ui.tui.Console.print')
 @patch('src.ui.tui.RAGEngine')
-def test_tui_greeting_flow(mock_rag, mock_print, mock_ask):
+@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+def test_tui_greeting_flow(mock_panel, mock_rag, mock_print, mock_ask):
     """Test TUI function with greeting and exit"""
     mock_engine = Mock()
     mock_engine.generate_response.return_value = "Hello response"
     mock_rag.return_value = mock_engine
 
     run_tui()
-
-    # Check that print was called with panel (hard to mock exactly, check calls)
     assert mock_print.called
     mock_engine.generate_response.assert_called_with('hello')

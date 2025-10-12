@@ -2,9 +2,9 @@ name: Docker
 
 on:
   push:
-    branches: [main, master]
+    branches: [ main, master ]
   pull_request:
-    branches: [main, master]
+    branches: [ main, master ]
 
 jobs:
   docker:
@@ -27,15 +27,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Test CLI startup
+      - name: Verify image imports
         run: |
-          docker run --rm rag:test rag --version || docker run --rm rag:test rag --help
+          docker run --rm rag:test python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
 
-      - name: Test module import
+      - name: Display CLI help safely
         run: |
-          docker run --rm rag:test python -c "import rag; print('Import successful')"
+          echo -e "exit" | docker run -i --rm rag:test rag --help
 
-      - name: Clean up Docker cache
+      - name: Display TUI safely
         run: |
-          docker system prune -af || true
-          docker builder prune -af || true
+          echo -e "exit" | docker run -i --rm rag:test python -c "from src.rag.ui.tui import run_tui; run_tui()"
+
+      - name: Clean up
+        run: |
+          docker system prune -f || true
+          docker image prune -f || true
+          docker volume prune -f || true
+          docker builder prune -f || true

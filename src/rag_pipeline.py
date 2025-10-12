@@ -5,6 +5,7 @@ import faiss
 import numpy as np
 import re
 import math
+import requests
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -111,7 +112,10 @@ class RAGTransformer:
 
     def get_tools(self) -> str:
         """Get available tools description"""
-        return "Available tools:\nCALC: Calculate a mathematical expression (e.g., CALC: 2 + 3 * 4)"
+        return """Available tools:
+CALC: Calculate a mathematical expression (e.g., CALC: 2 + 3 * 4)
+WIKI: Search Wikipedia for information (e.g., WIKI: Machine Learning)
+TIME: Get current date and time"""
 
     def execute_tool(self, tool_call: str) -> str:
         """Execute a tool call"""
@@ -134,6 +138,25 @@ class RAGTransformer:
                 return f"Calculation result: {result}"
             except Exception as e:
                 return f"Invalid calculation: {e}"
+        elif tool_call.startswith("WIKI:"):
+            topic = tool_call[5:].strip().replace(' ', '_')
+            try:
+                url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
+                headers = {'User-Agent': 'RAG-Transformer/1.0 (educational project)'}
+                response = requests.get(url, headers=headers, timeout=10)
+
+                if response.status_code == 200:
+                    data = response.json()
+                    extract = data.get('extract', 'No summary available')
+                    return f"Wikipedia summary for '{topic.replace('_', ' ')}': {extract}"
+                else:
+                    return f"No Wikipedia page found for '{topic.replace('_', ' ')}'"
+            except Exception as e:
+                return f"Error fetching Wikipedia: {e}"
+        elif tool_call.startswith("TIME:"):
+            from datetime import datetime
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            return f"Current date and time: {current_time}"
         return "Unknown tool"
     
     def retrieve_context(self, query: str, top_k: int = 3) -> List[str]:
@@ -180,6 +203,10 @@ class RAGTransformer:
 
         # Handle direct tool calls
         if query.upper().startswith("CALC:"):
+            return self.execute_tool(query)
+        if query.upper().startswith("WIKI:"):
+            return self.execute_tool(query)
+        if query.upper().startswith("TIME:"):
             return self.execute_tool(query)
 
         # Handle direct calculation queries

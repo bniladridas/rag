@@ -1,8 +1,26 @@
 # CHANGELOG
 
+## v0.2.0 (2025-10-12)
+
+### Feature
+
+* feat: add changelog enhancement script ([`89802e2`](https://github.com/bniladridas/rag/commit/89802e28a0ed60ad687466a72312f3c1910df9b7))
+
+### Fix
+
+* fix: remove invalid build_command ([`e00cbd5`](https://github.com/bniladridas/rag/commit/e00cbd571e5a15d47d21523e9de3a081f9eb01ae))
+
+* fix: disable build command ([`5fed875`](https://github.com/bniladridas/rag/commit/5fed875598bd3affd8ab7470fecbc7ab92b0485d))
+
+### Test
+
+* test: trigger release ([`c6f41ca`](https://github.com/bniladridas/rag/commit/c6f41cae1d2d753bcdd30e4f30b23da90b1da85f))
+
 ## v0.1.0 (2025-10-12)
 
 ### Chore
+
+* chore(release): 0.1.0 ([`ecf665c`](https://github.com/bniladridas/rag/commit/ecf665c64e5545110c23495ff7808661b3acc327))
 
 * chore: update files ([`a317db3`](https://github.com/bniladridas/rag/commit/a317db39685666a941e62e597c4e8db620f16c8e))
 

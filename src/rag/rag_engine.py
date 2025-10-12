@@ -126,7 +126,10 @@ class RAGEngine:
 
         if 'calculate' in query.lower() or re.search(r'\d+\s*[\+\-\*/]\s*\d+', query):
             expr_match = re.search(r'calculate\s+(.+)', query, re.IGNORECASE)
-            expr = expr_match.group(1).strip() if expr_match else re.sub(r'[^\d\+\-\*/\.\(\)\s]', '', query).strip()
+            expr = (
+                expr_match.group(1).strip() if expr_match
+                else re.sub(r'[^\d\+\-\*/\.\(\)\s]', '', query).strip()
+            )
             if expr:
                 return self.tool_executor.execute_tool(f"CALC: {expr}")
 

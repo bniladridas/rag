@@ -88,7 +88,10 @@ class DataFetcher:
                 return []
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(fetch_page, page) for page in range(1, self.config.MOVIE_PAGES + 1)]
+            futures = [
+                executor.submit(fetch_page, page)
+                for page in range(1, self.config.MOVIE_PAGES + 1)
+            ]
             for future in concurrent.futures.as_completed(futures):
                 movie_documents.extend(future.result())
         return movie_documents
@@ -106,7 +109,10 @@ class DataFetcher:
                 base_url = 'https://api.nasa.gov/planetary/apod'
                 params = {
                     'api_key': self.config.NASA_API_KEY,
-                    'date': time.strftime('%Y-%m-%d', time.localtime(time.time() - days_ago * 86400))
+                    'date': time.strftime(
+                        '%Y-%m-%d',
+                        time.localtime(time.time() - days_ago * 86400)
+                    )
                 }
                 response = self.session.get(base_url, params=params, timeout=10)
                 if response.status_code == 200:
@@ -121,7 +127,10 @@ class DataFetcher:
                 return None
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
-            futures = [executor.submit(fetch_day, days_ago) for days_ago in range(self.config.COSMOS_DAYS)]
+            futures = [
+                executor.submit(fetch_day, days_ago)
+                for days_ago in range(self.config.COSMOS_DAYS)
+            ]
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
                 if result:

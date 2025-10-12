@@ -20,9 +20,9 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'rag=main:main',
+            'rag=rag:main',
             'rag-tui=ui.tui:run_tui',
-            'rag-collect=data_fetcher:main',
+            'rag-collect=rag.data_fetcher:main',
         ],
     },
     author="RAG Transformer Team",

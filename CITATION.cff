@@ -3,11 +3,10 @@ message: "If you use this software, please cite it as below."
 type: software
 title: "RAG: Retrieval-Augmented Generation Assistant"
 authors:
-- family-names: "Your Name"
-  given-names: "Replace with actual author"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-repository-code: "https://github.com/yourusername/rag"
-url: "https://github.com/yourusername/rag"
+- family-names: "bniladridas"
+  given-names: ""
+repository-code: "https://github.com/bniladridas/rag"
+url: "https://github.com/bniladridas/rag"
 license: Apache-2.0
 preferred-citation:
   type: article

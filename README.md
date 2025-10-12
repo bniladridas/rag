@@ -151,6 +151,10 @@ src/rag/
     └── tui.py         → Text User Interface
 ```
 
+## Release Process
+
+The project uses automated releases via GitHub Actions. For details on the release workflow, see [release-webpage/index.html](release-webpage/index.html).
+
 ## Development
 
 **Run tests**

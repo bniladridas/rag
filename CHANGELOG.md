@@ -1,6 +1,16 @@
 # CHANGELOG
 
+## v0.2.5 (2025-10-12)
+
+### Fix
+
+* fix: add more permissions for releases ([`e5fb9b6`](https://github.com/bniladridas/rag/commit/e5fb9b6c65cfa600c913260c70b413eca9b48169))
+
 ## v0.2.4 (2025-10-12)
+
+### Chore
+
+* chore(release): 0.2.4 ([`de592f5`](https://github.com/bniladridas/rag/commit/de592f5e983878be82c61f7b1255c81fd816bfb4))
 
 ### Fix
 

@@ -5,7 +5,7 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app/src
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential && \

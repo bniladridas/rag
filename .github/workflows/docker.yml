@@ -22,6 +22,7 @@ jobs:
         context: .
         file: ./container/Dockerfile
         push: false
+        load: true
         tags: rag:test
         cache-from: type=gha
         cache-to: type=gha,mode=max

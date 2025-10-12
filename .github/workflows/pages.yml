@@ -19,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v4
+        with:
+          enablement: auto
       - run: cp -r release-webpage/* _site/
       - uses: actions/upload-pages-artifact@v3
         with:

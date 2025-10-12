@@ -152,10 +152,10 @@ class RAGTransformer:
     def generate_response(self, query: str) -> str:
         """
         Generate an agentic response using retrieved context and tools
-        
+
         Args:
             query (str): Input query
-        
+
         Returns:
             str: Generated response
         """
@@ -163,37 +163,56 @@ class RAGTransformer:
         greetings = ['hi', 'hello', 'hey', 'greetings']
         if query.lower().split()[0] in greetings:
             return "Hello! I'm an agentic AI assistant with knowledge about machine learning, sci-fi movies, and cosmos. I can use tools like calculations. How can I help you today?"
-        
+
+        # Handle direct calculation queries
+        if 'calculate' in query.lower() or re.search(r'\d+\s*[\+\-\*/]\s*\d+', query):
+            # Extract mathematical expression
+            expr_match = re.search(r'calculate\s+(.+)', query, re.IGNORECASE)
+            if expr_match:
+                expr = expr_match.group(1).strip()
+            else:
+                # Try to find math expression in the query
+                expr = re.sub(r'[^\d\+\-\*/\.\(\)\s]', '', query).strip()
+
+            if expr:
+                try:
+                    # Safe eval for simple math
+                    allowed_names = {"__builtins__": None}
+                    result = eval(expr, allowed_names)
+                    return f"Calculation result: {result}"
+                except Exception as e:
+                    return f"Invalid calculation: {e}"
+
         # Retrieve context
         context_docs = self.retrieve_context(query)
         context = " ".join(context_docs)
-        
+
         # Agent loop
         max_iterations = 3
         for _ in range(max_iterations):
             input_text = f"{self.get_tools()}\nContext: {context}\nQuery: {query}\nRespond or use a tool:"
-            
+
             # Generate response
             inputs = self.tokenizer(input_text, return_tensors="pt", max_length=512, truncation=True)
-            outputs = self.generator.generate(**inputs, 
-                                              max_length=150, 
-                                              num_return_sequences=1, 
+            outputs = self.generator.generate(**inputs,
+                                              max_length=150,
+                                              num_return_sequences=1,
                                               do_sample=True,
                                               temperature=0.7)
-            
+
             response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-            
+
             # Check for tool call
             if response.startswith("CALC:"):
                 tool_result = self.execute_tool(response)
                 context += f"\nTool result: {tool_result}"
                 continue  # Continue loop to generate final response
-            
+
             # Final response
             if not response or len(response.split()) < 3:
                 response = "I apologize, but I couldn't generate a specific response. Could you please rephrase your query about machine learning, sci-fi movies, or cosmos?"
             return response
-        
+
         # Fallback if loop exhausted
         return "I used tools but couldn't finalize a response. Please try a different query."
 

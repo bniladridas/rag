@@ -1,6 +1,22 @@
 # CHANGELOG
 
+## v0.2.1 (2025-10-12)
+
+### Fix
+
+* fix: test issue link #1 ([`f9f02a5`](https://github.com/bniladridas/rag/commit/f9f02a56dc013ff945317967a1be0b0c471c2fd4))
+
+### Test
+
+* test: verify bot avatar ([`bd002b7`](https://github.com/bniladridas/rag/commit/bd002b7bbd3de915f2c5032328ed8f58889d21fe))
+
+* test: trigger release with token ([`6cec1c3`](https://github.com/bniladridas/rag/commit/6cec1c3c55d51391f80e8602966accae04384794))
+
 ## v0.2.0 (2025-10-12)
+
+### Chore
+
+* chore(release): 0.2.0 ([`1de76f5`](https://github.com/bniladridas/rag/commit/1de76f52ac63b966dbe94f4295b1a7db46872872))
 
 ### Feature
 

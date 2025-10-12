@@ -2,48 +2,48 @@ name: Docker
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./container/Dockerfile
+          push: false
+          load: true
+          tags: rag:test
+      - name: Test Docker image
+        run: |
+          # Clean up any existing containers/images to free space
+          docker system prune -a -f || true
+          docker image prune -a -f || true
+          docker volume prune -f || true
+          docker builder prune -f || true
 
-     - name: Set up Docker Buildx
-       uses: docker/setup-buildx-action@v3
+          # Run the container and check if it starts
+          docker run --rm rag:test rag --help || echo "CLI works"
 
-     - name: Build Docker image
-       uses: docker/build-push-action@v5
-       with:
-         context: .
-         file: ./container/Dockerfile
-         push: false
-         load: true
-         tags: rag:test
+          # Test import
+          docker run --rm rag:test python -c "import rag; print('Import successful')"
 
-    - name: Test Docker image
-      run: |
-        # Clean up any existing containers/images to free space
-        docker system prune -a -f || true
-        docker image prune -a -f || true
-        docker volume prune -f || true
-        docker builder prune -f || true
+          # Test basic functionality (without API keys)
+          timeout 10s docker run --rm -i rag:test << EOF || true
+          help
+          exit
+          EOF
 
-        # Run the container and check if it starts
-        docker run --rm rag:test rag --help || echo "CLI works"
-
-        # Test import
-        docker run --rm rag:test python -c "import rag; print('Import successful')"
-
-         # Test basic functionality (without API keys)
-         timeout 10s docker run --rm -i rag:test << EOF || true
-         help
-         exit
-         EOF
-
-         # Clean up after tests
-         docker image rm rag:test || true
+          # Clean up after tests
+          docker image rm rag:test || true

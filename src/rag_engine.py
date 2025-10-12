@@ -4,13 +4,13 @@ RAG Engine for retrieval-augmented generation
 import os
 import json
 import faiss
-import numpy as np
 import re
 from typing import List
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from .config import Config
 from .tools import ToolExecutor
+
 
 class RAGEngine:
     """Retrieval-Augmented Generation engine"""
@@ -121,15 +121,24 @@ class RAGEngine:
 
         # Agent loop with tool usage
         for _ in range(self.config.MAX_ITERATIONS):
-            input_text = f"Context information: {context}\n\n{self.tool_executor.get_available_tools()}\n\nQuestion: {query}\n\nAnswer the question using the context. If you need external information, use a tool by responding with the tool command. Otherwise, provide a direct answer."
+            input_text = (
+                f"Context information: {context}\n\n"
+                f"{self.tool_executor.get_available_tools()}\n\n"
+                f"Question: {query}\n\n"
+                f"Answer the question using the context. If you need external "
+                f"information, use a tool by responding with the tool command. "
+                f"Otherwise, provide a direct answer."
+            )
 
             # Generate response
             inputs = self.tokenizer(input_text, return_tensors="pt", max_length=512, truncation=True)
-            outputs = self.generator.generate(**inputs,
-                                              max_length=self.config.MAX_LENGTH,
-                                              num_return_sequences=1,
-                                              do_sample=True,
-                                              temperature=0.7)
+            outputs = self.generator.generate(
+                **inputs,
+                max_length=self.config.MAX_LENGTH,
+                num_return_sequences=1,
+                do_sample=True,
+                temperature=0.7
+            )
 
             response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
@@ -141,7 +150,11 @@ class RAGEngine:
 
             # Return final response
             if not response or len(response.split()) < 3:
-                response = "I apologize, but I couldn't generate a specific response. Could you please rephrase your query about machine learning, sci-fi movies, or cosmos?"
+                response = (
+                    "I apologize, but I couldn't generate a specific response. "
+                    "Could you please rephrase your query about machine learning, "
+                    "sci-fi movies, or cosmos?"
+                )
             return response
 
         # Fallback

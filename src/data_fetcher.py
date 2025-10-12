@@ -9,6 +9,7 @@ import concurrent.futures
 from typing import List
 from .config import Config
 
+
 class DataFetcher:
     """Handles parallel data collection from multiple sources"""
 
@@ -60,7 +61,11 @@ class DataFetcher:
 
         def fetch_page(page):
             try:
-                discover_url = f"https://api.themoviedb.org/3/discover/movie?api_key={self.config.TMDB_API_KEY}&with_genres=878&page={page}&language=en-US&sort_by=popularity.desc"
+                discover_url = (
+                    f"https://api.themoviedb.org/3/discover/movie?"
+                    f"api_key={self.config.TMDB_API_KEY}&with_genres=878&"
+                    f"page={page}&language=en-US&sort_by=popularity.desc"
+                )
                 response = self.session.get(discover_url, timeout=10)
                 if response.status_code != 200:
                     return []
@@ -68,7 +73,12 @@ class DataFetcher:
 
                 page_docs = []
                 for movie in data['results'][:10]:  # Limit to 10 per page
-                    doc = f"Sci-Fi Movie: {movie['title']}. Release Date: {movie.get('release_date', 'Unknown')}. Overview: {movie['overview']}. Popularity: {movie.get('popularity', 'N/A')}"
+                    doc = (
+                        f"Sci-Fi Movie: {movie['title']}. "
+                        f"Release Date: {movie.get('release_date', 'Unknown')}. "
+                        f"Overview: {movie['overview']}. "
+                        f"Popularity: {movie.get('popularity', 'N/A')}"
+                    )
                     page_docs.append(doc)
                 return page_docs
             except Exception as e:
@@ -92,13 +102,20 @@ class DataFetcher:
                 base_url = 'https://api.nasa.gov/planetary/apod'
                 params = {
                     'api_key': self.config.NASA_API_KEY,
-                    'date': time.strftime('%Y-%m-%d', time.localtime(time.time() - days_ago * 86400))
+                    'date': time.strftime(
+                        '%Y-%m-%d',
+                        time.localtime(time.time() - days_ago * 86400)
+                    )
                 }
 
                 response = self.session.get(base_url, params=params, timeout=10)
                 if response.status_code == 200:
                     content = response.json()
-                    doc = f"Cosmos: {content.get('title', 'No Title')}. Date: {content.get('date', 'Unknown')}. Explanation: {content.get('explanation', 'No details')}"
+                    doc = (
+                        f"Cosmos: {content.get('title', 'No Title')}. "
+                        f"Date: {content.get('date', 'Unknown')}. "
+                        f"Explanation: {content.get('explanation', 'No details')}"
+                    )
                     return doc
                 return None
             except Exception:
@@ -133,6 +150,7 @@ class DataFetcher:
         print(f"Fetched {len(all_documents)} documents total")
         return all_documents
 
+
     def save_documents(self, documents: List[str]):
         """Save documents to knowledge base file"""
         filepath = os.path.join(self.config.DATASET_DIR, self.config.KNOWLEDGE_BASE_FILE)
@@ -141,11 +159,13 @@ class DataFetcher:
 
         print(f"Saved {len(documents)} documents to {filepath}")
 
+
 def main():
     """Main function for data collection"""
     fetcher = DataFetcher()
     documents = fetcher.fetch_all_data()
     fetcher.save_documents(documents)
+
 
 if __name__ == "__main__":
     main()

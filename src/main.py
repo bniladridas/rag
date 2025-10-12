@@ -1,8 +1,8 @@
 """
 Main entry point for the RAG Transformer application
 """
-import sys
 from .rag_engine import RAGEngine
+
 
 def main():
     """Main interactive loop"""
@@ -46,6 +46,7 @@ def main():
             break
         except Exception as e:
             print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()

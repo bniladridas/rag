@@ -1,6 +1,20 @@
 # CHANGELOG
 
+## v0.2.3 (2025-10-12)
+
+### Fix
+
+* fix: add issues write permission ([`d1e916e`](https://github.com/bniladridas/rag/commit/d1e916ed182c814b2b67e978a7e4af61ada0c4b2))
+
+### Test
+
+* test: final bot token check ([`f571d81`](https://github.com/bniladridas/rag/commit/f571d81547bc6481d86130636acdea518be7671a))
+
 ## v0.2.2 (2025-10-12)
+
+### Chore
+
+* chore(release): 0.2.2 ([`754efd9`](https://github.com/bniladridas/rag/commit/754efd95981da027c0bead2c5a9532d15a8d0580))
 
 ### Fix
 

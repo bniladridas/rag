@@ -116,6 +116,10 @@ python scripts/lint.py
 python setup.py sdist bdist_wheel
 ```
 
+### Automated Updates
+
+This project uses [Dependabot](https://github.com/dependabot) for automatic dependency updates. Dependabot creates pull requests weekly to keep dependencies up-to-date and secure. All updates are automatically tested and validated.
+
 ## Contributing
 
 1. Fork the repository

@@ -125,8 +125,8 @@ class RAGEngine:
                 f"Context information: {context}\n\n"
                 f"{self.tool_executor.get_available_tools()}\n\n"
                 f"Question: {query}\n\n"
-                f"Answer the question using the context. If you need external "
-                f"information, use a tool by responding with the tool command. "
+                f"Answer the question using the context. If you need external\n"
+                f"information, use a tool by responding with the tool command.\n"
                 f"Otherwise, provide a direct answer."
             )
 
@@ -151,8 +151,8 @@ class RAGEngine:
             # Return final response
             if not response or len(response.split()) < 3:
                 response = (
-                    "I apologize, but I couldn't generate a specific response. "
-                    "Could you please rephrase your query about machine learning, "
+                    "I apologize, but I couldn't generate a specific response.\n"
+                    "Could you please rephrase your query about machine learning,\n"
                     "sci-fi movies, or cosmos?"
                 )
             return response

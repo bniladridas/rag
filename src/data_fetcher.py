@@ -31,7 +31,10 @@ class DataFetcher:
 
         documents = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
-            future_to_topic = {executor.submit(self._fetch_wiki_summary, topic): topic for topic in ml_topics}
+            future_to_topic = {
+                executor.submit(self._fetch_wiki_summary, topic): topic
+                for topic in ml_topics
+            }
             for future in concurrent.futures.as_completed(future_to_topic):
                 topic = future_to_topic[future]
                 try:
@@ -86,7 +89,10 @@ class DataFetcher:
                 return []
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(fetch_page, page) for page in range(1, self.config.MOVIE_PAGES + 1)]
+            futures = [
+                executor.submit(fetch_page, page)
+                for page in range(1, self.config.MOVIE_PAGES + 1)
+            ]
             for future in concurrent.futures.as_completed(futures):
                 movie_documents.extend(future.result())
                 time.sleep(0.5)  # Rate limiting
@@ -122,7 +128,10 @@ class DataFetcher:
                 return None
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
-            futures = [executor.submit(fetch_day, days_ago) for days_ago in range(self.config.COSMOS_DAYS)]
+            futures = [
+                executor.submit(fetch_day, days_ago)
+                for days_ago in range(self.config.COSMOS_DAYS)
+            ]
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
                 if result:
@@ -149,7 +158,6 @@ class DataFetcher:
 
         print(f"Fetched {len(all_documents)} documents total")
         return all_documents
-
 
     def save_documents(self, documents: List[str]):
         """Save documents to knowledge base file"""

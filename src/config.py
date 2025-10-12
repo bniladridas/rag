@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
+
 class Config:
     """Configuration class for API keys and settings"""
 

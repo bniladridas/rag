@@ -1,14 +1,15 @@
 """
 RAG Engine for retrieval-augmented generation
 """
-import os
+
 import json
-import faiss
+import os
 import re
 import sys
 from typing import List
 
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import faiss
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from .config import Config
 from .tools import ToolExecutor
@@ -60,7 +61,7 @@ class RAGEngine:
         """Load documents from knowledge base file"""
         kb_path = os.path.join(self.config.DATASET_DIR, self.config.KNOWLEDGE_BASE_FILE)
         try:
-            with open(kb_path, 'r') as f:
+            with open(kb_path, "r") as f:
                 documents = json.load(f)
                 self.add_documents(documents)
                 print(f"Loaded {len(documents)} documents from knowledge base")
@@ -69,7 +70,7 @@ class RAGEngine:
             fallback_docs = [
                 "Machine learning is a subset of artificial intelligence.",
                 "Deep learning uses neural networks with multiple layers.",
-                "Science fiction explores futuristic concepts and advanced technology."
+                "Science fiction explores futuristic concepts and advanced technology.",
             ]
             self.add_documents(fallback_docs)
 
@@ -91,10 +92,10 @@ class RAGEngine:
     def retrieve_context(self, query: str) -> List[str]:
         """Retrieve most relevant documents for a query"""
         if not self.index or len(self.knowledge_base) == 0:
-            return self.knowledge_base[:self.config.TOP_K_RETRIEVAL]
+            return self.knowledge_base[: self.config.TOP_K_RETRIEVAL]
 
         if len(query.split()) < 2:
-            return self.knowledge_base[:self.config.TOP_K_RETRIEVAL]
+            return self.knowledge_base[: self.config.TOP_K_RETRIEVAL]
 
         if query in self.query_cache:
             query_embedding = self.query_cache[query]
@@ -113,7 +114,7 @@ class RAGEngine:
         """Generate response using RAG with tool support"""
         query = query.strip().strip('"').strip("'")
 
-        greetings = ['hi', 'hello', 'hey', 'greetings']
+        greetings = ["hi", "hello", "hey", "greetings"]
         if query.lower().split()[0] in greetings:
             return (
                 "Hello! I'm an agentic AI assistant with knowledge about "
@@ -124,11 +125,12 @@ class RAGEngine:
         if query.upper().startswith(("CALC:", "WIKI:", "TIME:")):
             return self.tool_executor.execute_tool(query)
 
-        if 'calculate' in query.lower() or re.search(r'\d+\s*[\+\-\*/]\s*\d+', query):
-            expr_match = re.search(r'calculate\s+(.+)', query, re.IGNORECASE)
+        if "calculate" in query.lower() or re.search(r"\d+\s*[\+\-\*/]\s*\d+", query):
+            expr_match = re.search(r"calculate\s+(.+)", query, re.IGNORECASE)
             expr = (
-                expr_match.group(1).strip() if expr_match
-                else re.sub(r'[^\d\+\-\*/\.\(\)\s]', '', query).strip()
+                expr_match.group(1).strip()
+                if expr_match
+                else re.sub(r"[^\d\+\-\*/\.\(\)\s]", "", query).strip()
             )
             if expr:
                 return self.tool_executor.execute_tool(f"CALC: {expr}")
@@ -158,7 +160,7 @@ class RAGEngine:
                 max_length=self.config.MAX_LENGTH,
                 num_return_sequences=1,
                 do_sample=True,
-                temperature=0.7
+                temperature=0.7,
             )
 
             response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)

@@ -1,7 +1,9 @@
 """
 Main entry point for the RAG Transformer application
 """
+
 import sys
+
 from .rag_engine import RAGEngine
 
 
@@ -24,11 +26,11 @@ def main():
         try:
             query = input("\nEnter your query (or 'exit'/'help' to interact): ").strip()
 
-            if query.lower() == 'exit':
+            if query.lower() == "exit":
                 print("Exiting RAG Transformer. Goodbye!")
                 break
 
-            if query.lower() == 'help':
+            if query.lower() == "help":
                 print("\nThis is an Agentic AI Assistant covering:")
                 print("- Machine Learning concepts")
                 print("- Science Fiction Movies")

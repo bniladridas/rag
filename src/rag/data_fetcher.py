@@ -1,12 +1,15 @@
 """
 Data fetching module for collecting knowledge from various APIs
 """
-import os
-import json
-import time
-import requests
+
 import concurrent.futures
+import json
+import os
+import time
 from typing import List
+
+import requests
+
 from .config import Config
 
 
@@ -18,21 +21,25 @@ class DataFetcher:
         os.makedirs(self.config.DATASET_DIR, exist_ok=True)
 
         self.session = requests.Session()
-        self.session.headers.update({'User-Agent': 'RAG-Transformer/1.0'})
+        self.session.headers.update({"User-Agent": "RAG-Transformer/1.0"})
 
     def fetch_ml_knowledge(self) -> List[str]:
         """Fetch machine learning knowledge from Wikipedia"""
         ml_topics = [
-            'Machine_learning', 'Deep_learning', 'Neural_network',
-            'Supervised_learning', 'Unsupervised_learning', 'Reinforcement_learning',
-            'Feature_extraction', 'Overfitting_(machine_learning)'
+            "Machine_learning",
+            "Deep_learning",
+            "Neural_network",
+            "Supervised_learning",
+            "Unsupervised_learning",
+            "Reinforcement_learning",
+            "Feature_extraction",
+            "Overfitting_(machine_learning)",
         ]
 
         documents = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
             future_to_topic = {
-                executor.submit(self._fetch_wiki_summary, topic): topic
-                for topic in ml_topics
+                executor.submit(self._fetch_wiki_summary, topic): topic for topic in ml_topics
             }
             for future in concurrent.futures.as_completed(future_to_topic):
                 topic = future_to_topic[future]
@@ -50,7 +57,7 @@ class DataFetcher:
             url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
             response = self.session.get(url, timeout=10)
             if response.status_code == 200:
-                return response.json().get('extract', '')
+                return response.json().get("extract", "")
             return ""
         except Exception:
             return ""
@@ -74,7 +81,7 @@ class DataFetcher:
                 if response.status_code != 200:
                     return []
                 page_docs = []
-                for movie in response.json().get('results', [])[:10]:
+                for movie in response.json().get("results", [])[:10]:
                     doc = (
                         f"Sci-Fi Movie: {movie.get('title','Unknown')}. "
                         f"Release Date: {movie.get('release_date', 'Unknown')}. "
@@ -89,8 +96,7 @@ class DataFetcher:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             futures = [
-                executor.submit(fetch_page, page)
-                for page in range(1, self.config.MOVIE_PAGES + 1)
+                executor.submit(fetch_page, page) for page in range(1, self.config.MOVIE_PAGES + 1)
             ]
             for future in concurrent.futures.as_completed(futures):
                 movie_documents.extend(future.result())
@@ -106,13 +112,12 @@ class DataFetcher:
 
         def fetch_day(days_ago):
             try:
-                base_url = 'https://api.nasa.gov/planetary/apod'
+                base_url = "https://api.nasa.gov/planetary/apod"
                 params = {
-                    'api_key': self.config.NASA_API_KEY,
-                    'date': time.strftime(
-                        '%Y-%m-%d',
-                        time.localtime(time.time() - days_ago * 86400)
-                    )
+                    "api_key": self.config.NASA_API_KEY,
+                    "date": time.strftime(
+                        "%Y-%m-%d", time.localtime(time.time() - days_ago * 86400)
+                    ),
                 }
                 response = self.session.get(base_url, params=params, timeout=10)
                 if response.status_code == 200:
@@ -128,8 +133,7 @@ class DataFetcher:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
             futures = [
-                executor.submit(fetch_day, days_ago)
-                for days_ago in range(self.config.COSMOS_DAYS)
+                executor.submit(fetch_day, days_ago) for days_ago in range(self.config.COSMOS_DAYS)
             ]
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
@@ -157,7 +161,7 @@ class DataFetcher:
     def save_documents(self, documents: List[str]):
         """Save documents to knowledge base file"""
         filepath = self.config.KNOWLEDGE_BASE_FILE
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(documents, f, indent=2)
         print(f"Saved {len(documents)} documents to {filepath}")
 

@@ -2,8 +2,8 @@
 Configuration for RAG Transformer
 """
 
-import os
 import logging
+import os
 from pathlib import Path
 
 
@@ -63,6 +63,7 @@ class Config:
             path.mkdir(parents=True, exist_ok=True)
         if not self.KNOWLEDGE_BASE_FILE.exists():
             logging.warning(f"Knowledge base file '{self.KNOWLEDGE_BASE_FILE}' does not exist.")
+
 
 # Example usage
 # config = Config()

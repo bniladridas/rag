@@ -1,8 +1,11 @@
 """
 Unit tests for tools.py
 """
-import pytest
+
 from unittest.mock import Mock, patch
+
+import pytest
+
 from src.rag.tools import ToolExecutor
 
 
@@ -32,11 +35,11 @@ def test_execute_calc(tool_executor):
     assert "Invalid calculation" in result
 
 
-@patch('src.rag.tools.requests.Session.get')
+@patch("src.rag.tools.requests.Session.get")
 def test_execute_wiki(mock_get, tool_executor):
     mock_response = Mock()
     mock_response.status_code = 200
-    mock_response.json.return_value = {'extract': 'Test summary'}
+    mock_response.json.return_value = {"extract": "Test summary"}
     mock_get.return_value = mock_response
 
     result = tool_executor._execute_wiki("WIKI: Test Topic")
@@ -44,7 +47,7 @@ def test_execute_wiki(mock_get, tool_executor):
     assert "Test summary" in result
 
 
-@patch('src.rag.tools.requests.Session.get')
+@patch("src.rag.tools.requests.Session.get")
 def test_execute_wiki_not_found(mock_get, tool_executor):
     mock_response = Mock()
     mock_response.status_code = 404

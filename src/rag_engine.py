@@ -28,6 +28,9 @@ class RAGEngine:
         self.knowledge_base = []
         self.index = None
 
+        # Query embedding cache
+        self.query_cache = {}
+
         # Load knowledge base
         self.load_knowledge_base()
 
@@ -74,8 +77,13 @@ class RAGEngine:
         if len(query.split()) < 2:
             return self.knowledge_base[:self.config.TOP_K_RETRIEVAL]
 
-        # Embed query and search
-        query_embedding = self.embedding_model.encode([query])
+        # Embed query and search (with caching)
+        if query in self.query_cache:
+            query_embedding = self.query_cache[query]
+        else:
+            query_embedding = self.embedding_model.encode([query])
+            self.query_cache[query] = query_embedding
+
         distances, indices = self.index.search(query_embedding, self.config.TOP_K_RETRIEVAL)
 
         # Retrieve documents

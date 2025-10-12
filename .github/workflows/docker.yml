@@ -46,7 +46,7 @@ jobs:
          EOF
 
          # Test TUI
-         timeout 10s docker run --rm -i rag:test rag-tui << EOF || true
+         timeout 10s docker run --rm -i rag:test python -c "from src.ui.tui import run_tui; run_tui()" << EOF || true
          help
          exit
          EOF

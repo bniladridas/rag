@@ -120,6 +120,27 @@ python setup.py sdist bdist_wheel
 
 This project uses [Dependabot](https://github.com/dependabot) for automatic dependency updates. Dependabot creates pull requests weekly to keep dependencies up-to-date and secure. All updates are automatically tested and validated.
 
+### Git Hooks
+
+This project uses conventional commits. To enable commit message validation:
+
+```bash
+cp scripts/commit-msg .git/hooks/
+chmod +x .git/hooks/commit-msg
+```
+
+For cleaning up commit messages in history:
+
+```bash
+# Rewrite specific range
+./scripts/rewrite_msg.sh HEAD~5..HEAD
+
+# Rewrite all history (use with caution)
+./scripts/rewrite_msg.sh --all
+```
+
+Commit messages must be lowercase, ≤40 characters, and start with types like `feat:`, `fix:`, `docs:`, etc.
+
 ## Contributing
 
 1. Fork the repository

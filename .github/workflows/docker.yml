@@ -29,13 +29,13 @@ jobs:
     - name: Test Docker image
       run: |
         # Run the container and check if it starts
-        docker run --rm rag-transformer:test rag-transformer --help || echo "CLI works"
+        docker run --rm rag:test rag --help || echo "CLI works"
 
         # Test import
-        docker run --rm rag-transformer:test python -c "import rag_transformer; print('Import successful')"
+        docker run --rm rag:test python -c "import rag; print('Import successful')"
 
         # Test basic functionality (without API keys)
-        timeout 10s docker run --rm -i rag-transformer:test << EOF || true
+        timeout 10s docker run --rm -i rag:test << EOF || true
         help
         exit
         EOF

@@ -52,10 +52,10 @@ def test_main_help_flow(mock_rag, mock_print, mock_input, mock_isatty):
 
 
 @patch('sys.stdin.isatty', return_value=True)
-@patch('src.rag.ui.tui.Prompt.ask', side_effect=['hello', 'exit'])
-@patch('src.rag.ui.tui.Console.print')
+@patch('rich.prompt.Prompt.ask', side_effect=['hello', 'exit'])
+@patch('rich.console.Console.print')
 @patch('src.rag.ui.tui.RAGEngine')
-@patch('src.rag.ui.tui.Panel')  # Mock Panel for CI-safe test
+@patch('rich.panel.Panel')  # Mock Panel for CI-safe test
 def test_tui_greeting_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
     """Test TUI function with greeting and exit"""
     mock_engine = Mock()
@@ -68,10 +68,10 @@ def test_tui_greeting_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isat
 
 
 @patch('sys.stdin.isatty', return_value=True)
-@patch('src.ui.tui.Prompt.ask', side_effect=['help', 'exit'])
-@patch('src.ui.tui.Console.print')
-@patch('src.ui.tui.RAGEngine')
-@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+@patch('rich.prompt.Prompt.ask', side_effect=['help', 'exit'])
+@patch('rich.console.Console.print')
+@patch('src.rag.ui.tui.RAGEngine')
+@patch('rich.panel.Panel')  # Mock Panel for CI-safe test
 def test_tui_help_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
     """Test TUI function with help command"""
     mock_engine = Mock()
@@ -82,10 +82,10 @@ def test_tui_help_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
 
 
 @patch('sys.stdin.isatty', return_value=True)
-@patch('src.ui.tui.Prompt.ask', side_effect=['calculate 2+3', 'exit'])
-@patch('src.ui.tui.Console.print')
-@patch('src.ui.tui.RAGEngine')
-@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+@patch('rich.prompt.Prompt.ask', side_effect=['calculate 2+3', 'exit'])
+@patch('rich.console.Console.print')
+@patch('src.rag.ui.tui.RAGEngine')
+@patch('rich.panel.Panel')  # Mock Panel for CI-safe test
 def test_tui_calc_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
     """Test TUI function with calculation"""
     mock_engine = Mock()
@@ -98,10 +98,10 @@ def test_tui_calc_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
 
 
 @patch('sys.stdin.isatty', return_value=True)
-@patch('src.ui.tui.Prompt.ask', side_effect=['exit'])
-@patch('src.ui.tui.Console.print')
-@patch('src.ui.tui.RAGEngine')
-@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+@patch('rich.prompt.Prompt.ask', side_effect=['exit'])
+@patch('rich.console.Console.print')
+@patch('src.rag.ui.tui.RAGEngine')
+@patch('rich.panel.Panel')  # Mock Panel for CI-safe test
 def test_tui_exit_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
     """Test TUI function with immediate exit"""
     mock_engine = Mock()

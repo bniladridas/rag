@@ -124,6 +124,10 @@ python setup.py sdist bdist_wheel
 4. Run tests and linting
 5. Open a pull request
 
+## Security
+
+Please see our [Security Policy](SECURITY.md) for information on reporting security vulnerabilities.
+
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.

@@ -7,6 +7,7 @@ on:
     branches: [ main, master ]
   schedule:
     - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   e2e:

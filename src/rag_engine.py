@@ -98,7 +98,11 @@ class RAGEngine:
         # Handle greetings
         greetings = ['hi', 'hello', 'hey', 'greetings']
         if query.lower().split()[0] in greetings:
-            return "Hello! I'm an agentic AI assistant with knowledge about machine learning, sci-fi movies, and cosmos. I can use tools like calculations. How can I help you today?"
+            return (
+                "Hello! I'm an agentic AI assistant with knowledge about "
+                "machine learning, sci-fi movies, and cosmos. I can use tools "
+                "like calculations. How can I help you today?"
+            )
 
         # Handle direct tool calls
         if query.upper().startswith(("CALC:", "WIKI:", "TIME:")):
@@ -126,8 +130,8 @@ class RAGEngine:
                 f"{self.tool_executor.get_available_tools()}\n\n"
                 f"Question: {query}\n\n"
                 f"Answer the question using the context. If you need external\n"
-                f"information, use a tool by responding with the tool command.\n"
-                f"Otherwise, provide a direct answer."
+                f"information, use a tool by responding with the tool\n"
+                f"command. Otherwise, provide a direct answer."
             )
 
             # Generate response
@@ -152,8 +156,8 @@ class RAGEngine:
             if not response or len(response.split()) < 3:
                 response = (
                     "I apologize, but I couldn't generate a specific response.\n"
-                    "Could you please rephrase your query about machine learning,\n"
-                    "sci-fi movies, or cosmos?"
+                    "Could you please rephrase your query about machine\n"
+                    "learning, sci-fi movies, or cosmos?"
                 )
             return response
 

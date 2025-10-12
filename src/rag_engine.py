@@ -5,7 +5,6 @@ import os
 import json
 import faiss
 import re
-import numpy as np
 from typing import List
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -85,7 +84,9 @@ class RAGEngine:
             query_embedding = self.embedding_model.encode([query])
             self.query_cache[query] = query_embedding
 
-        distances, indices = self.index.search(query_embedding, self.config.TOP_K_RETRIEVAL)  # type: ignore
+        distances, indices = self.index.search(
+            query_embedding, self.config.TOP_K_RETRIEVAL
+        )  # type: ignore
 
         # Retrieve documents
         retrieved_docs = [self.knowledge_base[idx] for idx in indices[0]]

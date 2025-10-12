@@ -3,7 +3,7 @@ Unit tests for rag_engine.py
 """
 import pytest
 from unittest.mock import Mock, patch
-from src.rag_engine import RAGEngine
+from src.rag.rag_engine import RAGEngine
 import numpy as np
 
 

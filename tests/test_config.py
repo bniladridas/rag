@@ -3,7 +3,7 @@ Unit tests for config.py
 """
 import os
 import pytest
-from src.config import Config
+from src.rag.config import Config
 
 
 def test_config_defaults():

@@ -3,7 +3,7 @@ Unit tests for tools.py
 """
 import pytest
 from unittest.mock import Mock, patch
-from src.tools import ToolExecutor
+from src.rag.tools import ToolExecutor
 
 
 @pytest.fixture

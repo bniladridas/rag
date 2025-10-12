@@ -39,6 +39,7 @@ jobs:
         run: semantic-release version --push --tag --changelog --vcs-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enhance changelog
         run: python scripts/enhance_changelog.py

@@ -1,4 +1,4 @@
-# RAG Transformer
+# RAG
 
 A friendly **AI assistant** that understands **machine learning**, **science fiction movies**, and the **cosmos**.
 It can **answer questions**, **do calculations**, and **search Wikipedia** — all from your **terminal**.
@@ -24,7 +24,7 @@ You’ll need:
 
 ```bash
 git clone <repository-url>
-cd rag-transformer
+cd rag
 pip install -r requirements.txt
 pip install -e .
 ```
@@ -33,22 +33,22 @@ pip install -e .
 
 ```bash
 # Build the image
-docker build -t rag-transformer .
+docker build -t rag .
 
 # Run the assistant
-docker run -it rag-transformer
+docker run -it rag
 
 # Run with API keys
-docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag-transformer
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
 
 # Run data collection
-docker run -it rag-transformer rag-collect
+docker run -it rag rag-collect
 ```
 
 ### Option 3: From pip (if published)
 
 ```bash
-pip install rag-transformer
+pip install rag
 ```
 
 ## Configuration
@@ -67,7 +67,7 @@ NASA_API_KEY=your_nasa_api_key_here
 Pass API keys as environment variables:
 
 ```bash
-docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag-transformer
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
 ```
 
 ### GitHub Actions
@@ -100,7 +100,7 @@ This command gathers:
 ### Start Interactive Mode
 
 ```bash
-rag-transformer
+rag
 ```
 
 Then you can ask:

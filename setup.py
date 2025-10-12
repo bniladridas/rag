@@ -7,13 +7,13 @@ with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
 setup(
-    name="rag-transformer",
+    name="rag",
     version="1.0.0",
     packages=find_packages(),
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'rag-transformer=src.main:main',
+            'rag=src.main:main',
             'rag-collect=src.data_fetcher:main',
         ],
     },

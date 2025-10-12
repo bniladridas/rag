@@ -35,4 +35,4 @@ USER app
 ENV PYTHONPATH=/app
 
 # Default command
-CMD ["rag-transformer"]
+CMD ["rag"]

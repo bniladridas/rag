@@ -11,10 +11,10 @@ def run_command(command, description):
     print(f"Running {description}...")
     try:
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        print(f"✓ {description} passed")
+        print(f"PASS: {description} passed")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"✗ {description} failed:")
+        print(f"FAIL: {description} failed:")
         print(e.stdout)
         print(e.stderr)
         return False
@@ -38,10 +38,10 @@ def main():
         print("pytest-cov not installed, skipping coverage...")
 
     if success:
-        print("\n✓ All tests passed!")
+        print("\nAll tests passed!")
         return 0
     else:
-        print("\n✗ Some tests failed!")
+        print("\nSome tests failed!")
         return 1
 
 if __name__ == "__main__":

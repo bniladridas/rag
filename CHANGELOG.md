@@ -4,13 +4,14 @@
 
 ### Fix
 
-* fix: test issue link #1 ([`f9f02a5`](https://github.com/bniladridas/rag/commit/f9f02a56dc013ff945317967a1be0b0c471c2fd4))
+* fix: test issue link [#1](https://github.com/bniladridas/rag/issues/1) ([`f9f02a5`](https://github.com/bniladridas/rag/commit/f9f02a56dc013ff945317967a1be0b0c471c2fd4))
 
 ### Test
 
 * test: verify bot avatar ([`bd002b7`](https://github.com/bniladridas/rag/commit/bd002b7bbd3de915f2c5032328ed8f58889d21fe))
 
 * test: trigger release with token ([`6cec1c3`](https://github.com/bniladridas/rag/commit/6cec1c3c55d51391f80e8602966accae04384794))
+## v0.2.1 (2025-10-12)
 
 ## v0.2.0 (2025-10-12)
 
@@ -31,6 +32,7 @@
 ### Test
 
 * test: trigger release ([`c6f41ca`](https://github.com/bniladridas/rag/commit/c6f41cae1d2d753bcdd30e4f30b23da90b1da85f))
+## v0.2.0 (2025-10-12)
 
 ## v0.1.0 (2025-10-12)
 
@@ -290,4 +292,5 @@
 
 * style: fix remaining linting issues ([`6c56b98`](https://github.com/bniladridas/rag/commit/6c56b98d8c2da1dc88b56aa6716b619db89dab61))
 
-* style: fix linting issues (flake8, mypy) ([`6005266`](https://github.com/bniladridas/rag/commit/6005266328d3ffdc3962f9d48e345667f8f1591c))
+* style: fix linting issues (flake8, mypy) ([`6005266`](https://github.com/bniladridas/rag/commit/6005266328d3ffdc3962f9d48e345667f8f1591c))## v0.1.0 (2025-10-12)
+

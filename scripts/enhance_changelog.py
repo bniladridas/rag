@@ -16,12 +16,12 @@ def enhance_changelog():
 
     # Example enhancement: Add issue links if #123 is mentioned
     def add_issue_links(match):
-        version_header = match.group(0)
+        version_header = match.group(1)
         # Find issue numbers in the section
-        section = match.group(1)
+        section = match.group(2)
         # Replace #123 with [#123](https://github.com/bniladridas/rag/issues/123)
-        enhanced = re.sub(r'#(\d+)', r'[#\1](https://github.com/bniladridas/rag/issues/\1)', section)
-        return version_header + enhanced
+        enhanced_section = re.sub(r'#(\d+)', r'[#\1](https://github.com/bniladridas/rag/issues/\1)', section)
+        return version_header + enhanced_section
 
     # Apply to each version section
     pattern = r'(## v[\d\.]+\s.*?\n)(.*?)(?=\n## v|\n*$)'

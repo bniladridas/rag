@@ -1,6 +1,20 @@
 # CHANGELOG
 
+## v0.2.6 (2025-10-12)
+
+### Fix
+
+* fix: update git username ([`2b1df6e`](https://github.com/bniladridas/rag/commit/2b1df6e6dfb90c358a097896daac313030d25795))
+
+* fix: update git email to bot email ([`ceae05f`](https://github.com/bniladridas/rag/commit/ceae05f0c8f92b78585a8d95c1b29afc8e850936))
+
+* fix: add GH_TOKEN env var ([`aa0f08a`](https://github.com/bniladridas/rag/commit/aa0f08a9df7a7a1e72e514fc17df851b7359ca6a))
+
 ## v0.2.5 (2025-10-12)
+
+### Chore
+
+* chore(release): 0.2.5 ([`e079822`](https://github.com/bniladridas/rag/commit/e079822860d5f084c436a7ef9ebb73a886e8c699))
 
 ### Fix
 

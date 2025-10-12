@@ -1,6 +1,16 @@
 # CHANGELOG
 
+## v0.2.4 (2025-10-12)
+
+### Fix
+
+* fix: use GITHUB_TOKEN for releases ([`5fd59fd`](https://github.com/bniladridas/rag/commit/5fd59fd371818b1a2da8e196a142109e54ea0a76))
+
 ## v0.2.3 (2025-10-12)
+
+### Chore
+
+* chore(release): 0.2.3 ([`10548ee`](https://github.com/bniladridas/rag/commit/10548ee944cff6eefc2aff9a4e25a8eaaffa9c47))
 
 ### Fix
 

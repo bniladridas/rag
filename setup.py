@@ -13,7 +13,7 @@ long_description = Path("README.md").read_text(encoding="utf-8")
 
 setup(
     name="rag",
-    version="0.2.3",
+    version="0.2.4",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,

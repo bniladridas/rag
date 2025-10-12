@@ -5,6 +5,7 @@ import os
 import json
 import faiss
 import re
+import numpy as np
 from typing import List
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -61,9 +62,9 @@ class RAGEngine:
         embeddings = self.embedding_model.encode(documents)
 
         # Create FAISS index
-        dimension = embeddings.shape[1]
+        dimension = int(embeddings.shape[1])  # type: ignore
         self.index = faiss.IndexFlatL2(dimension)
-        self.index.add(embeddings)
+        self.index.add(embeddings)  # type: ignore
 
         # Store documents
         self.knowledge_base.extend(documents)
@@ -84,7 +85,7 @@ class RAGEngine:
             query_embedding = self.embedding_model.encode([query])
             self.query_cache[query] = query_embedding
 
-        distances, indices = self.index.search(query_embedding, self.config.TOP_K_RETRIEVAL)
+        distances, indices = self.index.search(query_embedding, self.config.TOP_K_RETRIEVAL)  # type: ignore
 
         # Retrieve documents
         retrieved_docs = [self.knowledge_base[idx] for idx in indices[0]]

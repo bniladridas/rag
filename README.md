@@ -33,7 +33,7 @@ pip install -e .
 
 ```bash
 # Build the image
-docker build -t rag .
+docker build -f container/Dockerfile -t rag .
 
 # Run the assistant
 docker run -it rag

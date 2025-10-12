@@ -20,8 +20,9 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
+        file: ./container/Dockerfile
         push: false
-        tags: rag-transformer:test
+        tags: rag:test
         cache-from: type=gha
         cache-to: type=gha,mode=max
 

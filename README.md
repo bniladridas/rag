@@ -116,6 +116,12 @@ Collects:
 rag
 ```
 
+### Start TUI Mode
+
+```bash
+rag-tui
+```
+
 You can then ask:
 
 * “What is deep learning?”
@@ -133,12 +139,16 @@ You can then ask:
 ## Inside the Project
 
 ```
-src/
+src/rag/
+├── __init__.py        → Package initialization
+├── __main__.py        → CLI entry point
 ├── config.py          → Handles configuration and API keys
 ├── data_fetcher.py    → Collects data from APIs
-├── main.py            → CLI entry point
 ├── rag_engine.py      → Core RAG logic
-└── tools.py           → Tools like calculator and wiki search
+├── tools.py           → Tools like calculator and wiki search
+└── ui/
+    ├── __init__.py
+    └── tui.py         → Text User Interface
 ```
 
 ## Development

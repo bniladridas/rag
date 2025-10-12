@@ -12,7 +12,10 @@ def run_tui():
     console = Console()
     rag_engine = RAGEngine()
 
-    console.print(Panel.fit("[bold blue]Agentic RAG Transformer[/bold blue]\n[green]ML, Sci-Fi, and Cosmos Assistant[/green]"))
+    console.print(Panel.fit(
+        "[bold blue]Agentic RAG Transformer[/bold blue]\n"
+        "[green]ML, Sci-Fi, and Cosmos Assistant[/green]"
+    ))
     console.print("Type 'exit' to quit, 'help' for instructions.\n")
 
     while True:

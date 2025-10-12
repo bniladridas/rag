@@ -1,13 +1,13 @@
-torch==2.4.0
-transformers==4.48.0
+torch==2.8.0
+transformers==4.53.0
 sentence-transformers==2.7.0
 faiss-cpu==1.9.0
 numpy==1.26.0
 pandas==2.2.0
-scikit-learn==1.4.2
+scikit-learn==1.5.0
 openai==1.50.0
 python-dotenv==1.0.1
-requests==2.32.3
+requests==2.32.4
 beautifulsoup4==4.12.3
 tmdbsimple==2.9.1
 psutil==6.0.0

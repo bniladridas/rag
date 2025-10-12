@@ -235,6 +235,27 @@ Commit messages must be lowercase, ≤40 characters, starting with `feat:`, `fix
 
 See [Security Policy](SECURITY.md) for reporting vulnerabilities.
 
+## Citations
+
+If you use this project in your research or work, please cite the following:
+
+### RAG Concept
+```
+@article{lewis2020retrieval,
+  title={Retrieval-augmented generation for knowledge-intensive nlp tasks},
+  author={Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and K{\"u}ttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rockt{\"a}schel, Tim and others},
+  journal={Advances in Neural Information Processing Systems},
+  volume={33},
+  pages={9459--9474},
+  year={2020}
+}
+```
+
+### Key Libraries
+- **Transformers**: Wolf et al., "Transformers: State-of-the-Art Natural Language Processing", EMNLP 2020.
+- **Sentence Transformers**: Reimers and Gurevych, "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks", EMNLP 2019.
+- **FAISS**: Johnson et al., "Billion-scale similarity search with GPUs", arXiv 2017.
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE)

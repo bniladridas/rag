@@ -36,3 +36,6 @@ jobs:
         run: semantic-release version --push --tag --changelog --vcs-release
         env:
           GITHUB_TOKEN: ${{ secrets.HARPER_RELEASE_BOT_TOKEN }}
+
+      - name: Enhance changelog
+        run: python scripts/enhance_changelog.py

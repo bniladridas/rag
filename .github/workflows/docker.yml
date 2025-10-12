@@ -39,11 +39,17 @@ jobs:
         # Test import
         docker run --rm rag:test python -c "import rag; print('Import successful')"
 
-        # Test basic functionality (without API keys)
-        timeout 10s docker run --rm -i rag:test << EOF || true
-        help
-        exit
-        EOF
+         # Test basic functionality (without API keys)
+         timeout 10s docker run --rm -i rag:test << EOF || true
+         help
+         exit
+         EOF
 
-        # Clean up after tests
-        docker image rm rag:test || true
+         # Test TUI
+         timeout 10s docker run --rm -i rag:test rag-tui << EOF || true
+         help
+         exit
+         EOF
+
+         # Clean up after tests
+         docker image rm rag:test || true

@@ -29,6 +29,10 @@ jobs:
 
     - name: Test Docker image
       run: |
+        # Clean up any existing containers/images to free space
+        docker system prune -f || true
+        docker image prune -f || true
+
         # Run the container and check if it starts
         docker run --rm rag:test rag --help || echo "CLI works"
 
@@ -40,3 +44,6 @@ jobs:
         help
         exit
         EOF
+
+        # Clean up after tests
+        docker image rm rag:test || true

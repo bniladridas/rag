@@ -46,4 +46,4 @@ jobs:
 
       - name: Test TUI application flow
         run: |
-          echo -e "hello\nexit" | python -c "from src.rag.ui.tui import run_tui; run_tui()" | grep -E "(Query|Response|Goodbye)"
+          echo -e "hello\nexit" | PYTHONPATH=src python -c "from src.ui.tui import run_tui; run_tui()" | grep -E "(Query|Response|Goodbye)"

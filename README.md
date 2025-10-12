@@ -165,6 +165,33 @@ python -m pytest
 python scripts/lint.py
 ```
 
+**Fix linting issues**
+
+```bash
+./scripts/fix_lint.sh
+```
+
+**Run CI locally**
+
+```bash
+./scripts/run_ci.sh
+```
+
+**Run E2E tests locally**
+
+```bash
+# Set API keys if available
+export TMDB_API_KEY=your_key
+export NASA_API_KEY=your_key
+./scripts/run_e2e.sh
+```
+
+**Run Docker locally**
+
+```bash
+./scripts/run_docker.sh
+```
+
 **Build package**
 
 ```bash

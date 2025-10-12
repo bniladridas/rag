@@ -7,7 +7,7 @@ import time
 import requests
 import concurrent.futures
 from typing import List
-from config import Config
+from .config import Config
 
 class DataFetcher:
     """Handles parallel data collection from multiple sources"""

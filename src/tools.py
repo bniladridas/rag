@@ -5,7 +5,7 @@ import math
 import requests
 from datetime import datetime
 from typing import Dict, Any
-from config import Config
+from .config import Config
 
 class ToolExecutor:
     """Handles execution of various tools"""

@@ -13,8 +13,8 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'rag-transformer=main:main',
-            'rag-collect=data_fetcher:main',
+            'rag-transformer=src.main:main',
+            'rag-collect=src.data_fetcher:main',
         ],
     },
     author="RAG Transformer Team",

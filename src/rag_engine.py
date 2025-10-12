@@ -9,8 +9,8 @@ import re
 from typing import List
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-from config import Config
-from tools import ToolExecutor
+from .config import Config
+from .tools import ToolExecutor
 
 class RAGEngine:
     """Retrieval-Augmented Generation engine"""

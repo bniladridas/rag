@@ -2,7 +2,7 @@
 Main entry point for the RAG Transformer application
 """
 import sys
-from rag_engine import RAGEngine
+from .rag_engine import RAGEngine
 
 def main():
     """Main interactive loop"""

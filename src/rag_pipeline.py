@@ -39,58 +39,25 @@ class RAGTransformer:
     def load_datasets(self, dataset_dir: str = 'src/datasets'):
         """
         Load datasets from JSON files in the specified directory
-        
+
         Args:
             dataset_dir (str): Directory containing dataset JSON files
         """
-        # Machine learning documents
-        ml_documents = [
-            "Machine learning is a subset of artificial intelligence that focuses on the use of data and algorithms to imitate the way that humans learn.",
-            "Deep learning uses neural networks with multiple layers to progressively extract higher-level features from raw input.",
-            "Transformers are a type of neural network architecture used in NLP that can handle sequential data more effectively than previous models.",
-            "Supervised learning involves training a model on labeled data, where the desired output is known.",
-            "Unsupervised learning finds hidden patterns or intrinsic structures in input data without labeled responses.",
-            "Reinforcement learning is about training an agent to make decisions by rewarding desired behaviors and punishing undesired ones.",
-            "Neural networks are computing systems inspired by biological neural networks that can learn to perform tasks by considering examples.",
-            "Feature extraction is a key process in machine learning where important characteristics are identified and selected from raw data.",
-            "Overfitting occurs when a machine learning model learns the training data too well, including its noise and fluctuations."
-        ]
-        
-        # Load sci-fi movies dataset
-        sci_fi_movies_path = os.path.join(dataset_dir, 'sci_fi_movies.json')
-        cosmos_content_path = os.path.join(dataset_dir, 'cosmos_content.json')
-        
+        knowledge_base_path = os.path.join(dataset_dir, 'knowledge_base.json')
         try:
-            with open(sci_fi_movies_path, 'r') as f:
-                sci_fi_movies = json.load(f)
-                # Extract movie titles and overviews
-                movie_documents = [
-                    f"Science Fiction Movie: {movie['title']}. Release Date: {movie.get('release_date', 'Unknown')}. Overview: {movie['overview']}. Popularity: {movie.get('popularity', 'N/A')}. Genres: {', '.join(movie.get('genres', []))}" 
-                    for movie in sci_fi_movies
-                ]
-                print(f"Loaded {len(movie_documents)} sci-fi movie documents")
+            with open(knowledge_base_path, 'r') as f:
+                documents = json.load(f)
+                print(f"Loaded {len(documents)} documents from knowledge base")
+                self.add_documents(documents)
         except FileNotFoundError:
-            print(f"Sci-fi movies dataset not found at {sci_fi_movies_path}")
-            movie_documents = []
-        
-        try:
-            with open(cosmos_content_path, 'r') as f:
-                cosmos_content = json.load(f)
-                # Extract cosmos content details
-                cosmos_documents = [
-                    f"Cosmos Observation Date: {content.get('date', 'Unknown')}. Title: {content.get('title', 'No Title')}. Media Type: {content.get('media_type', 'Unknown')}. Explanation: {content.get('explanation', 'No details')}"
-                    for content in cosmos_content
-                ]
-                print(f"Loaded {len(cosmos_documents)} cosmos content documents")
-        except FileNotFoundError:
-            print(f"Cosmos content dataset not found at {cosmos_content_path}")
-            cosmos_documents = []
-        
-        # Combine all documents
-        all_documents = ml_documents + movie_documents + cosmos_documents
-        
-        # Add documents to knowledge base
-        self.add_documents(all_documents)
+            print(f"Knowledge base not found at {knowledge_base_path}. Run data collector first.")
+            # Fallback to minimal knowledge
+            fallback_docs = [
+                "Machine learning is a subset of artificial intelligence.",
+                "Deep learning uses neural networks with multiple layers.",
+                "Science fiction explores futuristic concepts and advanced technology."
+            ]
+            self.add_documents(fallback_docs)
     
     def add_documents(self, documents: List[str]):
         """
@@ -235,7 +202,7 @@ TIME: Get current date and time"""
         # Agent loop
         max_iterations = 3
         for _ in range(max_iterations):
-            input_text = f"{self.get_tools()}\nContext: {context}\nQuery: {query}\nRespond or use a tool:"
+            input_text = f"Context information: {context}\n\nAvailable tools: {self.get_tools()}\n\nQuestion: {query}\n\nAnswer the question using the context. If you need external information, use a tool by responding with the tool command (e.g., WIKI: topic). Otherwise, provide a direct answer."
 
             # Generate response
             inputs = self.tokenizer(input_text, return_tensors="pt", max_length=512, truncation=True)

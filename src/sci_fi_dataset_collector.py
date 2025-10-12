@@ -2,34 +2,29 @@ import os
 import json
 import time
 import requests
-import psutil
-
-import pandas as pd
-import numpy as np
+import concurrent.futures
 from typing import List, Dict, Any
-from memory_profiler import profile
-from line_profiler import LineProfiler
 
 # Load API key from environment
 from dotenv import load_dotenv
-import tmdbsimple as tmdb
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-class SciFiDatasetCollector:
+class DataFetcher:
     def __init__(self):
         """
-        Initialize the dataset collector with TMDB API
+        Initialize the data fetcher for parallel data collection
         """
-        # Set TMDB API key from environment variable
+        # Set API keys
         self.tmdb_api_key = os.getenv('TMDB_API_KEY', '')
-        tmdb.API_KEY = self.tmdb_api_key
-        
+        self.nasa_api_key = os.getenv('NASA_API_KEY', '')
+
         # Directories for data storage
         self.base_dir = os.path.join(os.path.dirname(__file__), 'datasets')
         os.makedirs(self.base_dir, exist_ok=True)
-        
-        # Performance tracking
-        self.performance_log = []
+
+        # Create session for reuse
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': 'RAG-Transformer/1.0'})
     
     def make_request(self, url: str, max_retries: int = 3) -> requests.Response:
         """
@@ -54,189 +49,164 @@ class SciFiDatasetCollector:
                 else:
                     raise e
 
-    @profile
-    def collect_sci_fi_movies(self, pages: int = 10) -> List[Dict[str, Any]]:
+    def fetch_ml_knowledge(self) -> List[str]:
         """
-        Collect science fiction movies from TMDB
+        Fetch machine learning knowledge from Wikipedia
+        """
+        ml_topics = [
+            'Machine_learning', 'Deep_learning', 'Neural_network',
+            'Supervised_learning', 'Unsupervised_learning', 'Reinforcement_learning',
+            'Feature_extraction', 'Overfitting_(machine_learning)'
+        ]
+
+        documents = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_topic = {executor.submit(self._fetch_wiki_summary, topic): topic for topic in ml_topics}
+            for future in concurrent.futures.as_completed(future_to_topic):
+                topic = future_to_topic[future]
+                try:
+                    summary = future.result()
+                    if summary:
+                        documents.append(f"Machine Learning - {topic.replace('_', ' ')}: {summary}")
+                except Exception as e:
+                    print(f"Error fetching {topic}: {e}")
+
+        return documents
+
+    def _fetch_wiki_summary(self, topic: str) -> str:
+        """
+        Fetch summary from Wikipedia API
+        """
+        try:
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
+            response = self.session.get(url, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('extract', '')
+            return ""
+        except Exception:
+            return ""
+
+    def fetch_sci_fi_movies(self, pages: int = 5) -> List[str]:
+        """
+        Fetch science fiction movies from TMDB
 
         Args:
             pages (int): Number of pages to collect
 
         Returns:
-            List of movie dictionaries
+            List of movie document strings
         """
-        sci_fi_movies = []
+        movie_documents = []
 
-        # Create a session for connection reuse
-        self.session = requests.Session()
-
-        # Start performance tracking
-        start_time = time.time()
-        start_memory = psutil.Process().memory_info().rss / (1024 * 1024)
-
-        try:
-            for page in range(1, pages + 1):
-                # Fetch sci-fi movies using requests
+        def fetch_page(page):
+            try:
                 discover_url = f"https://api.themoviedb.org/3/discover/movie?api_key={self.tmdb_api_key}&with_genres=878&page={page}&language=en-US&sort_by=popularity.desc"
-                try:
-                    discover_response = self.make_request(discover_url)
-                    if discover_response.status_code != 200:
-                        print(f"Failed to fetch page {page}: {discover_response.status_code}")
-                        continue
-                    data = discover_response.json()
-                except Exception as e:
-                    print(f"Failed to fetch page {page} after retries: {e}")
-                    continue
+                response = self.session.get(discover_url, timeout=10)
+                if response.status_code != 200:
+                    return []
+                data = response.json()
 
-                # Process each movie
-                for movie in data['results']:
-                    try:
-                        # Fetch detailed movie information
-                        detail_url = f"https://api.themoviedb.org/3/movie/{movie['id']}?api_key={self.tmdb_api_key}"
-                        detail_response = self.make_request(detail_url)
-                        if detail_response.status_code != 200:
-                            print(f"Failed to fetch details for movie {movie['id']}: {detail_response.status_code}")
-                            continue
-                        info = detail_response.json()
+                page_docs = []
+                for movie in data['results'][:10]:  # Limit to 10 per page
+                    doc = f"Sci-Fi Movie: {movie['title']}. Release Date: {movie.get('release_date', 'Unknown')}. Overview: {movie['overview']}. Popularity: {movie.get('popularity', 'N/A')}"
+                    page_docs.append(doc)
+                return page_docs
+            except Exception as e:
+                print(f"Error fetching page {page}: {e}")
+                return []
 
-                        # Fetch keywords
-                        keyword_url = f"https://api.themoviedb.org/3/movie/{movie['id']}/keywords?api_key={self.tmdb_api_key}"
-                        keyword_response = self.make_request(keyword_url)
-                        keywords = []
-                        if keyword_response.status_code == 200:
-                            keywords = [k['name'] for k in keyword_response.json()['keywords']]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [executor.submit(fetch_page, page) for page in range(1, pages + 1)]
+            for future in concurrent.futures.as_completed(futures):
+                movie_documents.extend(future.result())
+                time.sleep(0.5)  # Rate limiting
 
-                        # Extract relevant information
-                        sci_fi_movie = {
-                            'id': movie['id'],
-                            'title': movie['title'],
-                            'overview': movie['overview'],
-                            'release_date': movie.get('release_date', 'Unknown'),
-                            'popularity': movie['popularity'],
-                            'vote_average': movie['vote_average'],
-                            'genres': [genre['name'] for genre in info.get('genres', [])],
-                            'production_companies': [
-                                company['name'] for company in info.get('production_companies', [])
-                            ],
-                            'keywords': keywords
-                        }
-
-                        sci_fi_movies.append(sci_fi_movie)
-                    except Exception as e:
-                        print(f"Failed to process movie {movie['id']}: {e}")
-                        continue
-
-                # Rate limiting
-                time.sleep(1.0)  # Increased delay
-        
-        except Exception as e:
-            print(f"Error collecting movies: {e}")
-        
-        # End performance tracking
-        end_time = time.time()
-        end_memory = psutil.Process().memory_info().rss / (1024 * 1024)
-        
-        # Log performance metrics
-        performance_metrics = {
-            'total_movies': len(sci_fi_movies),
-            'collection_time': end_time - start_time,
-            'memory_usage': end_memory - start_memory
-        }
-        self.performance_log.append(performance_metrics)
-        
-        return sci_fi_movies
+        return movie_documents
     
-    def collect_cosmos_content(self) -> List[Dict[str, Any]]:
+    def fetch_cosmos_content(self) -> List[str]:
         """
-        Collect cosmos and astronomy-related content from NASA API
-        
+        Fetch cosmos and astronomy content from NASA API
+
         Returns:
-            List of cosmos-related content
+            List of cosmos document strings
         """
-        cosmos_content = []
-        
-        try:
-            # NASA APOD (Astronomy Picture of the Day) API
-            nasa_api_key = os.getenv('NASA_API_KEY', '')
-            base_url = 'https://api.nasa.gov/planetary/apod'
-            
-            # Collect multiple days of content
-            for days_ago in range(30):
+        cosmos_documents = []
+
+        def fetch_day(days_ago):
+            try:
+                base_url = 'https://api.nasa.gov/planetary/apod'
                 params = {
-                    'api_key': nasa_api_key,
+                    'api_key': self.nasa_api_key,
                     'date': time.strftime('%Y-%m-%d', time.localtime(time.time() - days_ago * 86400))
                 }
-                
-                response = requests.get(base_url, params=params)
+
+                response = self.session.get(base_url, params=params, timeout=10)
                 if response.status_code == 200:
                     content = response.json()
-                    cosmos_content.append({
-                        'date': content.get('date'),
-                        'title': content.get('title'),
-                        'explanation': content.get('explanation'),
-                        'media_type': content.get('media_type'),
-                        'url': content.get('url')
-                    })
-                
-                time.sleep(0.5)  # Rate limiting
-        
-        except Exception as e:
-            print(f"Error collecting cosmos content: {e}")
-        
-        return cosmos_content
+                    doc = f"Cosmos: {content.get('title', 'No Title')}. Date: {content.get('date', 'Unknown')}. Explanation: {content.get('explanation', 'No details')}"
+                    return doc
+                return None
+            except Exception:
+                return None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(fetch_day, days_ago) for days_ago in range(30)]
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    cosmos_documents.append(result)
+                time.sleep(0.2)  # Rate limiting
+
+        return cosmos_documents
     
-    def save_dataset(self, data: List[Dict[str, Any]], filename: str):
+    def fetch_all_data(self) -> List[str]:
         """
-        Save dataset to JSON file
-        
+        Fetch all data sources in parallel
+
+        Returns:
+            List of all document strings
+        """
+        print("Fetching data from multiple sources in parallel...")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            # Submit all fetch tasks
+            ml_future = executor.submit(self.fetch_ml_knowledge)
+            movies_future = executor.submit(self.fetch_sci_fi_movies, 5)
+            cosmos_future = executor.submit(self.fetch_cosmos_content)
+
+            # Collect results
+            all_documents = []
+            all_documents.extend(ml_future.result())
+            all_documents.extend(movies_future.result())
+            all_documents.extend(cosmos_future.result())
+
+        print(f"Fetched {len(all_documents)} documents total")
+        return all_documents
+
+    def save_documents(self, documents: List[str], filename: str):
+        """
+        Save documents to JSON file
+
         Args:
-            data (List[Dict]): Dataset to save
+            documents (List[str]): Documents to save
             filename (str): Output filename
         """
         filepath = os.path.join(self.base_dir, filename)
         with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-        
-        print(f"Dataset saved to {filepath}")
-    
-    def analyze_performance(self):
-        """
-        Analyze and print performance metrics
-        """
-        if not self.performance_log:
-            print("No performance data available")
-            return
-        
-        # Convert performance log to DataFrame
-        df = pd.DataFrame(self.performance_log)
-        
-        print("\n--- Performance Analysis ---")
-        print(f"Total Collections: {len(df)}")
-        print(f"Average Collection Time: {df['collection_time'].mean():.2f} seconds")
-        print(f"Average Memory Usage: {df['memory_usage'].mean():.2f} MB")
-        print(f"Total Movies Collected: {df['total_movies'].sum()}")
+            json.dump(documents, f, indent=2)
+
+        print(f"Saved {len(documents)} documents to {filepath}")
 
 def main():
-    print("Starting data collection...")
-    # Initialize collector
-    collector = SciFiDatasetCollector()
-    print(f"TMDB API Key loaded: {bool(collector.tmdb_api_key)}")
-    print(f"NASA API Key loaded: {bool(os.getenv('NASA_API_KEY'))}")
+    # Initialize fetcher
+    fetcher = DataFetcher()
 
-    # Collect sci-fi movies
-    print("Collecting sci-fi movies...")
-    sci_fi_movies = collector.collect_sci_fi_movies(pages=5)
-    print(f"Collected {len(sci_fi_movies)} movies")
-    collector.save_dataset(sci_fi_movies, 'sci_fi_movies.json')
+    # Fetch all data in parallel
+    documents = fetcher.fetch_all_data()
 
-    # Collect cosmos content
-    print("Collecting cosmos content...")
-    cosmos_content = collector.collect_cosmos_content()
-    print(f"Collected {len(cosmos_content)} cosmos items")
-    collector.save_dataset(cosmos_content, 'cosmos_content.json')
-
-    # Analyze performance
-    collector.analyze_performance()
+    # Save combined dataset
+    fetcher.save_documents(documents, 'knowledge_base.json')
 
 if __name__ == "__main__":
     main()

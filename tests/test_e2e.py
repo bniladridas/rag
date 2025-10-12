@@ -3,14 +3,15 @@ End-to-end tests for the application
 """
 import pytest
 from unittest.mock import patch, Mock
-from src.main import main
+from src.rag.__main__ import main
 from src.ui.tui import run_tui
 
 
+@patch('sys.stdin.isatty', return_value=True)
 @patch('builtins.input', side_effect=['hello', 'exit'])
 @patch('builtins.print')
-@patch('src.main.RAGEngine')
-def test_main_greeting_flow(mock_rag, mock_print, mock_input):
+@patch('src.rag.__main__.RAGEngine')
+def test_main_greeting_flow(mock_rag, mock_print, mock_input, mock_isatty):
     """Test main function with greeting and exit"""
     mock_engine = Mock()
     mock_engine.generate_response.return_value = "Hello response"
@@ -21,10 +22,11 @@ def test_main_greeting_flow(mock_rag, mock_print, mock_input):
     mock_print.assert_any_call("\nResponse: Hello response")
 
 
+@patch('sys.stdin.isatty', return_value=True)
 @patch('builtins.input', side_effect=['calculate 2+3', 'exit'])
 @patch('builtins.print')
-@patch('src.main.RAGEngine')
-def test_main_calc_flow(mock_rag, mock_print, mock_input):
+@patch('src.rag.__main__.RAGEngine')
+def test_main_calc_flow(mock_rag, mock_print, mock_input, mock_isatty):
     """Test main function with calculation"""
     mock_engine = Mock()
     mock_engine.generate_response.return_value = "Calculation result: 5"
@@ -35,10 +37,11 @@ def test_main_calc_flow(mock_rag, mock_print, mock_input):
     mock_print.assert_any_call("\nResponse: Calculation result: 5")
 
 
+@patch('sys.stdin.isatty', return_value=True)
 @patch('builtins.input', side_effect=['help', 'exit'])
 @patch('builtins.print')
-@patch('src.main.RAGEngine')
-def test_main_help_flow(mock_rag, mock_print, mock_input):
+@patch('src.rag.__main__.RAGEngine')
+def test_main_help_flow(mock_rag, mock_print, mock_input, mock_isatty):
     """Test main function with help command"""
     mock_engine = Mock()
     mock_rag.return_value = mock_engine
@@ -48,11 +51,12 @@ def test_main_help_flow(mock_rag, mock_print, mock_input):
     assert len(help_calls) > 0
 
 
+@patch('sys.stdin.isatty', return_value=True)
 @patch('src.ui.tui.Prompt.ask', side_effect=['hello', 'exit'])
 @patch('src.ui.tui.Console.print')
 @patch('src.ui.tui.RAGEngine')
 @patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
-def test_tui_greeting_flow(mock_panel, mock_rag, mock_print, mock_ask):
+def test_tui_greeting_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
     """Test TUI function with greeting and exit"""
     mock_engine = Mock()
     mock_engine.generate_response.return_value = "Hello response"

@@ -4,7 +4,7 @@ Text User Interface for RAG Transformer
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
-from ..rag_engine import RAGEngine
+from ..rag.rag_engine import RAGEngine
 import sys
 
 

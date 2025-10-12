@@ -65,3 +65,51 @@ def test_tui_greeting_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isat
     run_tui()
     assert mock_print.called
     mock_engine.generate_response.assert_called_with('hello')
+
+
+@patch('sys.stdin.isatty', return_value=True)
+@patch('src.ui.tui.Prompt.ask', side_effect=['help', 'exit'])
+@patch('src.ui.tui.Console.print')
+@patch('src.ui.tui.RAGEngine')
+@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+def test_tui_help_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
+    """Test TUI function with help command"""
+    mock_engine = Mock()
+    mock_rag.return_value = mock_engine
+
+    run_tui()
+    help_calls = [call for call in mock_print.call_args_list if "This AI Assistant covers:" in str(call)]
+    assert len(help_calls) > 0
+
+
+@patch('sys.stdin.isatty', return_value=True)
+@patch('src.ui.tui.Prompt.ask', side_effect=['calculate 2+3', 'exit'])
+@patch('src.ui.tui.Console.print')
+@patch('src.ui.tui.RAGEngine')
+@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+def test_tui_calc_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
+    """Test TUI function with calculation"""
+    mock_engine = Mock()
+    mock_engine.generate_response.return_value = "Calculation result: 5"
+    mock_rag.return_value = mock_engine
+
+    run_tui()
+    mock_engine.generate_response.assert_called_with('calculate 2+3')
+    response_calls = [call for call in mock_print.call_args_list if "Calculation result: 5" in str(call)]
+    assert len(response_calls) > 0
+
+
+@patch('sys.stdin.isatty', return_value=True)
+@patch('src.ui.tui.Prompt.ask', side_effect=['exit'])
+@patch('src.ui.tui.Console.print')
+@patch('src.ui.tui.RAGEngine')
+@patch('src.ui.tui.Panel')  # Mock Panel for CI-safe test
+def test_tui_exit_flow(mock_panel, mock_rag, mock_print, mock_ask, mock_isatty):
+    """Test TUI function with immediate exit"""
+    mock_engine = Mock()
+    mock_rag.return_value = mock_engine
+
+    run_tui()
+    # Should not crash and should print goodbye
+    goodbye_calls = [call for call in mock_print.call_args_list if "Goodbye" in str(call)]
+    assert len(goodbye_calls) > 0

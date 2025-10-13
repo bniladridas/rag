@@ -11,7 +11,7 @@ on:
 
 jobs:
   lint-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
 
@@ -53,7 +53,7 @@ jobs:
 
 
   submit-pypi:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: false
     permissions:
       contents: write

@@ -1,12 +1,30 @@
 # CHANGELOG
 
+## v0.3.1 (2025-10-13)
+
+### Chore
+
+* chore: merge remote ([`77664f2`](https://github.com/bniladridas/rag/commit/77664f219e52c9fa54c76a702553d4bd3f885709))
+
+### Ci
+
+* ci: enable Docker publishing to GHCR ([`9d264ec`](https://github.com/bniladridas/rag/commit/9d264ec2f7dac364b6b292d61c13c92956289932))
+
+### Fix
+
+* fix: fix docker.yml YAML indentation ([`3a547f8`](https://github.com/bniladridas/rag/commit/3a547f846714829cb80823427e2c7a735f01bee1))
+
 ## v0.3.0 (2025-10-12)
 
 ### Chore
 
+* chore(release): 0.3.0 ([`60c1215`](https://github.com/bniladridas/rag/commit/60c12150322c8bee3b0838cdd943629db8065f5b))
+
 * chore: merge remote changes ([`e1d8cff`](https://github.com/bniladridas/rag/commit/e1d8cff4a16f450ea6e8df5ceb3c92e695d7babb))
 
 ### Documentation
+
+* docs: add repo link ([`5be9c6b`](https://github.com/bniladridas/rag/commit/5be9c6b92f9b02d1f3875e826124fc0fdb69ee55))
 
 * docs: add release process section ([`23fd6b2`](https://github.com/bniladridas/rag/commit/23fd6b2bef29b3d6a508f4604adfa5dce120f010))
 

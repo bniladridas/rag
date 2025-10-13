@@ -1,3 +1,4 @@
+# CI workflow for linting, testing, and dependency submission
 name: CI
 permissions:
   contents: read

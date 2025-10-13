@@ -89,7 +89,7 @@ jobs:
     - name: Validate dependency installation
       run: |
         echo "::debug::Validating Python dependencies"
-        python -m pip install --dry-run -r requirements.txt
+        python -m pip install --dry-run --no-build-isolation -r requirements.txt
         echo "{valid-project}={true}" >> "$GITHUB_OUTPUT"
 
     - uses: actions/component-detection-dependency-submission-action@374343effede691df3a5ffaf36b4e7acab919590

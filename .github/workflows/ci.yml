@@ -38,7 +38,7 @@ jobs:
         python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
 
   submit-pypi:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: github.event_name == 'push' && contains(github.ref, 'dependabot/pip/')
     permissions:
       contents: write

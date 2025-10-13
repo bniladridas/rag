@@ -6,20 +6,20 @@ on:
   pull_request:
     branches: [ main, master ]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
-  workflow_dispatch:  # Allow manual trigger
+    - cron: '0 0 * * 0'  # Weekly Sunday
+  workflow_dispatch:
 
 jobs:
   e2e:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
-        python-version: '3.8'
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
@@ -29,7 +29,7 @@ jobs:
     - name: Run data collection (if API keys available)
       run: |
         if [ -n "$TMDB_API_KEY" ] && [ -n "$NASA_API_KEY" ]; then
-          python -m src.data_fetcher
+          python -m src.rag.data_fetcher
         else
           echo "API keys not available, skipping data collection"
         fi
@@ -38,9 +38,12 @@ jobs:
         NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
 
     - name: Run e2e tests
-      run: python -m pytest tests/test_e2e.py -v
+      run: PYTHONPATH=src python -m pytest tests/integration/test_e2e.py -v
 
     - name: Test full application flow
       run: |
-        echo "Testing full app with simulated inputs..."
-        echo -e "hello\ncalculate 2+3\nhelp\nexit" | python -m src.main | grep -E "(Hello|Result|This is an Agentic|Exiting)"
+        echo -e "hello\ncalculate 2+3\nhelp\nexit" | python -m src.rag.__main__ | grep -E "(Hello|Result|This is an Agentic|Exiting)"
+
+    - name: Test TUI application flow
+      run: |
+        echo -e "hello\nexit" | PYTHONPATH=src FORCE_TUI=1 python -c "from src.rag.ui.tui import run_tui; run_tui()" | grep -E "(Query|Response|Goodbye)"

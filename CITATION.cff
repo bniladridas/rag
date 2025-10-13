@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "RAG: Retrieval-Augmented Generation Assistant"
+authors:
+- family-names: "bniladridas"
+  given-names: ""
+repository-code: "https://github.com/bniladridas/rag"
+url: "https://github.com/bniladridas/rag"
+license: Apache-2.0
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Lewis"
+    given-names: "Patrick"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+  - family-names: "Perez"
+    given-names: "Ethan"
+  - family-names: "Piktus"
+    given-names: "Aleksandra"
+  - family-names: "Petroni"
+    given-names: "Fabio"
+  - family-names: "Karpukhin"
+    given-names: "Vladimir"
+  - family-names: "Goyal"
+    given-names: "Naman"
+  - family-names: "Küttler"
+    given-names: "Heinrich"
+  - family-names: "Lewis"
+    given-names: "Mike"
+  - family-names: "Yih"
+    given-names: "Wen-tau"
+  - family-names: "Rocktäschel"
+    given-names: "Tim"
+  doi: "10.5555/3454287.3454775"
+  journal: "Advances in Neural Information Processing Systems"
+  month: 12
+  pages: "9459--9474"
+  title: "Retrieval-augmented generation for knowledge-intensive nlp tasks"
+  volume: 33
+  year: 2020

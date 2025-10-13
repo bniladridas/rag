@@ -11,10 +11,10 @@ def run_command(command, description):
     print(f"Running {description}...")
     try:
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        print(f"✓ {description} passed")
+        print(f"PASS: {description} passed")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"✗ {description} failed:")
+        print(f"FAIL: {description} failed:")
         print(e.stdout)
         print(e.stderr)
         return False
@@ -26,20 +26,22 @@ def main():
     success = True
 
     # Run pytest
-    success &= run_command("python3 -m pytest tests/ -v", "Unit and E2E tests")
+    if not run_command(f"{sys.executable} -m pytest tests/ -v", "Unit and E2E tests"):
+        success = False
 
-    # Run with coverage if available
+    # Run with coverage if installed
     try:
-        import pytest_cov
-        success &= run_command("python3 -m pytest tests/ --cov=src --cov-report=term", "Tests with coverage")
+        import pytest_cov  # noqa: F401
+        if not run_command(f"{sys.executable} -m pytest tests/ --cov=src --cov-report=term", "Tests with coverage"):
+            success = False
     except ImportError:
         print("pytest-cov not installed, skipping coverage...")
 
     if success:
-        print("\n✓ All tests passed!")
+        print("\nAll tests passed!")
         return 0
     else:
-        print("\n✗ Some tests failed!")
+        print("\nSome tests failed!")
         return 1
 
 if __name__ == "__main__":

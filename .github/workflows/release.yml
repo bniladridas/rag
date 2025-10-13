@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+      issues: write
+      deployments: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install wheel
+
+      - name: Configure git
+        run: |
+          git config user.name "harper-release-bot"
+          git config user.email "237646224+harper-release-bot@users.noreply.github.com"
+
+      - name: Run semantic release
+        run: semantic-release version --push --tag --changelog --vcs-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.HARPER_RELEASE_BOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.HARPER_RELEASE_BOT_TOKEN }}
+
+      - name: Enhance changelog
+        run: python scripts/enhance_changelog.py

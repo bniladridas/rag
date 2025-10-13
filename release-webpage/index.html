@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Release Workflow</title>
+
+</head>
+<body>
+    <h1>Release Workflow</h1>
+    <p>This GitHub Actions workflow automates releases on pushes to <code>main</code>.</p>
+
+    <h2>Job</h2>
+    <p>Runs on Ubuntu with permissions for repository, packages, pull requests, issues, deployments, and ID tokens.</p>
+
+    <h2>Steps</h2>
+    <ol>
+        <li><strong>Checkout:</strong> Fetches full repository history.</li>
+        <li><strong>Python Setup:</strong> Configures Python 3.10.</li>
+        <li><strong>Dependencies:</strong> Upgrades pip, installs requirements, and adds wheel.</li>
+        <li><strong>Git Config:</strong> Sets user to harper-release-bot.</li>
+        <li><strong>Semantic Release:</strong> Versions, pushes, tags, updates changelog, and creates release using HARPER_RELEASE_BOT_TOKEN.</li>
+        <li><strong>Changelog Enhancement:</strong> Runs script to improve changelog.</li>
+    </ol>
+
+    <p>Ensures semantic versioning for automated release management.</p>
+
+    <p>See <a href="https://github.com/harper-release-bot">Harper Release Bot</a> and <a href="https://github.com/bniladridas/rag">repository</a> for details.</p>
+
+    <footer>
+        <a href="https://github.com/harpertoken">
+            <img src="https://avatars.githubusercontent.com/u/203538727?s=200&v=4" alt="Harper Token Org">
+        </a>
+        <br>
+        <a href="https://github.com/harpertoken/rag">rag</a>
+    </footer>
+</body>
+</html>

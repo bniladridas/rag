@@ -1,9 +1,12 @@
 """
 Unit tests for tools.py
 """
-import pytest
+
 from unittest.mock import Mock, patch
-from src.tools import ToolExecutor
+
+import pytest
+
+from src.rag.tools import ToolExecutor
 
 
 @pytest.fixture
@@ -12,7 +15,6 @@ def tool_executor():
 
 
 def test_get_available_tools(tool_executor):
-    """Test get_available_tools returns correct string"""
     tools = tool_executor.get_available_tools()
     assert "CALC:" in tools
     assert "WIKI:" in tools
@@ -20,30 +22,24 @@ def test_get_available_tools(tool_executor):
 
 
 def test_execute_tool_unknown(tool_executor):
-    """Test execute_tool with unknown tool"""
     result = tool_executor.execute_tool("UNKNOWN: test")
     assert result == "Unknown tool"
 
 
-@patch('src.tools.requests.Session.get')
-def test_execute_calc(mock_get, tool_executor):
-    """Test calculator tool"""
+def test_execute_calc(tool_executor):
     result = tool_executor._execute_calc("CALC: 2 + 3")
     assert result == "Calculation result: 5"
-
     result = tool_executor._execute_calc("CALC: sqrt(4)")
     assert result == "Calculation result: 2.0"
-
     result = tool_executor._execute_calc("CALC: invalid")
     assert "Invalid calculation" in result
 
 
-@patch('src.tools.requests.Session.get')
+@patch("src.rag.tools.requests.Session.get")
 def test_execute_wiki(mock_get, tool_executor):
-    """Test Wikipedia tool"""
     mock_response = Mock()
     mock_response.status_code = 200
-    mock_response.json.return_value = {'extract': 'Test summary'}
+    mock_response.json.return_value = {"extract": "Test summary"}
     mock_get.return_value = mock_response
 
     result = tool_executor._execute_wiki("WIKI: Test Topic")
@@ -51,9 +47,8 @@ def test_execute_wiki(mock_get, tool_executor):
     assert "Test summary" in result
 
 
-@patch('src.tools.requests.Session.get')
+@patch("src.rag.tools.requests.Session.get")
 def test_execute_wiki_not_found(mock_get, tool_executor):
-    """Test Wikipedia tool when page not found"""
     mock_response = Mock()
     mock_response.status_code = 404
     mock_get.return_value = mock_response
@@ -63,6 +58,5 @@ def test_execute_wiki_not_found(mock_get, tool_executor):
 
 
 def test_execute_time(tool_executor):
-    """Test time tool"""
     result = tool_executor._execute_time("TIME:")
     assert "Current date and time:" in result

@@ -9,6 +9,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 .mypy_cache/
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
 
 # Datasets (optional, depending on size)
 datasets/*.json

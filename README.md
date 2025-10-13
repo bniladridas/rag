@@ -1,7 +1,21 @@
-# RAG Transformer
+# RAG
 
 A friendly **AI assistant** that understands **machine learning**, **science fiction movies**, and the **cosmos**.
-It can **answer questions**, **do calculations**, and **search Wikipedia** — all from your **terminal**.
+It can **answer questions**, **perform calculations**, and **search Wikipedia** — all from your **terminal**.
+
+## Quick Start
+
+```bash
+# Run with Docker (basic knowledge without API keys)
+docker build -f container/Dockerfile -t rag .
+docker run -it rag
+
+# Run with API keys
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
+
+# Run data collection
+docker run -it rag rag-collect
+```
 
 ## What It Can Do
 
@@ -13,8 +27,6 @@ It can **answer questions**, **do calculations**, and **search Wikipedia** — a
 
 ## Before You Start
 
-You’ll need:
-
 * Python 3.8 or higher
 * (Optional) API keys for TMDB and NASA
 
@@ -24,40 +36,73 @@ You’ll need:
 
 ```bash
 git clone <repository-url>
-cd rag-transformer
+cd rag
 pip install -r requirements.txt
 pip install -e .
 ```
 
-### Option 2: From pip (if published)
+### Option 2: Docker
 
 ```bash
-pip install rag-transformer
+# Build the image
+docker build -f container/Dockerfile -t rag .
+
+# Run the assistant
+docker run -it rag
+
+# With API keys
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
+
+# Run data collection
+docker run -it rag rag-collect
+```
+
+### Option 3: From pip (if published)
+
+```bash
+pip install rag
 ```
 
 ## Configuration
 
-Create a `.env` file in the project root and add your API keys:
+### Local Development
+
+Create a `.env` file in the project root:
 
 ```env
 TMDB_API_KEY=your_tmdb_api_key_here
 NASA_API_KEY=your_nasa_api_key_here
 ```
 
-You can get the keys from:
+### Docker
+
+Pass API keys as environment variables:
+
+```bash
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
+```
+
+### GitHub Actions
+
+Set repository secrets:
+
+* `TMDB_API_KEY`
+* `NASA_API_KEY`
+
+Keys available from:
 
 * [TMDB API](https://www.themoviedb.org/settings/api)
 * [NASA API](https://api.nasa.gov/)
 
 ## Data Collection
 
-Before starting the assistant, collect its knowledge base:
+Populate the knowledge base:
 
 ```bash
 rag-collect
 ```
 
-This command gathers:
+Collects:
 
 * Machine learning documentation
 * Sci-fi movie data (TMDB)
@@ -68,10 +113,16 @@ This command gathers:
 ### Start Interactive Mode
 
 ```bash
-rag-transformer
+rag
 ```
 
-Then you can ask:
+### Start TUI Mode
+
+```bash
+rag-tui
+```
+
+You can then ask:
 
 * “What is deep learning?”
 * “Tell me about the movie Interstellar”
@@ -88,13 +139,21 @@ Then you can ask:
 ## Inside the Project
 
 ```
-src/
-├── 🧩 config.py          → Handles configuration and API keys
-├── 🚀 data_fetcher.py    → Collects data from APIs
-├── 💬 main.py            → CLI entry point
-├── 🧠 rag_engine.py      → Core RAG logic
-└── 🛠️ tools.py           → Tools like calculator and wiki search
+src/rag/
+├── __init__.py        → Package initialization
+├── __main__.py        → CLI entry point
+├── config.py          → Handles configuration and API keys
+├── data_fetcher.py    → Collects data from APIs
+├── rag_engine.py      → Core RAG logic
+├── tools.py           → Tools like calculator and wiki search
+└── ui/
+    ├── __init__.py
+    └── tui.py         → Text User Interface
 ```
+
+## Release Process
+
+The project uses automated releases via GitHub Actions. For details on the release workflow, see [release-webpage/index.html](release-webpage/index.html).
 
 ## Development
 
@@ -110,11 +169,63 @@ python -m pytest
 python scripts/lint.py
 ```
 
+**Fix linting issues**
+
+```bash
+./scripts/fix_lint.sh
+```
+
+**Run CI locally**
+
+```bash
+./scripts/run_ci.sh
+```
+
+**Run E2E tests locally**
+
+```bash
+# Set API keys if available
+export TMDB_API_KEY=your_key
+export NASA_API_KEY=your_key
+./scripts/run_e2e.sh
+```
+
+**Run Docker locally**
+
+```bash
+./scripts/run_docker.sh
+```
+
 **Build package**
 
 ```bash
 python setup.py sdist bdist_wheel
 ```
+
+## Automated Updates
+
+This project uses [Dependabot](https://github.com/dependabot) to keep dependencies updated. All updates are automatically tested.
+
+## Git Hooks
+
+Enable commit message validation:
+
+```bash
+cp scripts/commit-msg .git/hooks/
+chmod +x .git/hooks/commit-msg
+```
+
+Rewrite commit messages:
+
+```bash
+# Rewrite specific range
+./scripts/rewrite_msg.sh HEAD~5..HEAD
+
+# Rewrite all history (use with caution)
+./scripts/rewrite_msg.sh --all
+```
+
+Commit messages must be lowercase, ≤40 characters, starting with `feat:`, `fix:`, `docs:`, etc.
 
 ## Contributing
 
@@ -126,11 +237,32 @@ python setup.py sdist bdist_wheel
 
 ## Security
 
-Please see our [Security Policy](SECURITY.md) for information on reporting security vulnerabilities.
+See [Security Policy](SECURITY.md) for reporting vulnerabilities.
+
+## Citations
+
+If you use this project in your research or work, please cite the following:
+
+### RAG Concept
+```
+@article{lewis2020retrieval,
+  title={Retrieval-augmented generation for knowledge-intensive nlp tasks},
+  author={Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and K{\"u}ttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rockt{\"a}schel, Tim and others},
+  journal={Advances in Neural Information Processing Systems},
+  volume={33},
+  pages={9459--9474},
+  year={2020}
+}
+```
+
+### Key Libraries
+- **Transformers**: Wolf et al., "Transformers: State-of-the-Art Natural Language Processing", EMNLP 2020.
+- **Sentence Transformers**: Reimers and Gurevych, "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks", EMNLP 2019.
+- **FAISS**: Johnson et al., "Billion-scale similarity search with GPUs", arXiv 2017.
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+Apache License 2.0 — see [LICENSE](LICENSE)
 
 ## Support
 

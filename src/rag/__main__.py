@@ -1,29 +1,36 @@
 """
 Main entry point for the RAG Transformer application
 """
+
+import sys
+
 from .rag_engine import RAGEngine
 
 
 def main():
-    """Main interactive loop"""
+    """Main interactive loop or help display in non-interactive mode"""
+
+    # Detect non-interactive environment (e.g., CI or Docker run)
+    if not sys.stdin.isatty():
+        print("Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
+        print("Non-interactive environment detected. Exiting safely.")
+        return
+
     print("Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
     print("Type 'exit' to quit the program")
     print("Type 'help' for usage instructions")
 
-    # Initialize RAG engine
     rag_engine = RAGEngine()
 
     while True:
         try:
-            # Get user input
             query = input("\nEnter your query (or 'exit'/'help' to interact): ").strip()
 
-            # Handle special commands
-            if query.lower() == 'exit':
+            if query.lower() == "exit":
                 print("Exiting RAG Transformer. Goodbye!")
                 break
 
-            if query.lower() == 'help':
+            if query.lower() == "help":
                 print("\nThis is an Agentic AI Assistant covering:")
                 print("- Machine Learning concepts")
                 print("- Science Fiction Movies")
@@ -32,12 +39,10 @@ def main():
                 print("Ask about AI, movies, space, or scientific topics!")
                 continue
 
-            # Check for empty query
             if not query:
                 print("Please enter a valid query.")
                 continue
 
-            # Generate and print response
             response = rag_engine.generate_response(query)
             print(f"\nResponse: {response}")
 

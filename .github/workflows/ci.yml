@@ -36,3 +36,37 @@ jobs:
       run: |
         python setup.py check
         python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
+
+  submit-pypi:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'dependabot/pip/')
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{ github.ref }}
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install pip-tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-tools
+    - name: Validate dependencies
+      id: validate
+      run: |
+        if pip-compile --dry-run -o requirements.out requirements.txt; then
+          echo "valid-project=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "valid-project=false" >> "$GITHUB_OUTPUT"
+          echo "### :warning: Python validation failed in repository root" >> $GITHUB_STEP_SUMMARY
+          echo "We were unable to validate a Python project in the repository root. If your repository requires additional setup steps, you may need to check in your own workflow." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "For more information on submitting Python dependencies from your own workflow, refer to [the submission action](https://github.com/actions/component-detection-dependency-submission-action)" >> $GITHUB_STEP_SUMMARY
+          echo "::warning::Python validation failed in the repository root."
+          exit 1
+        fi
+    - uses: actions/component-detection-dependency-submission-action@374343effede691df3a5ffaf36b4e7acab919590
+      with:
+        valid-project: ${{ steps.validate.outputs.valid-project }}

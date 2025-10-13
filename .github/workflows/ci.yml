@@ -57,5 +57,6 @@ jobs:
     - uses: actions/component-detection-dependency-submission-action@374343effede691df3a5ffaf36b4e7acab919590
       env:
         PYTHON: ${{ github.workspace }}/venv/bin/python
+        PATH: ${{ github.workspace }}/venv/bin:$PATH
       with:
         valid-project: true

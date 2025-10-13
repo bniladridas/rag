@@ -1,4 +1,3 @@
-# CI workflow for linting, testing, and dependency submission
 name: CI
 permissions:
   contents: read
@@ -48,7 +47,7 @@ jobs:
     - name: Run additional checks
       run: |
         python setup.py check
-        $PWD/venv/bin/python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
+        python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
 
 
   submit-pypi:

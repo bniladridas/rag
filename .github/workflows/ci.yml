@@ -49,7 +49,7 @@ jobs:
     - name: Run additional checks
       run: |
         python setup.py check
-        python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
+        $PWD/venv/bin/python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
 
 
   submit-pypi:

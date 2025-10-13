@@ -18,7 +18,7 @@ from .tools import ToolExecutor
 try:
     from sentence_transformers import SentenceTransformer
 except ImportError:
-    SentenceTransformer = None
+    SentenceTransformer = None  # type: ignore
     print("Warning: sentence_transformers not installed. Using fallback embeddings.")
 
 
@@ -35,7 +35,7 @@ class RAGEngine:
 
         # Initialize models safely
         self.embedding_model = None
-        if SentenceTransformer:
+        if SentenceTransformer is not None:
             try:
                 self.embedding_model = SentenceTransformer(self.config.EMBEDDING_MODEL)
             except Exception:
@@ -100,6 +100,7 @@ class RAGEngine:
         if query in self.query_cache:
             query_embedding = self.query_cache[query]
         else:
+            assert self.embedding_model is not None
             query_embedding = self.embedding_model.encode([query])
             self.query_cache[query] = query_embedding
 

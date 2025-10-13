@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [tool.semantic_release]
 version_variables = ["setup.py:version", "src/rag/__version__.py:__version__"]
 commit_message = "chore(release): {version}"

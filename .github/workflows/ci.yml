@@ -55,5 +55,7 @@ jobs:
         echo "VIRTUAL_ENV=$PWD/venv" >> $GITHUB_ENV
         echo "$PWD/venv/bin" >> $GITHUB_PATH
     - uses: actions/component-detection-dependency-submission-action@374343effede691df3a5ffaf36b4e7acab919590
+      env:
+        PYTHON: ${{ github.workspace }}/venv/bin/python
       with:
         valid-project: true

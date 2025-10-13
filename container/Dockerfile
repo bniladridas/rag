@@ -14,6 +14,7 @@ RUN apt-get update && \
 COPY requirements.txt .
 
 RUN python -m pip install --upgrade pip setuptools wheel && \
+    pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu && \
     pip install -r requirements.txt
 
 COPY src ./src

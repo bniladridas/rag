@@ -61,6 +61,7 @@ jobs:
     - name: Validate dependencies
       id: validate
       run: |
+        export PYTHON=$PWD/venv/bin/python
         if pip-compile --dry-run -o requirements.out requirements.txt; then
           echo "valid-project=true" >> "$GITHUB_OUTPUT"
         else

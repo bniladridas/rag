@@ -186,11 +186,7 @@
 
 ### Documentation
 
-* docs: update citation.cff ([`064ab58`](https://github.com/bniladridas/rag/commit/064ab58e7d18e7b6283e4c9532ac837d8684984d))
 
-* docs: add citation.cff file ([`bf4c0ba`](https://github.com/bniladridas/rag/commit/bf4c0ba51d0a7a064f61068771b1abf2bcee893f))
-
-* docs: add citations section ([`d9cec48`](https://github.com/bniladridas/rag/commit/d9cec48cbf0b6f6de7a047a38a188357521d04f7))
 
 * docs: add codeowners file ([`b3a43a1`](https://github.com/bniladridas/rag/commit/b3a43a188faee972398e0d773238dcb6c428858b))
 

@@ -22,7 +22,7 @@ jobs:
         with:
           enablement: auto
       - run: mkdir -p _site && cp -r release-webpage/* _site/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 

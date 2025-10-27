@@ -10,7 +10,7 @@ python-dotenv==1.0.1
 requests==2.32.4
 beautifulsoup4==4.12.3
 tmdbsimple==2.9.1
-psutil==6.0.0
+psutil==7.1.2
 time-machine==2.15.0
 memory-profiler==0.61.0
 line-profiler==4.1.2

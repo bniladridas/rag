@@ -30,20 +30,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --upgrade pip-tools
+          # Install torch with CPU-specific index for CI performance
           python -m pip install torch==2.8.0 torchvision --index-url https://download.pytorch.org/whl/cpu
-          python -m pip install --prefer-binary -r requirements.txt
+          # Install development dependencies (includes main requirements)
+          python -m pip install --prefer-binary -r requirements-dev.txt
+          # Install package in development mode
           pip install -e .
 
       - name: Run linting
-        run: |
-          pip install flake8 mypy
-          python scripts/lint.py
+        run: python scripts/lint.py
 
       - name: Run tests
-        run: |
-          pip install pytest pytest-cov
-          python scripts/test.py
+        run: python scripts/test.py
 
       - name: Run additional checks
         run: |

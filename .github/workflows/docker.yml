@@ -43,7 +43,14 @@ jobs:
       - name: Verify image imports
         if: github.event_name == 'pull_request'
         run: |
-          docker run --rm ghcr.io/${{ github.repository }}:latest python -c 'import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print("All imports successful")'
+          docker run --rm ghcr.io/${{ github.repository }}:latest python -c '
+            import src.rag.__main__
+            import src.rag.rag_engine
+            import src.rag.config
+            import src.rag.tools
+            import src.rag.data_fetcher
+            print("All imports successful")
+          '
 
       - name: Display CLI help safely
         if: github.event_name == 'pull_request'

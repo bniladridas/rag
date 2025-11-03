@@ -38,7 +38,12 @@ docker run -it rag rag-collect
 ```bash
 git clone <repository-url>
 cd rag
-pip install -r requirements.txt
+
+# Quick development setup
+./scripts/setup_dev.sh
+
+# Or manual setup
+pip install -r requirements-dev.txt
 pip install -e .
 ```
 

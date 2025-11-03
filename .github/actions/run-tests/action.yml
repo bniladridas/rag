@@ -27,11 +27,11 @@ runs:
           "--cov-report=term-missing"
           "--cov-report=xml"
         )
-        
+
         if [[ "${{ inputs.cov-append }}" == "true" ]]; then
           cov_args+=( "--cov-append" )
         fi
-        
+
         python -m pytest ${{ inputs.test-path }} -v "${cov_args[@]}"
 
     - name: Upload coverage to Codecov

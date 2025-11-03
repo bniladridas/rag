@@ -29,6 +29,7 @@ docker run -it rag rag-collect
 
 * Python 3.8 or higher
 * (Optional) API keys for TMDB and NASA
+* Review the [CLI Policy](CLI_POLICY.md) for command-line interface standards and best practices
 
 ## Installation
 

@@ -27,11 +27,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
+          pip install -e .
 
       - name: Run data collection (if API keys available)
         run: |
           if [ -n "$TMDB_API_KEY" ] && [ -n "$NASA_API_KEY" ]; then
-            python -m src.rag.data_fetcher
+            rag-collect
           else
             echo "API keys not available, skipping data collection"
           fi
@@ -45,7 +46,7 @@ jobs:
       - name: Test full application flow
         run: |
           echo -e "hello\ncalculate 2+3\nhelp\nexit" | \
-            python -m src.rag.__main__ | \
+            rag --force-interactive | \
             grep -E "(Hello|Result|This is an Agentic|Exiting)"
 
       - name: Test TUI application flow

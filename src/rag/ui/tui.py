@@ -181,7 +181,11 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
         except Exception as e:
             console.print(
                 Panel(
-                    f"An error occurred: {e}" if no_color else f"[red]An error occurred: {e}[/red]",
+                    (
+                        f"An error occurred: {e}"
+                        if no_color
+                        else f"[red]An error occurred: {e}[/red]"
+                    ),
                     title="Error" if no_color else "❌ Error",
                     border_style=None if no_color else "red",
                 )

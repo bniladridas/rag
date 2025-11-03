@@ -76,6 +76,12 @@ For more information, visit: https://github.com/harpertoken/rag
         "--no-color", action="store_true", help="Disable colored output"
     )
 
+    parser.add_argument(
+        "--force-interactive",
+        action="store_true",
+        help="Force interactive mode even in non-TTY environments (for testing)",
+    )
+
     return parser
 
 
@@ -117,11 +123,14 @@ def handle_single_query(
 
 
 def interactive_mode(
-    verbose: bool = False, quiet: bool = False, no_color: bool = False
+    verbose: bool = False,
+    quiet: bool = False,
+    no_color: bool = False,
+    force_interactive: bool = False,
 ) -> None:
     """Run the interactive CLI mode"""
     # Detect non-interactive environment (e.g., CI or Docker run)
-    if not sys.stdin.isatty():
+    if not sys.stdin.isatty() and not force_interactive:
         if not quiet:
             print(
                 format_message(
@@ -208,7 +217,12 @@ def main(args: Optional[list] = None) -> None:
         return
 
     # Handle interactive mode
-    interactive_mode(parsed_args.verbose, parsed_args.quiet, parsed_args.no_color)
+    interactive_mode(
+        parsed_args.verbose,
+        parsed_args.quiet,
+        parsed_args.no_color,
+        parsed_args.force_interactive,
+    )
 
 
 if __name__ == "__main__":

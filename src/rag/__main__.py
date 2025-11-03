@@ -4,10 +4,32 @@ Main entry point for the RAG Transformer application
 
 import sys
 import argparse
+import os
 from typing import Optional
 
 from .rag_engine import RAGEngine
 from .__version__ import __version__
+
+
+def should_use_color(no_color: bool = False) -> bool:
+    """Determine if colored output should be used"""
+    # Respect --no-color flag
+    if no_color:
+        return False
+
+    # Respect NO_COLOR environment variable (https://no-color.org/)
+    if os.environ.get("NO_COLOR"):
+        return False
+
+    # Check if output is to a terminal
+    return sys.stdout.isatty()
+
+
+def format_message(message: str, emoji: str = "", no_color: bool = False) -> str:
+    """Format message with or without emoji based on color settings"""
+    if should_use_color(no_color) and emoji:
+        return f"{emoji} {message}"
+    return message
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -25,60 +47,65 @@ Examples:
   rag --help                    Show this help message
 
 For more information, visit: https://github.com/harpertoken/rag
-        """
+        """,
     )
-    
+
     parser.add_argument(
-        "--version", 
-        action="version", 
-        version=f"%(prog)s {__version__}"
+        "--version", action="version", version=f"%(prog)s {__version__}"
     )
-    
+
     parser.add_argument(
         "--query",
         type=str,
-        help="Ask a single question and exit (non-interactive mode)"
+        help="Ask a single question and exit (non-interactive mode)",
     )
-    
+
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
-        help="Enable verbose output for debugging"
+        help="Enable verbose output for debugging",
     )
-    
+
     parser.add_argument(
-        "--quiet", "-q",
-        action="store_true",
-        help="Suppress non-essential output"
+        "--quiet", "-q", action="store_true", help="Suppress non-essential output"
     )
-    
+
     parser.add_argument(
-        "--no-color",
-        action="store_true",
-        help="Disable colored output"
+        "--no-color", action="store_true", help="Disable colored output"
     )
-    
+
     return parser
 
 
-def print_welcome_message(verbose: bool = False, quiet: bool = False) -> None:
+def print_welcome_message(
+    verbose: bool = False, quiet: bool = False, no_color: bool = False
+) -> None:
     """Print welcome message with optional verbose information"""
     if not quiet:
-        print("🤖 Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
-        
+        print(
+            format_message(
+                "Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant",
+                "🤖",
+                no_color,
+            )
+        )
+
         if verbose:
             print(f"Version: {__version__}")
             print("Knowledge areas: Machine Learning, Science Fiction, Cosmos")
             print("Available tools: Calculator, Wikipedia, Time/Date")
-        
+
         print("Type 'exit' to quit, 'help' for instructions")
 
 
-def handle_single_query(query: str, verbose: bool = False, quiet: bool = False) -> None:
+def handle_single_query(
+    query: str, verbose: bool = False, quiet: bool = False, no_color: bool = False
+) -> None:
     """Handle a single query in non-interactive mode"""
     if verbose and not quiet:
         print(f"Processing query: {query}")
-    
+
     try:
         rag_engine = RAGEngine()
         response = rag_engine.generate_response(query)
@@ -88,17 +115,27 @@ def handle_single_query(query: str, verbose: bool = False, quiet: bool = False) 
         sys.exit(1)
 
 
-def interactive_mode(verbose: bool = False, quiet: bool = False) -> None:
+def interactive_mode(
+    verbose: bool = False, quiet: bool = False, no_color: bool = False
+) -> None:
     """Run the interactive CLI mode"""
     # Detect non-interactive environment (e.g., CI or Docker run)
     if not sys.stdin.isatty():
         if not quiet:
-            print("Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
-            print("Non-interactive environment detected. Use --query for single questions.")
+            print(
+                format_message(
+                    "Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant",
+                    "🤖",
+                    no_color,
+                )
+            )
+            print(
+                "Non-interactive environment detected. Use --query for single questions."
+            )
         return
 
-    print_welcome_message(verbose, quiet)
-    
+    print_welcome_message(verbose, quiet, no_color)
+
     try:
         rag_engine = RAGEngine()
     except Exception as e:
@@ -107,14 +144,17 @@ def interactive_mode(verbose: bool = False, quiet: bool = False) -> None:
 
     while True:
         try:
-            query = input("\n❯ ").strip()
+            # Use colored or plain prompt
+            prompt = "❯ " if should_use_color(no_color) else "> "
+            query = input(f"\n{prompt}").strip()
 
             if query.lower() in ["exit", "quit", "q"]:
-                print("👋 Goodbye!")
+                print(format_message("Goodbye!", "👋", no_color))
                 break
 
             if query.lower() in ["help", "h"]:
-                print("\n📚 RAG Transformer Help:")
+                help_title = format_message("RAG Transformer Help:", "📚", no_color)
+                print(f"\n{help_title}")
                 print("• Ask about Machine Learning, AI, and Data Science")
                 print("• Inquire about Science Fiction movies and plots")
                 print("• Explore Cosmos, astronomy, and space science")
@@ -122,7 +162,9 @@ def interactive_mode(verbose: bool = False, quiet: bool = False) -> None:
                 print("  - CALC: <expression>  (e.g., 'CALC: 2^10')")
                 print("  - WIKI: <topic>       (e.g., 'WIKI: Quantum Computing')")
                 print("  - TIME:               (current date and time)")
-                print("• Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message")
+                print(
+                    "• Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message"
+                )
                 continue
 
             if not query:
@@ -133,18 +175,20 @@ def interactive_mode(verbose: bool = False, quiet: bool = False) -> None:
                 print(f"Processing: {query}")
 
             response = rag_engine.generate_response(query)
-            print(f"\n💡 {response}")
+            response_msg = format_message(response, "💡", no_color)
+            print(f"\n{response_msg}")
 
         except KeyboardInterrupt:
-            print("\n👋 Goodbye!")
+            print(f"\n{format_message('Goodbye!', '👋', no_color)}")
             break
         except EOFError:
-            print("\n👋 Goodbye!")
+            print(f"\n{format_message('Goodbye!', '👋', no_color)}")
             break
         except Exception as e:
             error_msg = f"An error occurred: {e}"
             if verbose:
                 import traceback
+
                 error_msg += f"\n{traceback.format_exc()}"
             print(error_msg, file=sys.stderr)
 
@@ -153,14 +197,19 @@ def main(args: Optional[list] = None) -> None:
     """Main entry point with argument parsing and CLI policy enforcement"""
     parser = create_parser()
     parsed_args = parser.parse_args(args)
-    
+
     # Handle single query mode
     if parsed_args.query:
-        handle_single_query(parsed_args.query, parsed_args.verbose, parsed_args.quiet)
+        handle_single_query(
+            parsed_args.query,
+            parsed_args.verbose,
+            parsed_args.quiet,
+            parsed_args.no_color,
+        )
         return
-    
+
     # Handle interactive mode
-    interactive_mode(parsed_args.verbose, parsed_args.quiet)
+    interactive_mode(parsed_args.verbose, parsed_args.quiet, parsed_args.no_color)
 
 
 if __name__ == "__main__":

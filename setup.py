@@ -1,6 +1,7 @@
 """
 Setup script for RAG Transformer
 """
+
 from setuptools import setup, find_packages
 from pathlib import Path
 
@@ -19,10 +20,10 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     entry_points={
-        'console_scripts': [
-            'rag=rag:main',
-            'rag-tui=rag.ui.tui:main',
-            'rag-collect=rag.data_fetcher:main',
+        "console_scripts": [
+            "rag=rag:main",
+            "rag-tui=rag.ui.tui:main",
+            "rag-collect=rag.data_fetcher:main",
         ],
     },
     author="RAG Transformer Team",

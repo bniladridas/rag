@@ -29,27 +29,23 @@ Examples:
   rag-tui                Start TUI mode
   rag-tui --no-color     Start TUI without colors
   rag-tui --help         Show this help message
-        """
+        """,
     )
-    
+
     parser.add_argument(
-        "--version", 
-        action="version", 
-        version=f"%(prog)s {__version__}"
+        "--version", action="version", version=f"%(prog)s {__version__}"
     )
-    
+
     parser.add_argument(
-        "--no-color",
-        action="store_true",
-        help="Disable colored output"
+        "--no-color", action="store_true", help="Disable colored output"
     )
-    
+
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Force TUI mode even in non-interactive environments"
+        help="Force TUI mode even in non-interactive environments",
     )
-    
+
     return parser
 
 
@@ -65,7 +61,7 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
 
     # Initialize console with color settings
     console = Console(force_terminal=force, no_color=no_color)
-    
+
     try:
         rag_engine = RAGEngine()
     except Exception as e:
@@ -103,7 +99,7 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
                         "• [cyan]TIME:[/cyan]               (current date and time)\n\n"
                         "[bold]Commands:[/bold] 'exit'/'quit'/'q' to quit, 'help'/'h' for this message",
                         title="Help",
-                        border_style="blue"
+                        border_style="blue",
                     )
                 )
                 continue
@@ -119,12 +115,14 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
             # Show processing indicator for longer queries
             with console.status("[bold green]Processing your query..."):
                 response = rag_engine.generate_response(query)
-            
-            console.print(Panel(
-                f"[green]{response}[/green]", 
-                title="💡 Response",
-                border_style="green"
-            ))
+
+            console.print(
+                Panel(
+                    f"[green]{response}[/green]",
+                    title="💡 Response",
+                    border_style="green",
+                )
+            )
 
         except KeyboardInterrupt:
             console.print("\n[yellow]👋 Goodbye![/yellow]")
@@ -133,22 +131,21 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
             console.print("\n[yellow]👋 Goodbye![/yellow]")
             break
         except Exception as e:
-            console.print(Panel(
-                f"[red]An error occurred: {e}[/red]",
-                title="❌ Error",
-                border_style="red"
-            ))
+            console.print(
+                Panel(
+                    f"[red]An error occurred: {e}[/red]",
+                    title="❌ Error",
+                    border_style="red",
+                )
+            )
 
 
 def main(args: Optional[list] = None) -> None:
     """Main entry point for TUI with argument parsing"""
     parser = create_tui_parser()
     parsed_args = parser.parse_args(args)
-    
-    run_tui(
-        no_color=parsed_args.no_color,
-        force=parsed_args.force
-    )
+
+    run_tui(no_color=parsed_args.no_color, force=parsed_args.force)
 
 
 if __name__ == "__main__":

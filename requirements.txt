@@ -22,5 +22,4 @@ types-requests==2.32.4.20250913
 rich==13.7.0
 flake8==7.3.0
 python-semantic-release==9.8.8
-yamlint==1.35.1
-pre-commit==3.8.0
+pre-commit==4.3.0

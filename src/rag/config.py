@@ -21,7 +21,9 @@ class Config:
 
         # Dataset and knowledge base
         self.DATASET_DIR = Path(os.getenv("DATASET_DIR", "datasets"))
-        self.KNOWLEDGE_BASE_FILE = Path(os.getenv("KNOWLEDGE_BASE_FILE", "knowledge_base.json"))
+        self.KNOWLEDGE_BASE_FILE = Path(
+            os.getenv("KNOWLEDGE_BASE_FILE", "knowledge_base.json")
+        )
         self.MOVIE_PAGES = self._get_int_env("MOVIE_PAGES", 5)
         self.COSMOS_DAYS = self._get_int_env("COSMOS_DAYS", 7)
 
@@ -62,7 +64,9 @@ class Config:
         for path in [self.DATASET_DIR, self.OUTPUT_DIR, self.CACHE_DIR]:
             path.mkdir(parents=True, exist_ok=True)
         if not self.KNOWLEDGE_BASE_FILE.exists():
-            logging.warning(f"Knowledge base file '{self.KNOWLEDGE_BASE_FILE}' does not exist.")
+            logging.warning(
+                f"Knowledge base file '{self.KNOWLEDGE_BASE_FILE}' does not exist."
+            )
 
 
 # Example usage

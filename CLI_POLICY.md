@@ -106,10 +106,13 @@ Support standard environment variables:
 ## Accessibility
 
 ### Color and Formatting
-- Provide `--no-color` option to disable colors
+- Provide `--no-color` option to disable colors and emojis
+- Respect `NO_COLOR` environment variable (https://no-color.org/)
+- Automatically disable colors when output is not to a TTY
 - Use semantic colors (red for errors, green for success)
 - Ensure sufficient contrast for readability
 - Support terminal themes
+- Emojis should be removed in no-color mode for better accessibility
 
 ### Text Output
 - Use clear, simple language
@@ -195,6 +198,33 @@ Type 'exit' to quit, 'help' for instructions
 💡 1024
 
 ❯ exit
+👋 Goodbye!
+```
+
+### No-Color Mode Examples
+```bash
+# With colors (default)
+$ rag --query "Hello"
+💡 Hello! How can I help you today?
+
+# Without colors (accessible mode)
+$ rag --no-color --query "Hello"
+Hello! How can I help you today?
+
+# Using NO_COLOR environment variable
+$ NO_COLOR=1 rag --query "Hello"
+Hello! How can I help you today?
+
+# Interactive mode without colors
+$ rag --no-color
+Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant
+Type 'exit' to quit, 'help' for instructions
+
+> What is machine learning?
+Machine learning is a subset of artificial intelligence...
+
+> exit
+Goodbye!
 👋 Goodbye!
 ```
 

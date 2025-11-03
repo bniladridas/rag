@@ -30,7 +30,13 @@ def mock_config():
 @patch("src.rag.rag_engine.AutoModelForSeq2SeqLM")
 @patch("src.rag.rag_engine.faiss.IndexFlatL2")  # Patch faiss for CI
 def test_rag_engine_init(
-    mock_faiss, mock_model, mock_tokenizer, mock_embed, mock_tool, mock_config_class, mock_config
+    mock_faiss,
+    mock_model,
+    mock_tokenizer,
+    mock_embed,
+    mock_tool,
+    mock_config_class,
+    mock_config,
 ):
     mock_config_class.return_value = mock_config
     mock_embedding_model = Mock()
@@ -82,13 +88,17 @@ def test_generate_response_calc(mock_tool, mock_config_class):
 @patch("src.rag.rag_engine.SentenceTransformer")
 @patch("src.rag.rag_engine.AutoTokenizer")
 @patch("src.rag.rag_engine.AutoModelForSeq2SeqLM")
-def test_retrieve_context(mock_model, mock_tokenizer, mock_embed, mock_tool, mock_config_class):
+def test_retrieve_context(
+    mock_model, mock_tokenizer, mock_embed, mock_tool, mock_config_class
+):
     mock_config = Mock()
     mock_config.TOP_K_RETRIEVAL = 2
     mock_config_class.return_value = mock_config
 
     mock_embedding_model = Mock()
-    mock_embedding_model.encode.return_value = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]])
+    mock_embedding_model.encode.return_value = np.array(
+        [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
+    )
     mock_embed.return_value = mock_embedding_model
 
     mock_index = Mock()

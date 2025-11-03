@@ -21,7 +21,7 @@ addopts = [
 filterwarnings = [
     "ignore::DeprecationWarning:importlib.*",
     "ignore:builtin type SwigPyPacked has no __module__ attribute:DeprecationWarning",
-    "ignore:builtin type SwigPyObject has no __module__ attribute:DeprecationWarning", 
+    "ignore:builtin type SwigPyObject has no __module__ attribute:DeprecationWarning",
     "ignore:builtin type swigvarlink has no __module__ attribute:DeprecationWarning",
 ]
 markers = [

@@ -10,7 +10,9 @@ import os
 def run_command(command, description):
     print(f"Running {description}...")
     try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(
+            command, shell=True, check=True, capture_output=True, text=True
+        )
         print(f"PASS: {description} passed")
         return True
     except subprocess.CalledProcessError as e:
@@ -28,18 +30,19 @@ def main():
 
     try:
         import flake8
+
         success &= run_command(
             "python3 -m flake8 src/rag/ --max-line-length=100 --ignore=E203,W503",
-            "Flake8 linting"
+            "Flake8 linting",
         )
     except ImportError:
         print("Flake8 not installed, skipping...")
 
     try:
         import mypy
+
         success &= run_command(
-            "python3 -m mypy src/rag/ --ignore-missing-imports",
-            "MyPy type checking"
+            "python3 -m mypy src/rag/ --ignore-missing-imports", "MyPy type checking"
         )
     except ImportError:
         print("MyPy not installed, skipping...")

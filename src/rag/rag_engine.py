@@ -43,7 +43,9 @@ class RAGEngine:
 
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(self.config.GENERATOR_MODEL)
-            self.generator = AutoModelForSeq2SeqLM.from_pretrained(self.config.GENERATOR_MODEL)
+            self.generator = AutoModelForSeq2SeqLM.from_pretrained(
+                self.config.GENERATOR_MODEL
+            )
         except Exception:
             print("Warning: Failed to load generator model. Responses may be limited.")
             self.tokenizer = None
@@ -141,7 +143,11 @@ class RAGEngine:
 
         # If generator model not loaded, return context as fallback
         if not self.tokenizer or not self.generator:
-            return context_docs[0] if context_docs else "No response available in CI environment."
+            return (
+                context_docs[0]
+                if context_docs
+                else "No response available in CI environment."
+            )
 
         for _ in range(self.config.MAX_ITERATIONS):
             input_text = (

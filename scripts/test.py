@@ -6,11 +6,14 @@ import subprocess
 import sys
 import os
 
+
 def run_command(command, description):
     """Run a command and return success"""
     print(f"Running {description}...")
     try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(
+            command, shell=True, check=True, capture_output=True, text=True
+        )
         print(f"PASS: {description} passed")
         return True
     except subprocess.CalledProcessError as e:
@@ -19,9 +22,10 @@ def run_command(command, description):
         print(e.stderr)
         return False
 
+
 def main():
     """Main test function"""
-    os.chdir(os.path.join(os.path.dirname(__file__), '..'))  # Go to project root
+    os.chdir(os.path.join(os.path.dirname(__file__), ".."))  # Go to project root
 
     success = True
 
@@ -32,7 +36,11 @@ def main():
     # Run with coverage if installed
     try:
         import pytest_cov  # noqa: F401
-        if not run_command(f"{sys.executable} -m pytest tests/ --cov=src --cov-report=term", "Tests with coverage"):
+
+        if not run_command(
+            f"{sys.executable} -m pytest tests/ --cov=src --cov-report=term",
+            "Tests with coverage",
+        ):
             success = False
     except ImportError:
         print("pytest-cov not installed, skipping coverage...")
@@ -43,6 +51,7 @@ def main():
     else:
         print("\nSome tests failed!")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

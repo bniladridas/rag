@@ -2,14 +2,14 @@
 Tests for CLI functionality and policy compliance
 """
 
-from io import StringIO
-from unittest.mock import MagicMock, patch
-
 import pytest
 
 pytestmark = pytest.mark.unit
 
-from rag.__main__ import create_parser, handle_single_query, main
+from io import StringIO  # noqa: E402
+from unittest.mock import MagicMock, patch  # noqa: E402
+
+from src.rag.__main__ import create_parser, handle_single_query, main  # noqa: E402
 
 
 class TestCLIParser:
@@ -67,7 +67,7 @@ class TestCLIParser:
 class TestCLIFunctionality:
     """Test CLI functionality and user interactions"""
 
-    @patch("rag.__main__.RAGEngine")
+    @patch("src.rag.__main__.RAGEngine")
     def test_single_query_mode(self, mock_rag_engine):
         """Test single query mode functionality"""
         mock_engine = MagicMock()
@@ -79,7 +79,7 @@ class TestCLIFunctionality:
             output = mock_stdout.getvalue()
             assert "Test response" in output
 
-    @patch("rag.__main__.RAGEngine")
+    @patch("src.rag.__main__.RAGEngine")
     def test_single_query_error_handling(self, mock_rag_engine):
         """Test error handling in single query mode"""
         mock_rag_engine.side_effect = Exception("Test error")
@@ -90,13 +90,13 @@ class TestCLIFunctionality:
             assert exc_info.value.code == 1
             assert "Error: Test error" in mock_stderr.getvalue()
 
-    @patch("rag.__main__.interactive_mode")
+    @patch("src.rag.__main__.interactive_mode")
     def test_main_interactive_mode(self, mock_interactive):
         """Test main function calls interactive mode by default"""
         main([])
         mock_interactive.assert_called_once()
 
-    @patch("rag.__main__.handle_single_query")
+    @patch("src.rag.__main__.handle_single_query")
     def test_main_single_query_mode(self, mock_single_query):
         """Test main function handles single query mode"""
         main(["--query", "test"])
@@ -120,7 +120,7 @@ class TestCLIPolicy:
 
     def test_error_output_to_stderr(self):
         """Test that errors are written to stderr"""
-        with patch("rag.__main__.RAGEngine") as mock_rag_engine:
+        with patch("src.rag.__main__.RAGEngine") as mock_rag_engine:
             mock_rag_engine.side_effect = Exception("Test error")
 
             with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
@@ -157,7 +157,7 @@ class TestInteractiveMode:
     """Test interactive mode functionality"""
 
     @patch("sys.stdin.isatty")
-    @patch("rag.__main__.RAGEngine")
+    @patch("src.rag.__main__.RAGEngine")
     @patch("builtins.input")
     def test_interactive_exit_commands(self, mock_input, mock_rag_engine, mock_isatty):
         """Test that exit commands work in interactive mode"""
@@ -169,14 +169,14 @@ class TestInteractiveMode:
         mock_input.side_effect = ["exit"]
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            from rag.__main__ import interactive_mode
+            from src.rag.__main__ import interactive_mode
 
             interactive_mode()
             output = mock_stdout.getvalue()
             assert "Goodbye!" in output
 
     @patch("sys.stdin.isatty")
-    @patch("rag.__main__.RAGEngine")
+    @patch("src.rag.__main__.RAGEngine")
     @patch("builtins.input")
     def test_interactive_help_command(self, mock_input, mock_rag_engine, mock_isatty):
         """Test help command in interactive mode"""
@@ -187,7 +187,7 @@ class TestInteractiveMode:
         mock_input.side_effect = ["help", "exit"]
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            from rag.__main__ import interactive_mode
+            from src.rag.__main__ import interactive_mode
 
             interactive_mode()
             output = mock_stdout.getvalue()
@@ -200,7 +200,7 @@ class TestInteractiveMode:
         mock_isatty.return_value = False
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            from rag.__main__ import interactive_mode
+            from src.rag.__main__ import interactive_mode
 
             interactive_mode()
             output = mock_stdout.getvalue()
@@ -210,7 +210,7 @@ class TestInteractiveMode:
 class TestCLIIntegration:
     """Integration tests for CLI functionality"""
 
-    @patch("rag.__main__.RAGEngine")
+    @patch("src.rag.__main__.RAGEngine")
     def test_verbose_mode_integration(self, mock_rag_engine):
         """Test verbose mode provides additional output"""
         mock_engine = MagicMock()
@@ -222,7 +222,7 @@ class TestCLIIntegration:
             output = mock_stdout.getvalue()
             assert "Processing query:" in output
 
-    @patch("rag.__main__.RAGEngine")
+    @patch("src.rag.__main__.RAGEngine")
     def test_quiet_mode_integration(self, mock_rag_engine):
         """Test quiet mode suppresses non-essential output"""
         mock_engine = MagicMock()
@@ -239,17 +239,17 @@ class TestCLIIntegration:
 
     def test_no_color_mode_integration(self):
         """Test no-color mode removes emojis from output"""
-        from rag.__main__ import format_message
+        from src.rag.__main__ import format_message
 
         # Test format_message directly with explicit parameters
         # When should_use_color would return True (mocked scenario)
-        with patch("rag.__main__.should_use_color", return_value=True):
+        with patch("src.rag.__main__.should_use_color", return_value=True):
             colored_msg = format_message("Hello", "🤖", no_color=False)
             assert "🤖" in colored_msg
             assert "Hello" in colored_msg
 
         # When should_use_color would return False (no_color=True overrides)
-        with patch("rag.__main__.should_use_color", return_value=False):
+        with patch("src.rag.__main__.should_use_color", return_value=False):
             plain_msg = format_message("Hello", "🤖", no_color=True)
             assert "🤖" not in plain_msg
             assert "Hello" in plain_msg
@@ -257,7 +257,7 @@ class TestCLIIntegration:
     @patch.dict("os.environ", {"NO_COLOR": "1"})
     def test_no_color_environment_variable(self):
         """Test that NO_COLOR environment variable is respected"""
-        from rag.__main__ import should_use_color
+        from src.rag.__main__ import should_use_color
 
         # Should return False when NO_COLOR is set
         assert should_use_color(no_color=False) is False
@@ -265,7 +265,7 @@ class TestCLIIntegration:
     @patch("sys.stdout.isatty", return_value=False)
     def test_no_color_non_tty(self, mock_isatty):
         """Test that color is disabled for non-TTY output"""
-        from rag.__main__ import should_use_color
+        from src.rag.__main__ import should_use_color
 
         # Should return False when output is not to a terminal
         assert should_use_color(no_color=False) is False

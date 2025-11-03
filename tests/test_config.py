@@ -6,7 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from src.rag.config import Config
+from src.rag.config import Config  # noqa: E402
 
 
 def test_config_defaults():

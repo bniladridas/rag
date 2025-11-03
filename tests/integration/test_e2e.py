@@ -2,16 +2,16 @@
 End-to-end tests for the application with CLI policy compliance
 """
 
-import pytest
-
-pytestmark = pytest.mark.integration
-
 from io import StringIO
 from unittest.mock import Mock, patch
+
+import pytest
 
 from src.rag.__main__ import main
 from src.rag.data_fetcher import main as collector_main
 from src.rag.ui.tui import run_tui
+
+pytestmark = pytest.mark.integration
 
 
 class TestCLIE2E:

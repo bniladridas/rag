@@ -2,14 +2,15 @@
 Unit tests for rag_engine.py
 """
 
-from unittest.mock import Mock, patch
-
-import numpy as np
 import pytest
 
 pytestmark = pytest.mark.unit
 
-from src.rag.rag_engine import RAGEngine
+from unittest.mock import Mock, patch  # noqa: E402
+
+import numpy as np  # noqa: E402
+
+from src.rag.rag_engine import RAGEngine  # noqa: E402
 
 
 @pytest.fixture

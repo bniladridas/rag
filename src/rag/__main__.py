@@ -51,9 +51,7 @@ For more information, visit: https://github.com/harpertoken/rag
         """,
     )
 
-    parser.add_argument(
-        "--version", action="version", version=f"version {__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"version {__version__}")
 
     parser.add_argument(
         "--query",

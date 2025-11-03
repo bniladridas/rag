@@ -33,6 +33,7 @@ jobs:
           python -m pip install --upgrade pip-tools
           python -m pip install torch==2.8.0 torchvision --index-url https://download.pytorch.org/whl/cpu
           python -m pip install --prefer-binary -r requirements.txt
+          pip install -e .
 
       - name: Run linting
         run: |

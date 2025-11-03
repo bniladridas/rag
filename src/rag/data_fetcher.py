@@ -2,15 +2,24 @@
 Data fetching module for collecting knowledge from various APIs
 """
 
+import argparse
 import concurrent.futures
 import json
 import os
+import sys
 import time
+import traceback
 from typing import List
 
 import requests
 
 from .config import Config
+
+# Handle version import with fallback
+try:
+    from .__version__ import __version__
+except ImportError:
+    __version__ = "0.3.1"  # Fallback for when running as script
 
 
 class DataFetcher:
@@ -37,16 +46,21 @@ class DataFetcher:
         ]
 
         documents = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.config.MAX_WORKERS
+        ) as executor:
             future_to_topic = {
-                executor.submit(self._fetch_wiki_summary, topic): topic for topic in ml_topics
+                executor.submit(self._fetch_wiki_summary, topic): topic
+                for topic in ml_topics
             }
             for future in concurrent.futures.as_completed(future_to_topic):
                 topic = future_to_topic[future]
                 try:
                     summary = future.result()
                     if summary:
-                        documents.append(f"Machine Learning - {topic.replace('_', ' ')}: {summary}")
+                        documents.append(
+                            f"Machine Learning - {topic.replace('_', ' ')}: {summary}"
+                        )
                 except Exception as e:
                     print(f"Error fetching {topic}: {e}")
 
@@ -83,10 +97,10 @@ class DataFetcher:
                 page_docs = []
                 for movie in response.json().get("results", [])[:10]:
                     doc = (
-                        f"Sci-Fi Movie: {movie.get('title','Unknown')}. "
+                        f"Sci-Fi Movie: {movie.get('title', 'Unknown')}. "
                         f"Release Date: {movie.get('release_date', 'Unknown')}. "
-                        f"Overview: {movie.get('overview','No overview')}. "
-                        f"Popularity: {movie.get('popularity','N/A')}"
+                        f"Overview: {movie.get('overview', 'No overview')}. "
+                        f"Popularity: {movie.get('popularity', 'N/A')}"
                     )
                     page_docs.append(doc)
                 return page_docs
@@ -96,7 +110,8 @@ class DataFetcher:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             futures = [
-                executor.submit(fetch_page, page) for page in range(1, self.config.MOVIE_PAGES + 1)
+                executor.submit(fetch_page, page)
+                for page in range(1, self.config.MOVIE_PAGES + 1)
             ]
             for future in concurrent.futures.as_completed(futures):
                 movie_documents.extend(future.result())
@@ -131,9 +146,12 @@ class DataFetcher:
             except Exception:
                 return None
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.MAX_WORKERS) as executor:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.config.MAX_WORKERS
+        ) as executor:
             futures = [
-                executor.submit(fetch_day, days_ago) for days_ago in range(self.config.COSMOS_DAYS)
+                executor.submit(fetch_day, days_ago)
+                for days_ago in range(self.config.COSMOS_DAYS)
             ]
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
@@ -166,12 +184,97 @@ class DataFetcher:
         print(f"Saved {len(documents)} documents to {filepath}")
 
 
-def main():
-    """Main function for data collection"""
-    fetcher = DataFetcher()
-    documents = fetcher.fetch_all_data()
-    fetcher.save_documents(documents)
+def create_collector_parser():
+    """Create argument parser for data collection"""
+    parser = argparse.ArgumentParser(
+        prog="rag-collect",
+        description="RAG Transformer Data Collection Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+This tool collects knowledge from various sources to build the RAG database.
+
+Data Sources:
+  • Machine Learning concepts from Wikipedia
+  • Science Fiction movies from TMDB API
+  • Space and astronomy data from NASA API
+
+Examples:
+  rag-collect                    Collect all available data
+  rag-collect --verbose          Show detailed progress
+  rag-collect --help             Show this help message
+
+API Keys:
+  Set TMDB_API_KEY and NASA_API_KEY environment variables
+  for enhanced data collection capabilities.
+        """,
+    )
+
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
+
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose output showing collection progress",
+    )
+
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be collected without actually fetching data",
+    )
+
+    return parser
+
+
+def main(args=None):
+    """Main function for data collection with CLI policy compliance"""
+    parser = create_collector_parser()
+    parsed_args = parser.parse_args(args)
+
+    if parsed_args.verbose:
+        print("🚀 RAG Transformer Data Collection Tool")
+        print("Initializing data fetcher...")
+
+    try:
+        fetcher = DataFetcher()
+
+        if parsed_args.dry_run:
+            print("📋 Dry run mode - showing what would be collected:")
+            print("• Machine Learning concepts from Wikipedia")
+            print("• Science Fiction movies from TMDB API")
+            print("• Space and astronomy data from NASA API")
+            print("Use without --dry-run to actually collect data.")
+            return 0
+
+        if parsed_args.verbose:
+            print("📚 Starting data collection from multiple sources...")
+
+        documents = fetcher.fetch_all_data()
+
+        if parsed_args.verbose:
+            print(f"✅ Successfully collected {len(documents)} documents")
+            print("💾 Saving to knowledge base...")
+
+        fetcher.save_documents(documents)
+
+        print("🎉 Data collection completed successfully!")
+        if not parsed_args.verbose:
+            print(f"📊 Collected {len(documents)} documents for the knowledge base")
+
+    except KeyboardInterrupt:
+        print("\n⚠️  Data collection interrupted by user")
+        return 1
+    except Exception as e:
+        print(f"❌ Error during data collection: {e}")
+        if parsed_args.verbose:
+            print(f"Full error details:\n{traceback.format_exc()}")
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

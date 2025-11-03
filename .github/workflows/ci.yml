@@ -1,99 +1,148 @@
 name: CI
-permissions:
-  contents: read
 
 on:
   push:
-    branches: [ main, master, dependabot/** ]
+    branches: [main, master, feature/**, dependabot/**]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
 
 jobs:
-  lint-test:
+  pre-commit:
+    name: Pre-commit Hooks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Run pre-commit hooks
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
 
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.10'
-
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        python -m pip install --upgrade pip-tools
-        python -m pip install torch==2.8.0 torchvision --index-url https://download.pytorch.org/whl/cpu
-        python -m pip install --prefer-binary -r requirements.txt
-
-    - name: Run linting
-      run: |
-        pip install flake8 mypy
-        python scripts/lint.py
-
-    - name: Run tests
-      run: |
-        pip install pytest pytest-cov
-        python scripts/test.py
-
-    - name: Run additional checks
-      run: |
-        python setup.py check
-        python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
-
-
-  submit-pypi:
+  custom-lint:
+    name: Custom Linting
     runs-on: ubuntu-latest
-    if: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Run custom lint script
+        run: python scripts/lint.py
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.10'
+      - name: Run unit tests
+        uses: ./.github/actions/run-tests
+        with:
+          test-path: 'tests/'
+          marker: 'unit'
+          cov-path: 'src'
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.10'
+      - name: Run integration tests
+        uses: ./.github/actions/run-tests
+        with:
+          test-path: 'tests/'
+          marker: 'integration'
+          cov-path: 'src'
+          cov-append: 'true'
+
+      - name: Run additional checks
+        run: |
+          # Check package metadata
+          python setup.py check
+           # Verify main CLI entry point can be invoked and responds correctly
+           if ! python -m rag --help 2>&1 | grep -q 'usage:'; then
+             echo "Error: CLI help output not as expected"
+             exit 1
+           fi
+           # Verify version flag works
+           if ! python -m rag --version 2>&1 | grep -q 'version'; then
+             echo "Error: Version check failed"
+             exit 1
+           fi
+
+
+  release:
+    name: Release
+    needs: [unit-tests, integration-tests]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
+      id-token: write  # Required for GitHub OIDC
+
     steps:
-    - uses: actions/checkout@v5
-      with:
-        ref: ${{ github.ref }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.10'
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.10'
 
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Verify package version
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          PY_VERSION=$(python -c "from rag import __version__; print(__version__)")
+          if [ "$TAG_VERSION" != "$PY_VERSION" ]; then
+            echo "Version mismatch: tag $TAG_VERSION != package $PY_VERSION"
+            exit 1
+          fi
 
-    - name: Create virtual environment
-      run: |
-        python -m venv venv
-        echo "VIRTUAL_ENV=$PWD/venv" >> $GITHUB_ENV
-        echo "$PWD/venv/bin" >> $GITHUB_PATH
+      - name: Build package
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+          twine check dist/*
 
-    - name: Prepare Python environment
-      run: |
-        python -m pip install --upgrade pip setuptools wheel pip-tools
-        pip install torch==2.8.0 torchvision --index-url https://download.pytorch.org/whl/cpu
-        pip install --prefer-binary -r requirements.txt
+      - name: Publish to PyPI
+        if: github.repository == 'bniladridas/rag'  # Only run for this repository
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true  # Using kebab-case as per warning
+          verbose: true
 
-    - name: Validate dependency installation
-      run: |
-        echo "::debug::Validating Python dependencies"
-        python -m pip install --dry-run --no-build-isolation -r requirements.txt || true
-        echo "{valid-project}={true}" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: v${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## What's Changed
 
-    - uses: actions/component-detection-dependency-submission-action@374343effede691df3a5ffaf36b4e7acab919590
-      continue-on-error: true
-      env:
-        PYTHON: ${{ github.workspace }}/venv/bin/python
-        PATH: ${{ github.workspace }}/venv/bin:$PATH
-      with:
-        valid-project: true
+            ### New Features
+            - Add new features here
+
+            ### Bug Fixes
+            - Fix various issues
+
+            ### Documentation
+            - Update documentation
+          draft: false
+          prerelease: false

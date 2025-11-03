@@ -1,0 +1,93 @@
+name: 'Run Tests'
+description: 'Run project tests with coverage'
+
+inputs:
+  test-path:
+    description: 'Path to test directory or file'
+    required: false
+    default: 'tests/'
+  marker:
+    description: 'Pytest marker to filter tests'
+    required: false
+    default: ''
+  cov-path:
+    description: 'Path to measure coverage for'
+    required: false
+    default: 'src'
+  cov-append:
+    description: 'Whether to append to coverage file'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install package and test dependencies
+      shell: bash
+      run: |
+        set -e
+        echo "[SETUP] Setting up test environment..."
+        echo "[INFO] Python version: $(python --version)"
+
+        # Ensure pip is up to date
+        echo "[SETUP] Upgrading pip..."
+        python -m pip install --upgrade pip
+
+        # Install package in development mode with test dependencies
+        echo "[SETUP] Installing package and test dependencies..."
+        python -m pip install -e ".[test]"
+
+        # Verify pytest is installed and show version
+        echo "[SUCCESS] Installed pytest version: $(python -m pytest --version)"
+
+    - name: Run tests with coverage
+      shell: bash
+      run: |
+        set -e
+
+        # Set up environment
+        echo "[INFO] Setting up test environment..."
+        echo "[DEBUG] Current directory: $(pwd)"
+
+        # Set PYTHONPATH to src for module discovery (safeguard for editable install)
+        export PYTHONPATH=$(pwd)/src:$PYTHONPATH
+        echo "PYTHONPATH set to: $PYTHONPATH"
+
+        # Show environment info
+        echo "Python path: $(which python)"
+        echo "Pytest path: $(which pytest)"
+
+        # Build coverage arguments
+        cov_args=(
+          "--cov=${{ inputs.cov-path }}"
+          "--cov-report=term-missing"
+          "--cov-report=xml"
+          "-v"
+          "--durations=10"  # Show 10 slowest tests
+        )
+
+        if [[ -n "${{ inputs.marker }}" ]]; then
+          cov_args+=( "-m" "${{ inputs.marker }}" )
+          echo "[INFO] Using marker: ${{ inputs.marker }}"
+        fi
+
+        if [[ "${{ inputs.cov-append }}" == "true" ]]; then
+          cov_args+=( "--cov-append" )
+          echo "[INFO] Appending to existing coverage data"
+        fi
+
+        # Run tests with error handling
+        echo "[TEST] Running tests in: ${{ inputs.test-path }}"
+        if ! python -m pytest ${{ inputs.test-path }} "${cov_args[@]}"; then
+          echo "[ERROR] Tests failed. See above for details."
+          exit 1
+        fi
+
+        echo "[SUCCESS] All tests passed!"
+
+    - name: Upload coverage to Codecov
+      if: inputs.cov-append == 'false'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false

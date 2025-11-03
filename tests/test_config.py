@@ -2,7 +2,11 @@
 Unit tests for config.py
 """
 
-from src.rag.config import Config
+import pytest
+
+pytestmark = pytest.mark.unit
+
+from src.rag.config import Config  # noqa: E402
 
 
 def test_config_defaults():

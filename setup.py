@@ -1,8 +1,10 @@
 """
 Setup script for RAG Transformer
 """
-from setuptools import setup, find_packages
+
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Read requirements
 with open("requirements.txt") as f:
@@ -19,10 +21,10 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     entry_points={
-        'console_scripts': [
-            'rag=rag:main',
-            'rag-tui=rag.ui.tui:run_tui',
-            'rag-collect=rag.data_fetcher:main',
+        "console_scripts": [
+            "rag=rag:main",
+            "rag-tui=rag.ui.tui:main",
+            "rag-collect=rag.data_fetcher:main",
         ],
     },
     author="RAG Transformer Team",
@@ -31,4 +33,21 @@ setup(
     long_description_content_type="text/markdown",
     python_requires=">=3.8",
     zip_safe=False,
+    extras_require={
+        "test": [
+            "pytest>=7.0.0",
+            "pytest-cov>=4.0.0",
+            "pytest-mock>=3.10.0",
+        ],
+        "dev": [
+            "black>=23.0.0",
+            "flake8>=6.0.0",
+            "mypy>=1.0.0",
+            "pre-commit>=3.0.0",
+        ],
+    },
+    project_urls={
+        "Source": "https://github.com/bniladridas/rag",
+        "Bug Reports": "https://github.com/bniladridas/rag/issues",
+    },
 )

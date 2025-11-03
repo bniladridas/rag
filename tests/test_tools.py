@@ -2,11 +2,12 @@
 Unit tests for tools.py
 """
 
-from unittest.mock import Mock, patch
-
 import pytest
 
-from src.rag.tools import ToolExecutor
+pytestmark = pytest.mark.unit
+from unittest.mock import Mock, patch  # noqa: E402
+
+from src.rag.tools import ToolExecutor  # noqa: E402
 
 
 @pytest.fixture

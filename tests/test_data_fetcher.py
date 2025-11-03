@@ -6,7 +6,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from src.rag.data_fetcher import DataFetcher
+pytestmark = pytest.mark.unit
+
+from src.rag.data_fetcher import DataFetcher  # noqa: E402
 
 
 @pytest.fixture

@@ -49,26 +49,8 @@ Examples:
     return parser
 
 
-def run_tui(no_color: bool = False, force: bool = False) -> None:
-    """Run the Text User Interface with CLI policy compliance"""
-
-    # Skip TUI in non-interactive environments unless forced
-    if not sys.stdin.isatty() and not force and not os.getenv("FORCE_TUI"):
-        print("RAG Transformer TUI - Text User Interface")
-        print("Non-interactive environment detected. Use --force to override.")
-        print("For non-interactive usage, try: rag --query 'your question'")
-        return
-
-    # Initialize console with color settings
-    console = Console(force_terminal=force, no_color=no_color)
-
-    try:
-        rag_engine = RAGEngine()
-    except Exception as e:
-        console.print(f"[red]Failed to initialize RAG engine: {e}[/red]")
-        sys.exit(1)
-
-    # Welcome panel
+def _display_welcome(console: Console, no_color: bool) -> None:
+    """Display welcome message and instructions."""
     if no_color:
         console.print(
             Panel.fit(
@@ -77,61 +59,108 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
                 f"Version {__version__}"
             )
         )
-        console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
     else:
         console.print(
             Panel.fit(
-                "[bold blue]🤖 Agentic RAG Transformer[/bold blue]\n"
-                "[green]ML, Sci-Fi, and Cosmos Assistant[/green]\n"
-                f"[dim]Version {__version__}[/dim]"
+                "[bold blue]🤖 Agentic RAG Transformer[/]\n"
+                "[green]ML, Sci-Fi, and Cosmos Assistant[/]\n"
+                f"[dim]Version {__version__}[/]"
             )
         )
-        console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
+    console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
+
+
+def _display_help(console: Console, no_color: bool) -> None:
+    """Display help message with available commands and features."""
+    if no_color:
+        help_text = (
+            "RAG Transformer Help\n\n"
+            "• Ask about Machine Learning, AI, and Data Science\n"
+            "• Inquire about Science Fiction movies and plots\n"
+            "• Explore Cosmos, astronomy, and space science\n\n"
+            "Built-in Tools:\n"
+            "• CALC: <expression>  (e.g., 'CALC: 2^10')\n"
+            "• WIKI: <topic>       (e.g., 'WIKI: Quantum Computing')\n"
+            "• TIME:               (current date and time)\n\n"
+            "Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message"
+        )
+        console.print(Panel(help_text, title="Help"))
+    else:
+        help_text = (
+            "[bold]📚 RAG Transformer Help[/]\n\n"
+            "• Ask about [blue]Machine Learning[/], AI, and Data Science\n"
+            "• Inquire about [magenta]Science Fiction[/] movies and plots\n"
+            "• Explore [green]Cosmos[/], astronomy, and space science\n\n"
+            "[bold]Built-in Tools:[/]\n"
+            "• [cyan]CALC:[/] <expression>  (e.g., 'CALC: 2^10')\n"
+            "• [cyan]WIKI:[/] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
+            "• [cyan]TIME:[/]               (current date and time)\n\n"
+            "[bold]Commands:[/] 'exit'/'quit'/'q' to quit, 'help'/'h' for this message"
+        )
+        console.print(Panel(help_text, title="[blue]Help[/]", border_style="blue"))
+
+
+def _process_query(
+    rag_engine: RAGEngine, query: str, console: Console, no_color: bool
+) -> None:
+    """Process a single query and display the response."""
+    if no_color:
+        with console.status("Processing your query..."):
+            response = rag_engine.generate_response(query)
+        console.print(Panel(response, title="Response"))
+    else:
+        with console.status("[bold green]Processing your query...[/]"):
+            response = rag_engine.generate_response(query)
+        # Clean the response to ensure no unclosed tags
+        clean_response = response.replace("[/", "").replace("[", "[")
+        console.print(
+            Panel(clean_response, title="[bold]💡 Response[/]", border_style="green")
+        )
+
+
+def _handle_exit(console: Console, no_color: bool) -> None:
+    """Handle exit message display."""
+    if no_color:
+        console.print("\nGoodbye!")
+    else:
+        console.print("\n[yellow]👋 Goodbye![/yellow]")
+
+
+def run_tui(no_color: bool = False, force: bool = False) -> None:
+    """Run the Text User Interface with CLI policy compliance.
+
+    Args:
+        no_color: If True, disable colored output
+        force: If True, force TUI mode even in non-interactive environments
+    """
+    # Skip TUI in non-interactive environments unless forced
+    if not sys.stdin.isatty() and not force and not os.getenv("FORCE_TUI"):
+        print("RAG Transformer TUI - Text User Interface")
+        print("Non-interactive environment detected. Use --force to override.")
+        print("For non-interactive usage, try: rag --query 'your question'")
+        return
+
+    console = Console(force_terminal=force, no_color=no_color)
+
+    try:
+        rag_engine = RAGEngine()
+    except Exception as e:
+        console.print(f"[red]Failed to initialize RAG engine: {e}[/red]")
+        sys.exit(1)
+
+    _display_welcome(console, no_color)
 
     while True:
         try:
-            query = Prompt.ask("[bold cyan]❯[/bold cyan]").strip()
+            query = Prompt.ask("[cyan]❯[/]").strip()
 
+            # Handle commands
             if query.lower() in ["exit", "quit", "q"]:
-                if no_color:
-                    console.print("Goodbye!")
-                else:
-                    console.print("[yellow]👋 Goodbye![/yellow]")
+                _handle_exit(console, no_color)
                 break
 
             if query.lower() in ["help", "h"]:
-                if no_color:
-                    console.print(
-                        Panel(
-                            "RAG Transformer Help\n\n"
-                            "• Ask about Machine Learning, AI, and Data Science\n"
-                            "• Inquire about Science Fiction movies and plots\n"
-                            "• Explore Cosmos, astronomy, and space science\n\n"
-                            "Built-in Tools:\n"
-                            "• CALC: <expression>  (e.g., 'CALC: 2^10')\n"
-                            "• WIKI: <topic>       (e.g., 'WIKI: Quantum Computing')\n"
-                            "• TIME:               (current date and time)\n\n"
-                            "Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message",
-                            title="Help",
-                        )
-                    )
-                else:
-                    console.print(
-                        Panel(
-                            "[bold]📚 RAG Transformer Help[/bold]\n\n"
-                            "• Ask about [blue]Machine Learning[/blue], AI, and Data Science\n"
-                            "• Inquire about [magenta]Science Fiction[/magenta] movies and plots\n"
-                            "• Explore [green]Cosmos[/green], astronomy, and space science\n\n"
-                            "[bold]Built-in Tools:[/bold]\n"
-                            "• [cyan]CALC:[/cyan] <expression>  (e.g., 'CALC: 2^10')\n"
-                            "• [cyan]WIKI:[/cyan] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
-                            "• [cyan]TIME:[/cyan]               (current date and time)\n\n"
-                            "[bold]Commands:[/bold] 'exit'/'quit'/'q' to quit, "
-                            "'help'/'h' for this message",
-                            title="Help",
-                            border_style="blue",
-                        )
-                    )
+                _display_help(console, no_color)
                 continue
 
             if query.lower() == "clear":
@@ -139,44 +168,17 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
                 continue
 
             if not query:
-                if no_color:
-                    console.print("Please enter a valid query.")
-                else:
-                    console.print("[yellow]Please enter a valid query.[/yellow]")
+                console.print(
+                    "Please enter a valid query."
+                    if no_color
+                    else "[yellow]Please enter a valid query.[/yellow]"
+                )
                 continue
 
-            # Show processing indicator for longer queries
-            if no_color:
-                with console.status("Processing your query..."):
-                    response = rag_engine.generate_response(query)
-                console.print(
-                    Panel(
-                        response,
-                        title="Response",
-                    )
-                )
-            else:
-                with console.status("[bold green]Processing your query..."):
-                    response = rag_engine.generate_response(query)
-                console.print(
-                    Panel(
-                        f"[green]{response}[/green]",
-                        title="💡 Response",
-                        border_style="green",
-                    )
-                )
+            _process_query(rag_engine, query, console, no_color)
 
-        except KeyboardInterrupt:
-            if no_color:
-                console.print("\nGoodbye!")
-            else:
-                console.print("\n[yellow]👋 Goodbye![/yellow]")
-            break
-        except EOFError:
-            if no_color:
-                console.print("\nGoodbye!")
-            else:
-                console.print("\n[yellow]👋 Goodbye![/yellow]")
+        except (KeyboardInterrupt, EOFError):
+            _handle_exit(console, no_color)
             break
         except Exception as e:
             console.print(

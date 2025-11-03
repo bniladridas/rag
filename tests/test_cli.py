@@ -275,10 +275,10 @@ class TestCLIIntegration:
         assert os.path.exists(policy_file), "CLI_POLICY.md file should exist"
 
         with open(policy_file, "r") as f:
-            content = f.read()
-            assert "CLI Policy and Standards" in content
-            assert "POSIX Compliance" in content
-            assert "Exit Codes" in content
+            content = f.read().lower()
+            assert "cli policy and standards" in content
+            assert "posix compliance" in content
+            assert "exit codes" in content
 
 
 if __name__ == "__main__":

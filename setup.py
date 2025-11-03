@@ -32,4 +32,21 @@ setup(
     long_description_content_type="text/markdown",
     python_requires=">=3.8",
     zip_safe=False,
+    extras_require={
+        "test": [
+            "pytest>=7.0.0",
+            "pytest-cov>=4.0.0",
+            "pytest-mock>=3.10.0",
+        ],
+        "dev": [
+            "black>=23.0.0",
+            "flake8>=6.0.0",
+            "mypy>=1.0.0",
+            "pre-commit>=3.0.0",
+        ],
+    },
+    project_urls={
+        "Source": "https://github.com/bniladridas/rag",
+        "Bug Reports": "https://github.com/bniladridas/rag/issues",
+    },
 )

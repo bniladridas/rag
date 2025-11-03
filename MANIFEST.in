@@ -1,0 +1,14 @@
+# Include license and readme
+include LICENSE
+include README.md
+include CHANGELOG.md
+include SECURITY.md
+
+# Include type stubs
+recursive-include src/rag *.pyi
+recursive-include src/rag/*.pyi
+
+# Include package data
+recursive-include src/rag *.json
+recursive-include src/rag *.yaml
+recursive-include src/rag *.yml

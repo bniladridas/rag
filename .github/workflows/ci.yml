@@ -1,6 +1,4 @@
 name: CI
-permissions:
-  contents: read
 
 on:
   push:
@@ -8,48 +6,139 @@ on:
   pull_request:
     branches: [main, master]
 
-jobs:
-  lint-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      python-version: ${{ steps.setup-python.outputs.python-version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        id: setup-python
+        uses: ./.github/actions/setup-python
         with:
           python-version: '3.10'
 
-      - name: Cache pip packages
-        uses: actions/cache@v4
+  pre-commit:
+    name: Pre-commit Hooks
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
+          python-version: '3.10'
+      - name: Run pre-commit hooks
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          # Install torch with CPU-specific index for CI performance
-          python -m pip install torch==2.8.0 torchvision --index-url https://download.pytorch.org/whl/cpu
-          # Install development dependencies (includes main requirements)
-          python -m pip install --prefer-binary -r requirements-dev.txt
-          # Install package in development mode
-          pip install -e .
+          pip install pre-commit
+          pre-commit run --all-files
 
-      - name: Run linting
+  black:
+    name: Black Formatting
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install black
+      - name: Run black
+        run: black --check .
+
+  isort:
+    name: Import Sorting
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install isort
+      - name: Run isort
+        run: isort --check-only .
+
+  flake8:
+    name: Flake8 Linting
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install flake8
+      - name: Run flake8
+        run: flake8
+
+  mypy:
+    name: Type Checking
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install mypy
+      - name: Run mypy
+        run: mypy .
+
+  custom-lint:
+    name: Custom Linting
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Run custom lint script
         run: python scripts/lint.py
 
-      - name: Install test dependencies
-        run: |
-          python -m pip install pytest pytest-cov
-          python -m pip install -e .[test]  # If you have test extras in setup.py
+  unit-tests:
+    name: Unit Tests
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.10'
+      - name: Run unit tests
+        uses: ./.github/actions/run-tests
+        with:
+          test-path: 'tests/unit/'
+          cov-path: 'src'
 
-      - name: Run tests
-        env:
-          PYTHONPATH: src
-        run: |
-          python -m pytest tests/integration/test_e2e.py -v
+  integration-tests:
+    name: Integration Tests
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python
+        with:
+          python-version: '3.10'
+      - name: Run integration tests
+        uses: ./.github/actions/run-tests
+        with:
+          test-path: 'tests/integration/'
+          cov-path: 'src'
+          cov-append: 'true'
 
       - name: Run additional checks
         run: |
@@ -67,61 +156,68 @@ jobs:
           fi
 
 
-  submit-pypi:
+  release:
+    name: Release
+    needs: test
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    if: false
     permissions:
       contents: write
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.ref }}
+      packages: write
+      id-token: write  # Required for GitHub OIDC
 
-      - uses: actions/setup-python@v6
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python
         with:
           python-version: '3.10'
 
-      - name: Cache pip packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Create virtual environment
+      - name: Verify package version
+        id: version-check
         run: |
-          python -m venv venv
-          echo "VIRTUAL_ENV=$PWD/venv" >> $GITHUB_ENV
-          echo "$PWD/venv/bin" >> $GITHUB_PATH
-
-      - name: Prepare Python environment
-        run: |
-          python -m pip install --upgrade pip setuptools wheel pip-tools
-          pip install torch==2.8.0 torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install --prefer-binary -r requirements.txt
-
-      - name: Validate dependency installation
-        run: |
-          echo "::debug::Validating Python dependencies"
-          python -m pip install --dry-run --no-build-isolation -r requirements.txt || true
-          echo "{valid-project}={true}" >> "$GITHUB_OUTPUT"
-
-      - name: Component Detection
-        uses: actions/component-detection-dependency-submission-action@374343effede691df3a5ffaf36b4e7acab919590
-        continue-on-error: true
-        env:
-          PYTHON: ${{ github.workspace }}/venv/bin/python
-          PATH: ${{ github.workspace }}/venv/bin:$PATH
-        with:
-          valid-project: true
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          PY_VERSION=$(python -c "from src.rag import __version__; print(__version__)")
+          if [ "$TAG_VERSION" != "$PY_VERSION" ]; then
+            echo "Version mismatch: tag $TAG_VERSION != package $PY_VERSION"
+            exit 1
+          fi
+          echo "version=$PY_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build package
         run: |
           python -m pip install --upgrade build
           python -m build
-
-      - name: Check distribution files
-        run: |
-          python -m pip install twine
           twine check dist/*
+
+      - name: Publish to PyPI
+        if: github.repository == 'bniladridas/rag'  # Only run for this repository
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true  # Using kebab-case as per warning
+          verbose: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: v${{ steps.version-check.outputs.version }}
+          tag_name: ${{ github.ref }}
+          body: |
+            ## What's Changed
+
+            ### New Features
+            - Add new features here
+
+            ### Bug Fixes
+            - Fix various issues
+
+            ### Documentation
+            - Update documentation
+          draft: false
+          prerelease: false

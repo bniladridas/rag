@@ -1,0 +1,2 @@
+# This file indicates that this package is typed according to PEP 561.
+# It enables type checking tools to recognize the package as type-annotated.

@@ -1,0 +1,42 @@
+name: 'Run Tests'
+description: 'Run project tests with coverage'
+
+inputs:
+  test-path:
+    description: 'Path to test directory or file'
+    required: false
+    default: 'tests/'
+  cov-path:
+    description: 'Path to measure coverage for'
+    required: false
+    default: 'src'
+  cov-append:
+    description: 'Whether to append to coverage file'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run tests with coverage
+      shell: bash
+      run: |
+        set -e
+        cov_args=(
+          "--cov=${{ inputs.cov-path }}"
+          "--cov-report=term-missing"
+          "--cov-report=xml"
+        )
+        
+        if [[ "${{ inputs.cov-append }}" == "true" ]]; then
+          cov_args+=( "--cov-append" )
+        fi
+        
+        python -m pytest ${{ inputs.test-path }} -v "${cov_args[@]}"
+
+    - name: Upload coverage to Codecov
+      if: github.event_name != 'pull_request' && inputs.cov-append == 'false'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false

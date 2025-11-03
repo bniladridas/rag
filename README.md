@@ -1,255 +1,196 @@
 # RAG
 
-A friendly **AI assistant** that understands **machine learning**, **science fiction movies**, and the **cosmos**.
-It can **answer questions**, **perform calculations**, and **search Wikipedia** — all from your **terminal**.
+A friendly **AI assistant** that understands **machine learning**, **science fiction**, and the **cosmos**.
+It can **answer questions**, **perform calculations**, and **search Wikipedia** — all directly from your **terminal**.
+
+---
 
 ## Quick Start
 
 ```bash
-# Run with Docker (basic knowledge without API keys)
-docker build -f container/Dockerfile -t rag .
-docker run -it rag
-
-# Run with API keys
-docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
-
-# Run data collection
-docker run -it rag rag-collect
-```
-
-## What It Can Do
-
-* **Knowledge Areas:** Machine learning, sci-fi movies, space science
-* **Built-in Tools:** Calculator, Wikipedia search, time/date checker
-* **Command-Line Interface:** Simple to use
-* **Modular Design:** Easy to extend and customize
-* **Smart Search:** Uses FAISS for fast document retrieval
-
-## Before You Start
-
-* Python 3.8 or higher
-* (Optional) API keys for TMDB and NASA
-* Review the [CLI Policy](CLI_POLICY.md) for command-line interface standards and best practices
-
-## Installation
-
-### Option 1: From Source
-
-```bash
-git clone <repository-url>
+# Clone and enter the project
+git clone https://github.com/bniladridas/rag.git
 cd rag
 
-# Quick development setup
-./scripts/setup_dev.sh
+# Setup (virtual environment)
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -e ".[test,dev]"
 
-# Or manual setup
-pip install -r requirements-dev.txt
-pip install -e .
+# Run tests
+pytest --cov=src --cov-report=term-missing
 ```
 
-### Option 2: Docker
+Or run with **Docker**:
 
 ```bash
-# Build the image
 docker build -f container/Dockerfile -t rag .
-
-# Run the assistant
 docker run -it rag
-
-# With API keys
-docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
-
-# Run data collection
-docker run -it rag rag-collect
 ```
 
-### Option 3: From pip (if published)
-
-```bash
-pip install rag
-```
-
-## Configuration
-
-### Local Development
-
-Create a `.env` file in the project root:
-
-```env
-TMDB_API_KEY=your_tmdb_api_key_here
-NASA_API_KEY=your_nasa_api_key_here
-```
-
-### Docker
-
-Pass API keys as environment variables:
+With API keys:
 
 ```bash
 docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
 ```
 
-### GitHub Actions
+---
 
-Set repository secrets:
+## Capabilities
 
-* `TMDB_API_KEY`
-* `NASA_API_KEY`
+* **Knowledge Areas:** Machine learning, sci-fi, and space science
+* **Built-in Tools:** Calculator, Wikipedia search, time/date
+* **Interface:** Simple CLI and TUI modes
+* **Design:** Modular, extensible, and fast (FAISS-powered search)
 
-Keys available from:
-
-* [TMDB API](https://www.themoviedb.org/settings/api)
-* [NASA API](https://api.nasa.gov/)
-
-## Data Collection
-
-Populate the knowledge base:
-
-```bash
-rag-collect
-```
-
-Collects:
-
-* Machine learning documentation
-* Sci-fi movie data (TMDB)
-* Space and astronomy data (NASA)
+---
 
 ## Usage
 
-### Start Interactive Mode
+### Interactive Mode
 
 ```bash
 rag
 ```
 
-### Start TUI Mode
+### TUI Mode
 
 ```bash
 rag-tui
 ```
 
-You can then ask:
-
-* “What is deep learning?”
-* “Tell me about the movie Interstellar”
-* “Calculate 2^10”
-* “WIKI: Quantum Computing”
-* “What time is it?”
-
-### Use Tools Directly
-
-* `CALC: sqrt(144)`
-* `WIKI: Machine Learning`
-* `TIME:`
-
-## Inside the Project
+Examples:
 
 ```
-src/rag/
-├── __init__.py        → Package initialization
-├── __main__.py        → CLI entry point
-├── config.py          → Handles configuration and API keys
-├── data_fetcher.py    → Collects data from APIs
-├── rag_engine.py      → Core RAG logic
-├── tools.py           → Tools like calculator and wiki search
-└── ui/
-    ├── __init__.py
-    └── tui.py         → Text User Interface
+What is deep learning?
+Tell me about Interstellar
+WIKI: Quantum Computing
+CALC: sqrt(144)
+TIME:
 ```
 
-## Release Process
+### Data Collection
 
-The project uses automated releases via GitHub Actions. For details on the release workflow, see [release-webpage/index.html](release-webpage/index.html).
+```bash
+rag-collect
+```
+
+Fetches data from:
+
+* Machine learning documentation
+* TMDB (sci-fi movies)
+* NASA (space/astronomy)
+
+---
+
+## Configuration
+
+Create a `.env` file:
+
+```env
+TMDB_API_KEY=your_tmdb_api_key
+NASA_API_KEY=your_nasa_api_key
+```
+
+Or pass via Docker:
+
+```bash
+docker run -it -e TMDB_API_KEY=your_key -e NASA_API_KEY=your_key rag
+```
+
+API keys:
+
+* [TMDB API](https://www.themoviedb.org/settings/api)
+* [NASA API](https://api.nasa.gov/)
+
+---
 
 ## Development
 
-**Run tests**
-
 ```bash
-python -m pytest
-```
+# Lint and format
+black . && isort . && flake8 && mypy .
 
-**Lint code**
+# Run tests
+pytest
 
-```bash
-python scripts/lint.py
-```
-
-**Fix linting issues**
-
-```bash
-./scripts/fix_lint.sh
-```
-
-**Run CI locally**
-
-```bash
+# Local CI / lint scripts
 ./scripts/run_ci.sh
-```
+./scripts/fix_lint.sh
 
-**Run E2E tests locally**
-
-```bash
-# Set API keys if available
-export TMDB_API_KEY=your_key
-export NASA_API_KEY=your_key
-./scripts/run_e2e.sh
-```
-
-**Run Docker locally**
-
-```bash
-./scripts/run_docker.sh
-```
-
-**Build package**
-
-```bash
+# Build package
 python setup.py sdist bdist_wheel
 ```
 
-## Automated Updates
+Optional setup:
 
-This project uses [Dependabot](https://github.com/dependabot) to keep dependencies updated. All updates are automatically tested.
+```bash
+./scripts/setup_dev.sh
+```
 
-## Git Hooks
+---
 
-Enable commit message validation:
+## Project Structure
+
+```
+src/rag/
+├── __main__.py       → CLI entry
+├── config.py         → Configuration and API keys
+├── data_fetcher.py   → Data collection
+├── rag_engine.py     → Core logic
+├── tools.py          → Utilities (calc, wiki, etc.)
+└── ui/tui.py         → Text-based UI
+```
+
+---
+
+## Contribution
+
+1. Fork and branch off `main`
+2. Implement changes
+3. Run tests and linters
+4. Submit a pull request
+
+Refer to:
+
+* [Contributing Guidelines](CONTRIBUTING.md)
+* [CLI Policy](CLI_POLICY.md)
+* [Changelog](CHANGELOG.md)
+
+---
+
+## Git Hooks & Commit Style
 
 ```bash
 cp scripts/commit-msg .git/hooks/
 chmod +x .git/hooks/commit-msg
 ```
 
-Rewrite commit messages:
+Commit format:
 
-```bash
-# Rewrite specific range
-./scripts/rewrite_msg.sh HEAD~5..HEAD
-
-# Rewrite all history (use with caution)
-./scripts/rewrite_msg.sh --all
+```
+feat: add feature
+fix: resolve issue
+docs: update readme
 ```
 
-Commit messages must be lowercase, ≤40 characters, starting with `feat:`, `fix:`, `docs:`, etc.
+---
 
-## Contributing
+## Automation
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Open a pull request
+* **Dependabot**: Keeps dependencies updated
+* **GitHub Actions**: Handles testing and releases
+* **Release Webpage**: [release-webpage/index.html](release-webpage/index.html)
 
-## Security
+---
 
-See [Security Policy](SECURITY.md) for reporting vulnerabilities.
+## License & Security
 
+* Licensed under **Apache 2.0** — see [LICENSE](LICENSE)
+* For vulnerabilities, see [Security Policy](SECURITY.md)
 
-## License
-
-Apache License 2.0 — see [LICENSE](LICENSE)
+---
 
 ## Support
 
-For help or questions, open an issue on GitHub.
+For help or questions, please open an issue on GitHub.

@@ -20,6 +20,7 @@ def create_parser() -> argparse.ArgumentParser:
 Examples:
   rag                           Start interactive mode
   rag --query "What is ML?"     Ask a single question
+  rag --quiet --query "test"    Ask a question with minimal output
   rag --version                 Show version information
   rag --help                    Show this help message
 
@@ -34,7 +35,7 @@ For more information, visit: https://github.com/harpertoken/rag
     )
     
     parser.add_argument(
-        "--query", "-q",
+        "--query",
         type=str,
         help="Ask a single question and exit (non-interactive mode)"
     )
@@ -46,6 +47,12 @@ For more information, visit: https://github.com/harpertoken/rag
     )
     
     parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suppress non-essential output"
+    )
+    
+    parser.add_argument(
         "--no-color",
         action="store_true",
         help="Disable colored output"
@@ -54,21 +61,22 @@ For more information, visit: https://github.com/harpertoken/rag
     return parser
 
 
-def print_welcome_message(verbose: bool = False) -> None:
+def print_welcome_message(verbose: bool = False, quiet: bool = False) -> None:
     """Print welcome message with optional verbose information"""
-    print("🤖 Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
-    
-    if verbose:
-        print(f"Version: {__version__}")
-        print("Knowledge areas: Machine Learning, Science Fiction, Cosmos")
-        print("Available tools: Calculator, Wikipedia, Time/Date")
-    
-    print("Type 'exit' to quit, 'help' for instructions")
+    if not quiet:
+        print("🤖 Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
+        
+        if verbose:
+            print(f"Version: {__version__}")
+            print("Knowledge areas: Machine Learning, Science Fiction, Cosmos")
+            print("Available tools: Calculator, Wikipedia, Time/Date")
+        
+        print("Type 'exit' to quit, 'help' for instructions")
 
 
-def handle_single_query(query: str, verbose: bool = False) -> None:
+def handle_single_query(query: str, verbose: bool = False, quiet: bool = False) -> None:
     """Handle a single query in non-interactive mode"""
-    if verbose:
+    if verbose and not quiet:
         print(f"Processing query: {query}")
     
     try:
@@ -80,15 +88,16 @@ def handle_single_query(query: str, verbose: bool = False) -> None:
         sys.exit(1)
 
 
-def interactive_mode(verbose: bool = False) -> None:
+def interactive_mode(verbose: bool = False, quiet: bool = False) -> None:
     """Run the interactive CLI mode"""
     # Detect non-interactive environment (e.g., CI or Docker run)
     if not sys.stdin.isatty():
-        print("Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
-        print("Non-interactive environment detected. Use --query for single questions.")
+        if not quiet:
+            print("Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant")
+            print("Non-interactive environment detected. Use --query for single questions.")
         return
 
-    print_welcome_message(verbose)
+    print_welcome_message(verbose, quiet)
     
     try:
         rag_engine = RAGEngine()
@@ -147,11 +156,11 @@ def main(args: Optional[list] = None) -> None:
     
     # Handle single query mode
     if parsed_args.query:
-        handle_single_query(parsed_args.query, parsed_args.verbose)
+        handle_single_query(parsed_args.query, parsed_args.verbose, parsed_args.quiet)
         return
     
     # Handle interactive mode
-    interactive_mode(parsed_args.verbose)
+    interactive_mode(parsed_args.verbose, parsed_args.quiet)
 
 
 if __name__ == "__main__":

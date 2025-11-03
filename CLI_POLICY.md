@@ -43,8 +43,9 @@ All commands should support these standard options:
 rag [OPTIONS] [--query QUERY]
 
 Options:
-  --query, -q TEXT     Ask a single question and exit
+  --query TEXT         Ask a single question and exit
   --verbose, -v        Enable verbose output
+  --quiet, -q          Suppress non-essential output
   --no-color          Disable colored output
   --help, -h          Show help message
   --version           Show version information

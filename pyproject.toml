@@ -29,3 +29,10 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
 ]
+
+[tool.yamlint]
+extends = "default"
+rules.line-length.max = 120
+rules.document-start = "disable"
+rules.truthy.allowed-values = ["true", "false"]
+rules.truthy.check-keys = false

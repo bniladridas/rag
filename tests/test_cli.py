@@ -39,6 +39,16 @@ class TestCLIParser:
         args = parser.parse_args(["--query", "test question"])
         assert args.query == "test question"
     
+    def test_quiet_argument(self):
+        """Test --quiet argument"""
+        parser = create_parser()
+        args = parser.parse_args(["--quiet"])
+        assert args.quiet is True
+        
+        # Test short form
+        args = parser.parse_args(["-q"])
+        assert args.quiet is True
+    
     def test_verbose_argument(self):
         """Test --verbose argument"""
         parser = create_parser()
@@ -88,7 +98,7 @@ class TestCLIFunctionality:
     def test_main_single_query_mode(self, mock_single_query):
         """Test main function handles single query mode"""
         main(["--query", "test"])
-        mock_single_query.assert_called_once_with("test", False)
+        mock_single_query.assert_called_once_with("test", False, False)
 
 
 class TestCLIPolicy:
@@ -206,6 +216,21 @@ class TestCLIIntegration:
             handle_single_query("test question", verbose=True)
             output = mock_stdout.getvalue()
             assert "Processing query:" in output
+    
+    @patch('rag.__main__.RAGEngine')
+    def test_quiet_mode_integration(self, mock_rag_engine):
+        """Test quiet mode suppresses non-essential output"""
+        mock_engine = MagicMock()
+        mock_engine.generate_response.return_value = "Test response"
+        mock_rag_engine.return_value = mock_engine
+        
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            handle_single_query("test question", verbose=True, quiet=True)
+            output = mock_stdout.getvalue()
+            # Should not contain verbose processing message when quiet is True
+            assert "Processing query:" not in output
+            # But should still contain the response
+            assert "Test response" in output
     
     def test_cli_policy_documentation_exists(self):
         """Test that CLI policy documentation exists"""

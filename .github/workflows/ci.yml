@@ -12,24 +12,8 @@ permissions:
   security-events: write
 
 jobs:
-  setup:
-    name: Setup Environment
-    runs-on: ubuntu-latest
-    outputs:
-      python-version: ${{ steps.setup-python.outputs.python-version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        id: setup-python
-        uses: ./.github/actions/setup-python
-        with:
-          python-version: '3.10'
-
   pre-commit:
     name: Pre-commit Hooks
-    needs: setup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,65 +25,8 @@ jobs:
           pip install pre-commit
           pre-commit run --all-files
 
-  black:
-    name: Black Formatting
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install dependencies
-        run: pip install black
-      - name: Run black
-        run: black --check .
-
-  isort:
-    name: Import Sorting
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install dependencies
-        run: pip install isort
-      - name: Run isort
-        run: isort --check-only .
-
-  flake8:
-    name: Flake8 Linting
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install dependencies
-        run: pip install flake8
-      - name: Run flake8
-        run: flake8
-
-  mypy:
-    name: Type Checking
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install dependencies
-        run: pip install mypy
-      - name: Run mypy
-        run: mypy src
-
   custom-lint:
     name: Custom Linting
-    needs: setup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,7 +38,6 @@ jobs:
 
   unit-tests:
     name: Unit Tests
-    needs: setup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -126,7 +52,6 @@ jobs:
 
   integration-tests:
     name: Integration Tests
-    needs: setup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

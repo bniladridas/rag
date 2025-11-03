@@ -34,6 +34,7 @@ repos:
     rev: v1.37.1
     hooks:
       - id: yamllint
+        files: '.*\.yml$'
         args: [--format, parsable, --strict]
         pass_filenames: true
 

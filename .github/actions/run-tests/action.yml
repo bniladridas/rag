@@ -18,27 +18,38 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Install test dependencies
+    - name: Install package and test dependencies
       shell: bash
       run: |
         set -e
+        # Ensure pip is up to date
+        python -m pip install --upgrade pip
+        # Install package in development mode with test dependencies
         python -m pip install -e ".[test]"
+        # Verify pytest is installed
+        python -m pytest --version
 
     - name: Run tests with coverage
       shell: bash
       run: |
         set -e
+        # Set PYTHONPATH to include the src directory
+        export PYTHONPATH=/home/runner/work/rag/rag/src:$PYTHONPATH
+
+        # Build coverage arguments
         cov_args=(
           "--cov=${{ inputs.cov-path }}"
           "--cov-report=term-missing"
           "--cov-report=xml"
+          "-v"
         )
 
         if [[ "${{ inputs.cov-append }}" == "true" ]]; then
           cov_args+=( "--cov-append" )
         fi
 
-        python -m pytest ${{ inputs.test-path }} -v "${cov_args[@]}"
+        # Run pytest with the specified test path and coverage arguments
+        python -m pytest ${{ inputs.test-path }} "${cov_args[@]}"
 
     - name: Upload coverage to Codecov
       if: github.event_name != 'pull_request' && inputs.cov-append == 'false'

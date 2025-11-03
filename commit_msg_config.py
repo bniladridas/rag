@@ -15,7 +15,7 @@ COMMIT_TYPES = [
     "perf",
     "ci",
     "build",
-    "revert"
+    "revert",
 ]
 
 # Maximum length for the first line
@@ -31,4 +31,4 @@ REQUIRE_SCOPE = True
 ALLOW_MULTIPLE_SCOPES = False
 
 # Bracket type for scope: '[' or '('
-BRACKET_TYPE = '['
+BRACKET_TYPE = "["

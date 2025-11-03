@@ -94,8 +94,8 @@ jobs:
           python-version: '3.10'
       - name: Install dependencies
         run: pip install mypy
-       - name: Run mypy
-         run: mypy src
+      - name: Run mypy
+        run: mypy src
 
   custom-lint:
     name: Custom Linting
@@ -177,16 +177,14 @@ jobs:
         with:
           python-version: '3.10'
 
-       - name: Verify package version
-         id: version-check
-         run: |
-           TAG_VERSION=${GITHUB_REF#refs/tags/v}
-           PY_VERSION=$(python -c "from rag import __version__; print(__version__)")
-           if [ "$TAG_VERSION" != "$PY_VERSION" ]; then
-             echo "Version mismatch: tag $TAG_VERSION != package $PY_VERSION"
-             exit 1
-           fi
-           echo "version=$PY_VERSION" >> $GITHUB_OUTPUT
+      - name: Verify package version
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          PY_VERSION=$(python -c "from rag import __version__; print(__version__)")
+          if [ "$TAG_VERSION" != "$PY_VERSION" ]; then
+            echo "Version mismatch: tag $TAG_VERSION != package $PY_VERSION"
+            exit 1
+          fi
 
       - name: Build package
         run: |
@@ -206,8 +204,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: v${{ steps.version-check.outputs.version }}
-          tag_name: ${{ github.ref }}
+          name: v${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           body: |
             ## What's Changed
 

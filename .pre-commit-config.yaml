@@ -1,4 +1,4 @@
- repos:
+repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -20,12 +20,14 @@
     hooks:
       - id: black
         language_version: python3
+        args: [.]
         pass_filenames: false
 
   - repo: https://github.com/pycqa/flake8
     rev: 7.3.0
     hooks:
       - id: flake8
+        args: [--exclude, venv, .]
         pass_filenames: false
 
   - repo: https://github.com/adrienverge/yamllint.git
@@ -33,7 +35,7 @@
     hooks:
       - id: yamllint
         args: [--format, parsable, --strict]
-        pass_filenames: false
+        pass_filenames: true
 
   - repo: local
     hooks:

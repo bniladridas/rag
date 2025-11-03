@@ -22,34 +22,59 @@ runs:
       shell: bash
       run: |
         set -e
+        echo "[SETUP] Setting up test environment..."
+        echo "[INFO] Python version: $(python --version)"
+        
         # Ensure pip is up to date
+        echo "[SETUP] Upgrading pip..."
         python -m pip install --upgrade pip
+        
         # Install package in development mode with test dependencies
+        echo "[SETUP] Installing package and test dependencies..."
         python -m pip install -e ".[test]"
-        # Verify pytest is installed
-        python -m pytest --version
+        
+        # Verify pytest is installed and show version
+        echo "[SUCCESS] Installed pytest version: $(python -m pytest --version)"
 
     - name: Run tests with coverage
       shell: bash
       run: |
         set -e
-        # Set PYTHONPATH to include the src directory
-        export PYTHONPATH=/home/runner/work/rag/rag/src:$PYTHONPATH
-
+        
+        # Set up environment
+        echo "[INFO] Setting up test environment..."
+        echo "[DEBUG] Current directory: $(pwd)"
+        
+        # Set PYTHONPATH dynamically
+        export PYTHONPATH=$(pwd)/src:$PYTHONPATH
+        echo "PYTHONPATH set to: $PYTHONPATH"
+        
+        # Show environment info
+        echo "Python path: $(which python)"
+        echo "Pytest path: $(which pytest)"
+        
         # Build coverage arguments
         cov_args=(
           "--cov=${{ inputs.cov-path }}"
           "--cov-report=term-missing"
           "--cov-report=xml"
           "-v"
+          "--durations=10"  # Show 10 slowest tests
         )
 
         if [[ "${{ inputs.cov-append }}" == "true" ]]; then
           cov_args+=( "--cov-append" )
+          echo "[INFO] Appending to existing coverage data"
         fi
 
-        # Run pytest with the specified test path and coverage arguments
-        python -m pytest ${{ inputs.test-path }} "${cov_args[@]}"
+        # Run tests with error handling
+        echo "[TEST] Running tests in: ${{ inputs.test-path }}"
+        if ! python -m pytest ${{ inputs.test-path }} "${cov_args[@]}"; then
+          echo "[ERROR] Tests failed. See above for details."
+          exit 1
+        fi
+        
+        echo "[SUCCESS] All tests passed!"
 
     - name: Upload coverage to Codecov
       if: github.event_name != 'pull_request' && inputs.cov-append == 'false'

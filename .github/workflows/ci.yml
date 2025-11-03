@@ -158,7 +158,7 @@ jobs:
 
   release:
     name: Release
-    needs: test
+    needs: [unit-tests, integration-tests]
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

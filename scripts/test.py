@@ -2,9 +2,9 @@
 """
 Test runner script for the RAG Transformer project
 """
+import os
 import subprocess
 import sys
-import os
 
 
 def run_command(command, description):

@@ -6,8 +6,8 @@ from io import StringIO
 from unittest.mock import Mock, patch
 
 from src.rag.__main__ import main
-from src.rag.ui.tui import run_tui
 from src.rag.data_fetcher import main as collector_main
+from src.rag.ui.tui import run_tui
 
 
 class TestCLIE2E:

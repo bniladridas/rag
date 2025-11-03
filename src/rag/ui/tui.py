@@ -2,17 +2,17 @@
 Text User Interface for RAG Transformer
 """
 
+import argparse
 import os
 import sys
-import argparse
 from typing import Optional
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from ..rag_engine import RAGEngine
 from ..__version__ import __version__
+from ..rag_engine import RAGEngine
 
 
 def create_tui_parser() -> argparse.ArgumentParser:

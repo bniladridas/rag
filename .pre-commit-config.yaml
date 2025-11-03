@@ -1,27 +1,45 @@
-repos:
+ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        pass_filenames: false
       - id: end-of-file-fixer
+        pass_filenames: false
       - id: check-yaml
+        pass_filenames: false
       - id: check-added-large-files
+        pass_filenames: false
       - id: check-merge-conflict
+        pass_filenames: false
       - id: debug-statements
+        pass_filenames: false
 
   - repo: https://github.com/psf/black
     rev: 25.9.0
     hooks:
       - id: black
         language_version: python3
+        pass_filenames: false
 
   - repo: https://github.com/pycqa/flake8
     rev: 7.3.0
     hooks:
       - id: flake8
+        pass_filenames: false
 
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.37.1
     hooks:
       - id: yamllint
         args: [--format, parsable, --strict]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: commit-msg
+        name: Check commit message format
+        entry: python scripts/commit-msg.py
+        language: system
+        stages: [commit-msg]
+        pass_filenames: false

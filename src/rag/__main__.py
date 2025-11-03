@@ -2,14 +2,14 @@
 Main entry point for the RAG Transformer application
 """
 
-import sys
 import argparse
 import os
+import sys
 import traceback
 from typing import Optional
 
-from .rag_engine import RAGEngine
 from .__version__ import __version__
+from .rag_engine import RAGEngine
 
 
 def should_use_color(no_color: bool = False) -> bool:

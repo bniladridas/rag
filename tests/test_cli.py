@@ -2,11 +2,12 @@
 Tests for CLI functionality and policy compliance
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
 from io import StringIO
+from unittest.mock import MagicMock, patch
 
-from rag.__main__ import main, create_parser, handle_single_query
+import pytest
+
+from rag.__main__ import create_parser, handle_single_query, main
 
 
 class TestCLIParser:

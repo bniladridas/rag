@@ -24,15 +24,15 @@ runs:
         set -e
         echo "[SETUP] Setting up test environment..."
         echo "[INFO] Python version: $(python --version)"
-        
+
         # Ensure pip is up to date
         echo "[SETUP] Upgrading pip..."
         python -m pip install --upgrade pip
-        
+
         # Install package in development mode with test dependencies
         echo "[SETUP] Installing package and test dependencies..."
         python -m pip install -e ".[test]"
-        
+
         # Verify pytest is installed and show version
         echo "[SUCCESS] Installed pytest version: $(python -m pytest --version)"
 
@@ -40,19 +40,19 @@ runs:
       shell: bash
       run: |
         set -e
-        
+
         # Set up environment
         echo "[INFO] Setting up test environment..."
         echo "[DEBUG] Current directory: $(pwd)"
-        
+
         # Set PYTHONPATH dynamically
         export PYTHONPATH=$(pwd)/src:$PYTHONPATH
         echo "PYTHONPATH set to: $PYTHONPATH"
-        
+
         # Show environment info
         echo "Python path: $(which python)"
         echo "Pytest path: $(which pytest)"
-        
+
         # Build coverage arguments
         cov_args=(
           "--cov=${{ inputs.cov-path }}"
@@ -73,7 +73,7 @@ runs:
           echo "[ERROR] Tests failed. See above for details."
           exit 1
         fi
-        
+
         echo "[SUCCESS] All tests passed!"
 
     - name: Upload coverage to Codecov

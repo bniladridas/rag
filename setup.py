@@ -2,8 +2,9 @@
 Setup script for RAG Transformer
 """
 
-from setuptools import setup, find_packages
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Read requirements
 with open("requirements.txt") as f:

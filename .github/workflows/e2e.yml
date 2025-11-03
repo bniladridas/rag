@@ -4,9 +4,9 @@ permissions:
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   schedule:
     - cron: '0 0 * * 0'  # Weekly Sunday
   workflow_dispatch:
@@ -16,36 +16,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
 
-    - name: Run data collection (if API keys available)
-      run: |
-        if [ -n "$TMDB_API_KEY" ] && [ -n "$NASA_API_KEY" ]; then
-          python -m src.rag.data_fetcher
-        else
-          echo "API keys not available, skipping data collection"
-        fi
-      env:
-        TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-        NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+      - name: Run data collection (if API keys available)
+        run: |
+          if [ -n "$TMDB_API_KEY" ] && [ -n "$NASA_API_KEY" ]; then
+            python -m src.rag.data_fetcher
+          else
+            echo "API keys not available, skipping data collection"
+          fi
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
 
-    - name: Run e2e tests
-      run: PYTHONPATH=src python -m pytest tests/integration/test_e2e.py -v
+      - name: Run e2e tests
+        run: PYTHONPATH=src python -m pytest tests/integration/test_e2e.py -v
 
-    - name: Test full application flow
-      run: |
-        echo -e "hello\ncalculate 2+3\nhelp\nexit" | python -m src.rag.__main__ | grep -E "(Hello|Result|This is an Agentic|Exiting)"
+      - name: Test full application flow
+        run: |
+          echo -e "hello\ncalculate 2+3\nhelp\nexit" | \
+            python -m src.rag.__main__ | \
+            grep -E "(Hello|Result|This is an Agentic|Exiting)"
 
-    - name: Test TUI application flow
-      run: |
-        echo -e "hello\nexit" | PYTHONPATH=src FORCE_TUI=1 python -c "from src.rag.ui.tui import run_tui; run_tui()" | grep -E "(Query|Response|Goodbye)"
+      - name: Test TUI application flow
+        run: |
+          echo -e "hello\nexit" | \
+            PYTHONPATH=src FORCE_TUI=1 python -c \
+            "from src.rag.ui.tui import run_tui; run_tui()" | \
+            grep -E "(Query|Response|Goodbye)"

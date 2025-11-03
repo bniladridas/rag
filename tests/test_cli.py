@@ -3,7 +3,6 @@ Tests for CLI functionality and policy compliance
 """
 
 import pytest
-import sys
 from unittest.mock import patch, MagicMock
 from io import StringIO
 
@@ -238,14 +237,14 @@ class TestCLIIntegration:
     def test_no_color_mode_integration(self):
         """Test no-color mode removes emojis from output"""
         from rag.__main__ import format_message
-        
+
         # Test format_message directly with explicit parameters
         # When should_use_color would return True (mocked scenario)
         with patch("rag.__main__.should_use_color", return_value=True):
             colored_msg = format_message("Hello", "🤖", no_color=False)
             assert "🤖" in colored_msg
             assert "Hello" in colored_msg
-        
+
         # When should_use_color would return False (no_color=True overrides)
         with patch("rag.__main__.should_use_color", return_value=False):
             plain_msg = format_message("Hello", "🤖", no_color=True)
@@ -256,7 +255,7 @@ class TestCLIIntegration:
     def test_no_color_environment_variable(self):
         """Test that NO_COLOR environment variable is respected"""
         from rag.__main__ import should_use_color
-        
+
         # Should return False when NO_COLOR is set
         assert should_use_color(no_color=False) is False
 
@@ -264,7 +263,7 @@ class TestCLIIntegration:
     def test_no_color_non_tty(self, mock_isatty):
         """Test that color is disabled for non-TTY output"""
         from rag.__main__ import should_use_color
-        
+
         # Should return False when output is not to a terminal
         assert should_use_color(no_color=False) is False
 

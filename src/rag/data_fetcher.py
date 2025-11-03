@@ -15,6 +15,12 @@ import requests
 
 from .config import Config
 
+# Handle version import with fallback
+try:
+    from .__version__ import __version__
+except ImportError:
+    __version__ = "0.3.1"  # Fallback for when running as script
+
 
 class DataFetcher:
     """Handles parallel data collection from multiple sources"""
@@ -180,12 +186,6 @@ class DataFetcher:
 
 def create_collector_parser():
     """Create argument parser for data collection"""
-    try:
-        from .__version__ import __version__
-    except ImportError:
-        # Fallback for when running as script
-        __version__ = "0.3.1"
-
     parser = argparse.ArgumentParser(
         prog="rag-collect",
         description="RAG Transformer Data Collection Tool",

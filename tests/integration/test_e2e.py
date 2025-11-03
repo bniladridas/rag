@@ -2,7 +2,6 @@
 End-to-end tests for the application with CLI policy compliance
 """
 
-import sys
 from io import StringIO
 from unittest.mock import Mock, patch
 
@@ -38,9 +37,7 @@ class TestCLIE2E:
 
         # Check response (could be with or without emoji depending on color settings)
         response_calls = [
-            call
-            for call in mock_print.call_args_list
-            if "Hello response" in str(call)
+            call for call in mock_print.call_args_list if "Hello response" in str(call)
         ]
         assert len(response_calls) > 0
 
@@ -52,8 +49,7 @@ class TestCLIE2E:
         self, mock_rag, mock_print, mock_input, mock_isatty
     ):
         """Test main function interactive mode with help command"""
-        mock_engine = Mock()
-        mock_rag.return_value = mock_engine
+        mock_rag.return_value.generate_response.return_value = "Help response"
 
         main([])  # Pass empty args to avoid pytest interference
 
@@ -129,17 +125,7 @@ class TestTUIE2E:
         mock_rag.return_value = mock_engine
 
         run_tui()
-        # Check that help content is displayed (look for Panel calls with help content)
-        help_calls = [
-            call
-            for call in mock_print.call_args_list
-            if any(
-                "RAG Transformer Help" in str(arg)
-                for arg in call[0]
-                if hasattr(arg, "__str__")
-            )
-        ]
-        # Alternative check - just verify print was called multiple times for help display
+        # Verify print was called multiple times for help display
         assert mock_print.call_count > 2  # Welcome + help panel + other content
 
     @patch("sys.stdin.isatty", return_value=False)

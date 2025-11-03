@@ -11,9 +11,7 @@ def run_command(command, description):
     """Run a command and return success"""
     print(f"Running {description}...")
     try:
-        result = subprocess.run(
-            command, shell=True, check=True, capture_output=True, text=True
-        )
+        subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
         print(f"PASS: {description} passed")
         return True
     except subprocess.CalledProcessError as e:

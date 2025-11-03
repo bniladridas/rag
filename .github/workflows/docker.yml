@@ -2,9 +2,9 @@ name: Docker
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   docker:
@@ -43,7 +43,15 @@ jobs:
       - name: Verify image imports
         if: github.event_name == 'pull_request'
         run: |
-          docker run --rm ghcr.io/${{ github.repository }}:latest python -c "import src.rag.__main__; import src.rag.rag_engine; import src.rag.config; import src.rag.tools; import src.rag.data_fetcher; print('All imports successful')"
+          docker run --rm ghcr.io/${{ github.repository }}:latest \
+            python -c """
+            import src.rag.__main__
+            import src.rag.rag_engine
+            import src.rag.config
+            import src.rag.tools
+            import src.rag.data_fetcher
+            print('All imports successful')
+            """
 
       - name: Display CLI help safely
         if: github.event_name == 'pull_request'
@@ -53,7 +61,9 @@ jobs:
       - name: Display TUI safely
         if: github.event_name == 'pull_request'
         run: |
-          echo -e "exit" | docker run -i --rm ghcr.io/${{ github.repository }}:latest python -c "from src.rag.ui.tui import run_tui; run_tui()"
+          echo -e "exit" | docker run -i --rm \
+            ghcr.io/${{ github.repository }}:latest \
+            python -c "from src.rag.ui.tui import run_tui; run_tui()"
 
       - name: Clean up
         run: |

@@ -2,17 +2,15 @@
 """
 Linting script for the RAG Transformer project
 """
+import os
 import subprocess
 import sys
-import os
 
 
 def run_command(command, description):
     print(f"Running {description}...")
     try:
-        result = subprocess.run(
-            command, shell=True, check=True, capture_output=True, text=True
-        )
+        subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
         print(f"PASS: {description} passed")
         return True
     except subprocess.CalledProcessError as e:
@@ -29,7 +27,7 @@ def main():
     success &= run_command("python3 -m py_compile src/rag/*.py", "Python syntax check")
 
     try:
-        import flake8
+        import flake8  # noqa: F401
 
         success &= run_command(
             "python3 -m flake8 src/rag/ --max-line-length=100 --ignore=E203,W503",
@@ -39,7 +37,7 @@ def main():
         print("Flake8 not installed, skipping...")
 
     try:
-        import mypy
+        import mypy  # noqa: F401
 
         success &= run_command(
             "python3 -m mypy src/rag/ --ignore-missing-imports", "MyPy type checking"

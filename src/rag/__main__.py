@@ -5,6 +5,7 @@ Main entry point for the RAG Transformer application
 import sys
 import argparse
 import os
+import traceback
 from typing import Optional
 
 from .rag_engine import RAGEngine
@@ -187,8 +188,6 @@ def interactive_mode(
         except Exception as e:
             error_msg = f"An error occurred: {e}"
             if verbose:
-                import traceback
-
                 error_msg += f"\n{traceback.format_exc()}"
             print(error_msg, file=sys.stderr)
 

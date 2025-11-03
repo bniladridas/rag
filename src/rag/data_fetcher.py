@@ -2,10 +2,13 @@
 Data fetching module for collecting knowledge from various APIs
 """
 
+import argparse
 import concurrent.futures
 import json
 import os
+import sys
 import time
+import traceback
 from typing import List
 
 import requests
@@ -88,10 +91,10 @@ class DataFetcher:
                 page_docs = []
                 for movie in response.json().get("results", [])[:10]:
                     doc = (
-                        f"Sci-Fi Movie: {movie.get('title','Unknown')}. "
+                        f"Sci-Fi Movie: {movie.get('title', 'Unknown')}. "
                         f"Release Date: {movie.get('release_date', 'Unknown')}. "
-                        f"Overview: {movie.get('overview','No overview')}. "
-                        f"Popularity: {movie.get('popularity','N/A')}"
+                        f"Overview: {movie.get('overview', 'No overview')}. "
+                        f"Popularity: {movie.get('popularity', 'N/A')}"
                     )
                     page_docs.append(doc)
                 return page_docs
@@ -177,8 +180,6 @@ class DataFetcher:
 
 def create_collector_parser():
     """Create argument parser for data collection"""
-    import argparse
-
     try:
         from .__version__ import __version__
     except ImportError:
@@ -269,8 +270,6 @@ def main(args=None):
     except Exception as e:
         print(f"❌ Error during data collection: {e}")
         if parsed_args.verbose:
-            import traceback
-
             print(f"Full error details:\n{traceback.format_exc()}")
         return 1
 
@@ -278,6 +277,4 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())

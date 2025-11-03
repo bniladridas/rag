@@ -97,7 +97,8 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
                         "• [cyan]CALC:[/cyan] <expression>  (e.g., 'CALC: 2^10')\n"
                         "• [cyan]WIKI:[/cyan] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
                         "• [cyan]TIME:[/cyan]               (current date and time)\n\n"
-                        "[bold]Commands:[/bold] 'exit'/'quit'/'q' to quit, 'help'/'h' for this message",
+                        "[bold]Commands:[/bold] 'exit'/'quit'/'q' to quit, "
+                        "'help'/'h' for this message",
                         title="Help",
                         border_style="blue",
                     )

@@ -69,40 +69,69 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
         sys.exit(1)
 
     # Welcome panel
-    console.print(
-        Panel.fit(
-            "[bold blue]🤖 Agentic RAG Transformer[/bold blue]\n"
-            "[green]ML, Sci-Fi, and Cosmos Assistant[/green]\n"
-            f"[dim]Version {__version__}[/dim]"
+    if no_color:
+        console.print(
+            Panel.fit(
+                "Agentic RAG Transformer\n"
+                "ML, Sci-Fi, and Cosmos Assistant\n"
+                f"Version {__version__}"
+            )
         )
-    )
-    console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
+        console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
+    else:
+        console.print(
+            Panel.fit(
+                "[bold blue]🤖 Agentic RAG Transformer[/bold blue]\n"
+                "[green]ML, Sci-Fi, and Cosmos Assistant[/green]\n"
+                f"[dim]Version {__version__}[/dim]"
+            )
+        )
+        console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
 
     while True:
         try:
             query = Prompt.ask("[bold cyan]❯[/bold cyan]").strip()
 
             if query.lower() in ["exit", "quit", "q"]:
-                console.print("[yellow]👋 Goodbye![/yellow]")
+                if no_color:
+                    console.print("Goodbye!")
+                else:
+                    console.print("[yellow]👋 Goodbye![/yellow]")
                 break
 
             if query.lower() in ["help", "h"]:
-                console.print(
-                    Panel(
-                        "[bold]📚 RAG Transformer Help[/bold]\n\n"
-                        "• Ask about [blue]Machine Learning[/blue], AI, and Data Science\n"
-                        "• Inquire about [magenta]Science Fiction[/magenta] movies and plots\n"
-                        "• Explore [green]Cosmos[/green], astronomy, and space science\n\n"
-                        "[bold]Built-in Tools:[/bold]\n"
-                        "• [cyan]CALC:[/cyan] <expression>  (e.g., 'CALC: 2^10')\n"
-                        "• [cyan]WIKI:[/cyan] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
-                        "• [cyan]TIME:[/cyan]               (current date and time)\n\n"
-                        "[bold]Commands:[/bold] 'exit'/'quit'/'q' to quit, "
-                        "'help'/'h' for this message",
-                        title="Help",
-                        border_style="blue",
+                if no_color:
+                    console.print(
+                        Panel(
+                            "RAG Transformer Help\n\n"
+                            "• Ask about Machine Learning, AI, and Data Science\n"
+                            "• Inquire about Science Fiction movies and plots\n"
+                            "• Explore Cosmos, astronomy, and space science\n\n"
+                            "Built-in Tools:\n"
+                            "• CALC: <expression>  (e.g., 'CALC: 2^10')\n"
+                            "• WIKI: <topic>       (e.g., 'WIKI: Quantum Computing')\n"
+                            "• TIME:               (current date and time)\n\n"
+                            "Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message",
+                            title="Help",
+                        )
                     )
-                )
+                else:
+                    console.print(
+                        Panel(
+                            "[bold]📚 RAG Transformer Help[/bold]\n\n"
+                            "• Ask about [blue]Machine Learning[/blue], AI, and Data Science\n"
+                            "• Inquire about [magenta]Science Fiction[/magenta] movies and plots\n"
+                            "• Explore [green]Cosmos[/green], astronomy, and space science\n\n"
+                            "[bold]Built-in Tools:[/bold]\n"
+                            "• [cyan]CALC:[/cyan] <expression>  (e.g., 'CALC: 2^10')\n"
+                            "• [cyan]WIKI:[/cyan] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
+                            "• [cyan]TIME:[/cyan]               (current date and time)\n\n"
+                            "[bold]Commands:[/bold] 'exit'/'quit'/'q' to quit, "
+                            "'help'/'h' for this message",
+                            title="Help",
+                            border_style="blue",
+                        )
+                    )
                 continue
 
             if query.lower() == "clear":
@@ -110,33 +139,51 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
                 continue
 
             if not query:
-                console.print("[yellow]Please enter a valid query.[/yellow]")
+                if no_color:
+                    console.print("Please enter a valid query.")
+                else:
+                    console.print("[yellow]Please enter a valid query.[/yellow]")
                 continue
 
             # Show processing indicator for longer queries
-            with console.status("[bold green]Processing your query..."):
-                response = rag_engine.generate_response(query)
-
-            console.print(
-                Panel(
-                    f"[green]{response}[/green]",
-                    title="💡 Response",
-                    border_style="green",
+            if no_color:
+                with console.status("Processing your query..."):
+                    response = rag_engine.generate_response(query)
+                console.print(
+                    Panel(
+                        response,
+                        title="Response",
+                    )
                 )
-            )
+            else:
+                with console.status("[bold green]Processing your query..."):
+                    response = rag_engine.generate_response(query)
+                console.print(
+                    Panel(
+                        f"[green]{response}[/green]",
+                        title="💡 Response",
+                        border_style="green",
+                    )
+                )
 
         except KeyboardInterrupt:
-            console.print("\n[yellow]👋 Goodbye![/yellow]")
+            if no_color:
+                console.print("\nGoodbye!")
+            else:
+                console.print("\n[yellow]👋 Goodbye![/yellow]")
             break
         except EOFError:
-            console.print("\n[yellow]👋 Goodbye![/yellow]")
+            if no_color:
+                console.print("\nGoodbye!")
+            else:
+                console.print("\n[yellow]👋 Goodbye![/yellow]")
             break
         except Exception as e:
             console.print(
                 Panel(
-                    f"[red]An error occurred: {e}[/red]",
-                    title="❌ Error",
-                    border_style="red",
+                    f"An error occurred: {e}" if no_color else f"[red]An error occurred: {e}[/red]",
+                    title="Error" if no_color else "❌ Error",
+                    border_style=None if no_color else "red",
                 )
             )
 

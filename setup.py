@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'rag=rag:main',
-            'rag-tui=rag.ui.tui:run_tui',
+            'rag-tui=rag.ui.tui:main',
             'rag-collect=rag.data_fetcher:main',
         ],
     },

@@ -166,12 +166,107 @@ class DataFetcher:
         print(f"Saved {len(documents)} documents to {filepath}")
 
 
-def main():
-    """Main function for data collection"""
-    fetcher = DataFetcher()
-    documents = fetcher.fetch_all_data()
-    fetcher.save_documents(documents)
+def create_collector_parser():
+    """Create argument parser for data collection"""
+    import argparse
+    try:
+        from .__version__ import __version__
+    except ImportError:
+        # Fallback for when running as script
+        __version__ = "0.3.1"
+    
+    parser = argparse.ArgumentParser(
+        prog="rag-collect",
+        description="RAG Transformer Data Collection Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+This tool collects knowledge from various sources to build the RAG database.
+
+Data Sources:
+  • Machine Learning concepts from Wikipedia
+  • Science Fiction movies from TMDB API
+  • Space and astronomy data from NASA API
+
+Examples:
+  rag-collect                    Collect all available data
+  rag-collect --verbose          Show detailed progress
+  rag-collect --help             Show this help message
+
+API Keys:
+  Set TMDB_API_KEY and NASA_API_KEY environment variables
+  for enhanced data collection capabilities.
+        """
+    )
+    
+    parser.add_argument(
+        "--version", 
+        action="version", 
+        version=f"%(prog)s {__version__}"
+    )
+    
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable verbose output showing collection progress"
+    )
+    
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be collected without actually fetching data"
+    )
+    
+    return parser
+
+
+def main(args=None):
+    """Main function for data collection with CLI policy compliance"""
+    parser = create_collector_parser()
+    parsed_args = parser.parse_args(args)
+    
+    if parsed_args.verbose:
+        print("🚀 RAG Transformer Data Collection Tool")
+        print("Initializing data fetcher...")
+    
+    try:
+        fetcher = DataFetcher()
+        
+        if parsed_args.dry_run:
+            print("📋 Dry run mode - showing what would be collected:")
+            print("• Machine Learning concepts from Wikipedia")
+            print("• Science Fiction movies from TMDB API")
+            print("• Space and astronomy data from NASA API")
+            print("Use without --dry-run to actually collect data.")
+            return 0
+        
+        if parsed_args.verbose:
+            print("📚 Starting data collection from multiple sources...")
+        
+        documents = fetcher.fetch_all_data()
+        
+        if parsed_args.verbose:
+            print(f"✅ Successfully collected {len(documents)} documents")
+            print("💾 Saving to knowledge base...")
+        
+        fetcher.save_documents(documents)
+        
+        print("🎉 Data collection completed successfully!")
+        if not parsed_args.verbose:
+            print(f"📊 Collected {len(documents)} documents for the knowledge base")
+        
+    except KeyboardInterrupt:
+        print("\n⚠️  Data collection interrupted by user")
+        return 1
+    except Exception as e:
+        print(f"❌ Error during data collection: {e}")
+        if parsed_args.verbose:
+            import traceback
+            print(f"Full error details:\n{traceback.format_exc()}")
+        return 1
+    
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main())

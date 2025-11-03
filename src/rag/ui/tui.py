@@ -4,63 +4,152 @@ Text User Interface for RAG Transformer
 
 import os
 import sys
+import argparse
+from typing import Optional
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
 from ..rag_engine import RAGEngine
+from ..__version__ import __version__
 
 
-def run_tui():
-    """Run the Text User Interface"""
+def create_tui_parser() -> argparse.ArgumentParser:
+    """Create argument parser for TUI mode"""
+    parser = argparse.ArgumentParser(
+        prog="rag-tui",
+        description="RAG Transformer Text User Interface",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+The TUI provides a rich terminal interface with enhanced formatting
+and interactive features for the RAG Transformer assistant.
 
-    # Skip TUI in non-interactive environments (CI/Docker), unless forced for testing
-    if not sys.stdin.isatty() and not os.getenv("FORCE_TUI"):
-        print("Non-interactive environment detected. Skipping TUI.")
+Examples:
+  rag-tui                Start TUI mode
+  rag-tui --no-color     Start TUI without colors
+  rag-tui --help         Show this help message
+        """
+    )
+    
+    parser.add_argument(
+        "--version", 
+        action="version", 
+        version=f"%(prog)s {__version__}"
+    )
+    
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable colored output"
+    )
+    
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force TUI mode even in non-interactive environments"
+    )
+    
+    return parser
+
+
+def run_tui(no_color: bool = False, force: bool = False) -> None:
+    """Run the Text User Interface with CLI policy compliance"""
+
+    # Skip TUI in non-interactive environments unless forced
+    if not sys.stdin.isatty() and not force and not os.getenv("FORCE_TUI"):
+        print("RAG Transformer TUI - Text User Interface")
+        print("Non-interactive environment detected. Use --force to override.")
+        print("For non-interactive usage, try: rag --query 'your question'")
         return
 
-    console = Console()
-    rag_engine = RAGEngine()
+    # Initialize console with color settings
+    console = Console(force_terminal=not no_color, no_color=no_color)
+    
+    try:
+        rag_engine = RAGEngine()
+    except Exception as e:
+        console.print(f"[red]Failed to initialize RAG engine: {e}[/red]")
+        sys.exit(1)
 
+    # Welcome panel
     console.print(
         Panel.fit(
-            "[bold blue]Agentic RAG Transformer[/bold blue]\n"
-            "[green]ML, Sci-Fi, and Cosmos Assistant[/green]"
+            "[bold blue]🤖 Agentic RAG Transformer[/bold blue]\n"
+            "[green]ML, Sci-Fi, and Cosmos Assistant[/green]\n"
+            f"[dim]Version {__version__}[/dim]"
         )
     )
-    console.print("Type 'exit' to quit, 'help' for instructions.\n")
+    console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
 
     while True:
         try:
-            query = Prompt.ask("[bold cyan]Query[/bold cyan]").strip()
+            query = Prompt.ask("[bold cyan]❯[/bold cyan]").strip()
 
-            if query.lower() == "exit":
-                console.print("[yellow]Goodbye![/yellow]")
+            if query.lower() in ["exit", "quit", "q"]:
+                console.print("[yellow]👋 Goodbye![/yellow]")
                 break
 
-            if query.lower() == "help":
+            if query.lower() in ["help", "h"]:
                 console.print(
                     Panel(
-                        "This AI Assistant covers:\n"
-                        "- Machine Learning concepts\n"
-                        "- Science Fiction Movies\n"
-                        "- Cosmos and Astronomy\n"
-                        "Ask about AI, movies, space, or scientific topics!",
+                        "[bold]📚 RAG Transformer Help[/bold]\n\n"
+                        "• Ask about [blue]Machine Learning[/blue], AI, and Data Science\n"
+                        "• Inquire about [magenta]Science Fiction[/magenta] movies and plots\n"
+                        "• Explore [green]Cosmos[/green], astronomy, and space science\n\n"
+                        "[bold]Built-in Tools:[/bold]\n"
+                        "• [cyan]CALC:[/cyan] <expression>  (e.g., 'CALC: 2^10')\n"
+                        "• [cyan]WIKI:[/cyan] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
+                        "• [cyan]TIME:[/cyan]               (current date and time)\n\n"
+                        "[bold]Commands:[/bold] 'exit'/'quit'/'q' to quit, 'help'/'h' for this message",
                         title="Help",
+                        border_style="blue"
                     )
                 )
                 continue
 
-            if not query:
-                console.print("[red]Please enter a valid query.[/red]")
+            if query.lower() == "clear":
+                console.clear()
                 continue
 
-            response = rag_engine.generate_response(query)
-            console.print(Panel(f"[green]{response}[/green]", title="Response"))
+            if not query:
+                console.print("[yellow]Please enter a valid query.[/yellow]")
+                continue
+
+            # Show processing indicator for longer queries
+            with console.status("[bold green]Processing your query..."):
+                response = rag_engine.generate_response(query)
+            
+            console.print(Panel(
+                f"[green]{response}[/green]", 
+                title="💡 Response",
+                border_style="green"
+            ))
 
         except KeyboardInterrupt:
-            console.print("\n[yellow]Goodbye![/yellow]")
+            console.print("\n[yellow]👋 Goodbye![/yellow]")
+            break
+        except EOFError:
+            console.print("\n[yellow]👋 Goodbye![/yellow]")
             break
         except Exception as e:
-            console.print(f"[red]Error: {e}[/red]")
+            console.print(Panel(
+                f"[red]An error occurred: {e}[/red]",
+                title="❌ Error",
+                border_style="red"
+            ))
+
+
+def main(args: Optional[list] = None) -> None:
+    """Main entry point for TUI with argument parsing"""
+    parser = create_tui_parser()
+    parsed_args = parser.parse_args(args)
+    
+    run_tui(
+        no_color=parsed_args.no_color,
+        force=parsed_args.force
+    )
+
+
+if __name__ == "__main__":
+    main()

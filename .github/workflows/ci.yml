@@ -63,7 +63,7 @@ jobs:
         uses: ./.github/actions/run-tests
         with:
           test-path: 'tests/'
-         marker: 'integration'
+          marker: 'integration'
           cov-path: 'src'
           cov-append: 'true'
 

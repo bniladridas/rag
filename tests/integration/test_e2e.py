@@ -2,6 +2,10 @@
 End-to-end tests for the application with CLI policy compliance
 """
 
+import pytest
+
+pytestmark = pytest.mark.integration
+
 from io import StringIO
 from unittest.mock import Mock, patch
 

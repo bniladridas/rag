@@ -2,6 +2,10 @@
 Unit tests for config.py
 """
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from src.rag.config import Config
 
 

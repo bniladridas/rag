@@ -7,6 +7,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from src.rag.rag_engine import RAGEngine
 
 

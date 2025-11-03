@@ -47,7 +47,8 @@ jobs:
       - name: Run unit tests
         uses: ./.github/actions/run-tests
         with:
-          test-path: 'tests/unit/'
+          test-path: 'tests/'
+          marker: 'unit'
           cov-path: 'src'
 
   integration-tests:
@@ -61,7 +62,8 @@ jobs:
       - name: Run integration tests
         uses: ./.github/actions/run-tests
         with:
-          test-path: 'tests/integration/'
+          test-path: 'tests/'
+         marker: 'integration'
           cov-path: 'src'
           cov-append: 'true'
 

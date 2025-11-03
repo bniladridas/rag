@@ -187,7 +187,7 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
                         else f"[red]An error occurred: {e}[/red]"
                     ),
                     title="Error" if no_color else "❌ Error",
-                    border_style=None if no_color else "red",
+                    border_style="white" if no_color else "red",
                 )
             )
 

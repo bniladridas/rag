@@ -64,7 +64,7 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
         return
 
     # Initialize console with color settings
-    console = Console(force_terminal=not no_color, no_color=no_color)
+    console = Console(force_terminal=force, no_color=no_color)
     
     try:
         rag_engine = RAGEngine()

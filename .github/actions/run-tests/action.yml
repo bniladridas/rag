@@ -18,6 +18,12 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Install test dependencies
+      shell: bash
+      run: |
+        set -e
+        python -m pip install -e ".[test]"
+
     - name: Run tests with coverage
       shell: bash
       run: |

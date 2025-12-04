@@ -23,7 +23,7 @@ sentence-transformers==5.1.1
 faiss-cpu==1.12.0
 numpy>=1.26.0,<3.0.0
 pandas==2.3.3
-scikit-learn==1.5.0
+scikit-learn==1.6.1
 openai==2.6.1
 python-dotenv==1.2.1
 requests==2.32.5

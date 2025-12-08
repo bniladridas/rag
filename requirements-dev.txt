@@ -37,4 +37,4 @@ networkx==3.4
 matplotlib==3.9.4
 rich==13.7.0
 types-requests==2.32.4.20250913
-python-semantic-release==9.8.8
+python-semantic-release==10.5.2

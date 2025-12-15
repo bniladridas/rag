@@ -3,6 +3,7 @@ RAG Engine for retrieval-augmented generation
 """
 
 import json
+import logging
 import os
 import re
 import sys
@@ -14,12 +15,14 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from .config import Config
 from .tools import ToolExecutor
 
+logger = logging.getLogger(__name__)
+
 # Optional: use fallback embeddings if SentenceTransformer not available
 try:
     from sentence_transformers import SentenceTransformer
 except ImportError:
     SentenceTransformer = None  # type: ignore
-    print("Warning: sentence_transformers not installed. Using fallback embeddings.")
+    logger.warning("sentence_transformers not installed. Using fallback embeddings.")
 
 
 class RAGEngine:
@@ -39,7 +42,7 @@ class RAGEngine:
             try:
                 self.embedding_model = SentenceTransformer(self.config.EMBEDDING_MODEL)
             except Exception:
-                print("Warning: Failed to load embedding model. Using fallback.")
+                logger.warning("Failed to load embedding model. Using fallback.")
 
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(self.config.GENERATOR_MODEL)
@@ -47,7 +50,7 @@ class RAGEngine:
                 self.config.GENERATOR_MODEL
             )
         except Exception:
-            print("Warning: Failed to load generator model. Responses may be limited.")
+            logger.warning("Failed to load generator model. Responses may be limited.")
             self.tokenizer = None
             self.generator = None
 
@@ -66,9 +69,11 @@ class RAGEngine:
             with open(kb_path, "r") as f:
                 documents = json.load(f)
                 self.add_documents(documents)
-                print(f"Loaded {len(documents)} documents from knowledge base")
+                logger.info(f"Loaded {len(documents)} documents from knowledge base")
         except FileNotFoundError:
-            print(f"Knowledge base not found at {kb_path}. Using fallback docs.")
+            logger.warning(
+                f"Knowledge base not found at {kb_path}. Using fallback docs."
+            )
             fallback_docs = [
                 "Machine learning is a subset of artificial intelligence.",
                 "Deep learning uses neural networks with multiple layers.",

@@ -4,11 +4,12 @@ import subprocess
 from importlib.metadata import PackageNotFoundError, version
 from typing import Optional
 
-# Import main at the top to avoid E402, but use a different name to avoid circular imports
-from .__main__ import main as _main  # noqa: F401
-
 # Set up logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+# Import main at the top to avoid E402, but use a different name to avoid circular imports
+from .__main__ import main as _main  # noqa: E402,F401
 
 # Re-export main as part of the public API
 main = _main

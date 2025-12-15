@@ -6,7 +6,7 @@ pytest-cov==7.0.0
 
 # Linting and type checking
 flake8==7.3.0
-mypy==1.18.2
+mypy==1.19.1
 
 # Code formatting
 black==25.9.0

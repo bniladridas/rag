@@ -9,7 +9,7 @@ flake8==7.3.0
 mypy==1.19.1
 
 # Code formatting
-black==25.9.0
+black==25.11.0
 
 # Pre-commit hooks
 pre-commit==4.3.0

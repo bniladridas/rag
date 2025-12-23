@@ -254,6 +254,8 @@ class DataFetcher:
                     f"Explanation: {content.get('explanation', 'No details')}"
                 )
             except Exception as e:
+                if "Read timed out" in str(e):
+                    return None  # Skip on timeout
                 raise ValueError(
                     f"Failed to fetch NASA data for {days_ago} days ago: {e}"
                 )

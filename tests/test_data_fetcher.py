@@ -29,10 +29,8 @@ def test_fetch_all_data(mock_as_completed, mock_executor, mock_get, data_fetcher
     # Mock the executor
     mock_future = Mock()
     mock_future.result.return_value = [{"title": "Movie1"}]
-    mock_executor_instance = Mock()
-    mock_executor.return_value = mock_executor_instance
-    mock_executor_instance.__enter__ = Mock(return_value=mock_executor_instance)
-    mock_executor_instance.__exit__ = Mock(return_value=None)
+    mock_executor_instance = mock_executor.return_value
+    mock_executor_instance.__enter__.return_value = mock_executor_instance
     mock_executor_instance.submit.return_value = mock_future
     mock_as_completed.side_effect = lambda fs, timeout=None: iter(fs)
 

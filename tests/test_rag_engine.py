@@ -200,7 +200,10 @@ def test_generate_response_with_tools(
     mock_tokenizer_instance = Mock()
     mock_tokenizer.return_value.from_pretrained.return_value = mock_tokenizer_instance
     mock_tokenizer_instance.return_value = mock_tokenizer_instance
-    mock_tokenizer_instance.decode.side_effect = ["CALC: 2+2", "4"]
+    mock_tokenizer_instance.decode.side_effect = [
+        "CALC: 2+2",
+        "The result of the calculation is 4.",
+    ]
     mock_generator_instance = Mock()
     mock_model.return_value.from_pretrained.return_value = mock_generator_instance
     mock_generator_instance.generate.return_value = [Mock()]

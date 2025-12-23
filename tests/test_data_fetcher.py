@@ -18,7 +18,8 @@ def data_fetcher():
 
 @patch("src.rag.data_fetcher.requests.Session.get")
 @patch("src.rag.data_fetcher.concurrent.futures.ThreadPoolExecutor")
-def test_fetch_all_data(mock_executor, mock_get, data_fetcher):
+@patch("concurrent.futures.as_completed")
+def test_fetch_all_data(mock_as_completed, mock_executor, mock_get, data_fetcher):
     # Mock the session get
     mock_response = Mock()
     mock_response.status_code = 200
@@ -28,8 +29,12 @@ def test_fetch_all_data(mock_executor, mock_get, data_fetcher):
     # Mock the executor
     mock_future = Mock()
     mock_future.result.return_value = [{"title": "Movie1"}]
-    mock_executor.return_value.__enter__.return_value.submit.return_value = mock_future
-    mock_executor.return_value.__enter__.return_value.map.return_value = [mock_future]
+    mock_executor_instance = Mock()
+    mock_executor.return_value = mock_executor_instance
+    mock_executor_instance.__enter__ = Mock(return_value=mock_executor_instance)
+    mock_executor_instance.__exit__ = Mock(return_value=None)
+    mock_executor_instance.submit.return_value = mock_future
+    mock_as_completed.side_effect = lambda fs, timeout=None: iter(fs)
 
     # Mock the config
     data_fetcher.config = Mock()

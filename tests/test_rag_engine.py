@@ -200,7 +200,7 @@ def test_generate_response_with_tools(
     mock_tokenizer_instance = Mock()
     mock_tokenizer.return_value.from_pretrained.return_value = mock_tokenizer_instance
     mock_tokenizer_instance.return_value = mock_tokenizer_instance
-    mock_tokenizer_instance.decode.return_value = "CALC: 2+2"
+    mock_tokenizer_instance.decode.side_effect = ["CALC: 2+2", "4"]
     mock_generator_instance = Mock()
     mock_model.return_value.from_pretrained.return_value = mock_generator_instance
     mock_generator_instance.generate.return_value = [Mock()]
@@ -215,4 +215,4 @@ def test_generate_response_with_tools(
         engine.generator = mock_generator_instance
         engine.config = mock_config
         result = engine.generate_response("calculate something")
-        assert "4" in result or "couldn't finalize" in result
+        assert result == "4"

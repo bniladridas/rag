@@ -274,7 +274,7 @@ class DataFetcher:
                 for days_ago in range(self.config.COSMOS_DAYS)
             )
 
-            for future in concurrent.futures.as_completed(futures):
+            for future in concurrent.futures.as_completed(futures, timeout=30):
                 result = future.result()
                 if isinstance(result, list):
                     all_documents.extend(result)

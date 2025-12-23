@@ -171,7 +171,7 @@ class DataFetcher:
                     cosmos_documents.append(result)
         return cosmos_documents
 
-    def fetch_all_data(self) -> List[str]:
+    def fetch_all_data(self) -> List[str]:  # noqa: C901
         """Fetch all data sources in parallel"""
         logger.info("Fetching data from multiple sources in parallel...")
         all_documents = []

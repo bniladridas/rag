@@ -176,14 +176,108 @@ class DataFetcher:
         logger.info("Fetching data from multiple sources in parallel...")
         all_documents = []
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            ml_future = executor.submit(self.fetch_ml_knowledge)
-            movies_future = executor.submit(self.fetch_sci_fi_movies)
-            cosmos_future = executor.submit(self.fetch_cosmos_content)
+        ml_topics = [
+            "Machine_learning",
+            "Deep_learning",
+            "Neural_network",
+            "Supervised_learning",
+            "Unsupervised_learning",
+            "Reinforcement_learning",
+            "Feature_extraction",
+            "Overfitting_(machine_learning)",
+        ]
 
-            all_documents.extend(ml_future.result())
-            all_documents.extend(movies_future.result())
-            all_documents.extend(cosmos_future.result())
+        def fetch_topic(topic):
+            try:
+                url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}?redirect=true"
+                response = self.session.get(url, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    content = data.get("extract", "")
+                    if content:
+                        return [f"ML Topic: {topic}. {content}"]
+                    else:
+                        return []
+                else:
+                    return []
+            except Exception as e:
+                logger.error(f"Error fetching {topic}: {e}")
+                return []
+
+        def fetch_page(page):
+            try:
+                url = (
+                    f"https://api.themoviedb.org/3/discover/movie?"
+                    f"api_key={self.config.TMDB_API_KEY}&with_genres=878&"
+                    f"page={page}&language=en-US&sort_by=popularity.desc"
+                )
+                response = self.session.get(url, timeout=10)
+                if response.status_code == 404:
+                    return []
+                if response.status_code != 200:
+                    raise ValueError(
+                        f"TMDB API request failed with status {response.status_code}"
+                    )
+                page_docs = []
+                for movie in response.json().get("results", [])[:10]:
+                    doc = (
+                        f"Sci-Fi Movie: {movie.get('title', 'Unknown')}. "
+                        f"Release Date: {movie.get('release_date', 'Unknown')}. "
+                        f"Overview: {movie.get('overview', 'No overview')}. "
+                        f"Popularity: {movie.get('popularity', 'N/A')}"
+                    )
+                    page_docs.append(doc)
+                return page_docs
+            except Exception as e:
+                raise ValueError(f"Failed to fetch TMDB page {page}: {e}")
+
+        def fetch_day(days_ago):
+            try:
+                base_url = "https://api.nasa.gov/planetary/apod"
+                params = {
+                    "api_key": self.config.NASA_API_KEY,
+                    "date": time.strftime(
+                        "%Y-%m-%d", time.localtime(time.time() - days_ago * 86400)
+                    ),
+                }
+                response = self.session.get(base_url, params=params, timeout=10)
+                if response.status_code == 404:
+                    return None  # No data available for this date
+                if response.status_code != 200:
+                    raise ValueError(
+                        f"NASA API request failed with status {response.status_code}"
+                    )
+                content = response.json()
+                return (
+                    f"Cosmos: {content.get('title', 'No Title')}. "
+                    f"Date: {content.get('date', 'Unknown')}. "
+                    f"Explanation: {content.get('explanation', 'No details')}"
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to fetch NASA data for {days_ago} days ago: {e}"
+                )
+
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.config.MAX_WORKERS
+        ) as executor:
+            futures = []
+            futures.extend(executor.submit(fetch_topic, topic) for topic in ml_topics)
+            futures.extend(
+                executor.submit(fetch_page, page)
+                for page in range(1, self.config.MOVIE_PAGES + 1)
+            )
+            futures.extend(
+                executor.submit(fetch_day, days_ago)
+                for days_ago in range(self.config.COSMOS_DAYS)
+            )
+
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if isinstance(result, list):
+                    all_documents.extend(result)
+                elif result:
+                    all_documents.append(result)
 
         logger.info(f"Fetched {len(all_documents)} documents total")
         return all_documents

@@ -5,6 +5,7 @@ Data fetching module for collecting knowledge from various APIs
 import argparse
 import concurrent.futures
 import json
+import logging
 import os
 import sys
 import time
@@ -14,6 +15,8 @@ from typing import List
 import requests
 
 from .config import Config
+
+logger = logging.getLogger(__name__)
 
 # Handle version import with fallback
 try:
@@ -62,7 +65,7 @@ class DataFetcher:
                             f"Machine Learning - {topic.replace('_', ' ')}: {summary}"
                         )
                 except Exception as e:
-                    print(f"Error fetching {topic}: {e}")
+                    logger.error(f"Error fetching {topic}: {e}")
 
         return documents
 
@@ -79,8 +82,10 @@ class DataFetcher:
     def fetch_sci_fi_movies(self) -> List[str]:
         """Fetch science fiction movies from TMDB"""
         if not self.config.TMDB_API_KEY:
-            print("TMDB_API_KEY missing, skipping movie fetch.")
-            return []
+            raise ValueError(
+                "TMDB_API_KEY environment variable not set. "
+                "Please set TMDB_API_KEY to fetch science fiction movie data."
+            )
 
         movie_documents = []
 
@@ -93,7 +98,9 @@ class DataFetcher:
                 )
                 response = self.session.get(url, timeout=10)
                 if response.status_code != 200:
-                    return []
+                    raise ValueError(
+                        f"TMDB API request failed with status {response.status_code}"
+                    )
                 page_docs = []
                 for movie in response.json().get("results", [])[:10]:
                     doc = (
@@ -105,8 +112,7 @@ class DataFetcher:
                     page_docs.append(doc)
                 return page_docs
             except Exception as e:
-                print(f"Error fetching page {page}: {e}")
-                return []
+                raise ValueError(f"Failed to fetch TMDB page {page}: {e}")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             futures = [
@@ -120,8 +126,10 @@ class DataFetcher:
     def fetch_cosmos_content(self) -> List[str]:
         """Fetch cosmos content from NASA API"""
         if not self.config.NASA_API_KEY:
-            print("NASA_API_KEY missing, skipping cosmos fetch.")
-            return []
+            raise ValueError(
+                "NASA_API_KEY environment variable not set. "
+                "Please set NASA_API_KEY to fetch cosmos data."
+            )
 
         cosmos_documents = []
 
@@ -135,16 +143,20 @@ class DataFetcher:
                     ),
                 }
                 response = self.session.get(base_url, params=params, timeout=10)
-                if response.status_code == 200:
-                    content = response.json()
-                    return (
-                        f"Cosmos: {content.get('title', 'No Title')}. "
-                        f"Date: {content.get('date', 'Unknown')}. "
-                        f"Explanation: {content.get('explanation', 'No details')}"
+                if response.status_code != 200:
+                    raise ValueError(
+                        f"NASA API request failed with status {response.status_code}"
                     )
-                return None
-            except Exception:
-                return None
+                content = response.json()
+                return (
+                    f"Cosmos: {content.get('title', 'No Title')}. "
+                    f"Date: {content.get('date', 'Unknown')}. "
+                    f"Explanation: {content.get('explanation', 'No details')}"
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to fetch NASA data for {days_ago} days ago: {e}"
+                )
 
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.config.MAX_WORKERS
@@ -161,7 +173,7 @@ class DataFetcher:
 
     def fetch_all_data(self) -> List[str]:
         """Fetch all data sources in parallel"""
-        print("Fetching data from multiple sources in parallel...")
+        logger.info("Fetching data from multiple sources in parallel...")
         all_documents = []
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
@@ -173,7 +185,7 @@ class DataFetcher:
             all_documents.extend(movies_future.result())
             all_documents.extend(cosmos_future.result())
 
-        print(f"Fetched {len(all_documents)} documents total")
+        logger.info(f"Fetched {len(all_documents)} documents total")
         return all_documents
 
     def save_documents(self, documents: List[str]):
@@ -181,7 +193,7 @@ class DataFetcher:
         filepath = self.config.KNOWLEDGE_BASE_FILE
         with open(filepath, "w") as f:
             json.dump(documents, f, indent=2)
-        print(f"Saved {len(documents)} documents to {filepath}")
+        logger.info(f"Saved {len(documents)} documents to {filepath}")
 
 
 def create_collector_parser():
@@ -268,7 +280,7 @@ def main(args=None):
         print("\n⚠️  Data collection interrupted by user")
         return 1
     except Exception as e:
-        print(f"❌ Error during data collection: {e}")
+        print(f"Error during data collection: {e}")
         if parsed_args.verbose:
             print(f"Full error details:\n{traceback.format_exc()}")
         return 1

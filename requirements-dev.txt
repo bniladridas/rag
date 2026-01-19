@@ -18,7 +18,7 @@ pre-commit==4.3.0
 pip-tools>=7.0.0
 
 # Core dependencies (excluding torch which is installed separately in CI)
-transformers==4.57.3
+transformers==4.57.6
 sentence-transformers==5.1.2
 faiss-cpu==1.13.0
 numpy>=1.26.0,<3.0.0

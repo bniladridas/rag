@@ -23,6 +23,7 @@ def mock_config():
     config.TOP_K_RETRIEVAL = 3
     config.MAX_ITERATIONS = 1
     config.MAX_LENGTH = 50
+    config.DEVICE = "cpu"
     return config
 
 
@@ -50,7 +51,7 @@ def test_rag_engine_init(
 
     engine = RAGEngine()
     assert engine.config == mock_config
-    mock_embed.assert_called_once_with("test-model")
+    mock_embed.assert_called_once_with("test-model", device="cpu")
     mock_tokenizer.from_pretrained.assert_called_once_with("test-gen")
     mock_model.from_pretrained.assert_called_once_with("test-gen")
 

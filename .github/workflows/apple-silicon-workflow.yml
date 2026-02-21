@@ -1,0 +1,62 @@
+name: Apple Silicon Setup
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/apple-silicon-workflow.yml"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "setup.py"
+
+permissions:
+  contents: read
+
+jobs:
+  setup-apple-silicon:
+    name: Install and validate on Apple Silicon
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Create and activate venv
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+
+      - name: Install project in editable mode
+        run: |
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Display PyTorch device info
+        run: |
+          source .venv/bin/activate
+          python - <<'PY'
+          import torch
+          print("torch", torch.__version__)
+          print("MPS available", torch.backends.mps.is_available())
+          PY
+
+      - name: Run quick sanity commands
+        run: |
+          source .venv/bin/activate
+          python -m rag.ui.tui --help >/dev/null
+          python -m rag.ui.tui -V
+
+      - name: Run portable smoke test
+        run: |
+          source .venv/bin/activate
+          python - <<'PY'
+          from rag.rag_engine import RAGEngine
+          print("RAGEngine loaded on", RAGEngine().__class__.__name__)
+          PY

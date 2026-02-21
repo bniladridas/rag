@@ -49,6 +49,11 @@ class RAGEngine:
                     torch.set_num_threads(1)
                 except Exception:
                     pass
+            if sys.version_info >= (3, 14):
+                logger.warning(
+                    "Python 3.14 on macOS can be unstable with torch/libomp. "
+                    "Use Python 3.12/3.13 or set RAG_DEVICE=cpu and OMP_NUM_THREADS=1."
+                )
 
         # Handle non-interactive CI/Docker environment
         if not sys.stdin.isatty():

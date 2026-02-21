@@ -1,0 +1,95 @@
+# RAG Setup - Error and Fix
+
+## Original Error / Crash Report
+```
+Translated Report (Full Report Below)
+-------------------------------------
+Process:             Python [86154]
+Path:                /opt/homebrew/*/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python
+Identifier:          org.python.python
+Version:             3.14.3 (3.14.3)
+Code Type:           ARM-64 (Native)
+Role:                Unspecified
+Parent Process:      opencode [84169]
+Coalition:           com.microsoft.VSCode [5293]
+Responsible Process: Electron [83422]
+User ID:             501
+
+Date/Time:           2026-02-22 01:55:21.0786 +0530
+Launch Time:         2026-02-22 01:55:07.7913 +0530
+Hardware Model:      MacBookAir10,1
+OS Version:          macOS 26.3 (25D125)
+Release Type:        User
+
+Crash Reporter Key:  10104224-4F0B-D3B0-55C4-C518999017F7
+Incident Identifier: BA8CCE92-F73D-4D46-870E-5232BEC65258
+
+Sleep/Wake UUID:       1E0838D8-36A2-49BF-8C3C-EF1AE1F4F3B4
+
+Time Awake Since Boot: 110000 seconds
+Time Since Wake:       32801 seconds
+
+System Integrity Protection: enabled
+
+Triggered by Thread:  15
+
+Exception Type:    EXC_BAD_ACCESS (SIGSEGV)
+Exception Subtype: KERN_INVALID_ADDRESS at 0x0000000000000580
+Exception Codes:   0x0000000000000001, 0x0000000000000580
+
+Termination Reason:  Namespace SIGNAL, Code 11, Segmentation fault: 11
+Terminating Process: exc handler [86154]
+
+VM Region Info: 0x580 is not in any region.  Bytes before following region: 4307761792
+      REGION TYPE                    START - END         [ VSIZE] PRT/MAX SHRMOD  REGION DETAIL
+      UNUSED SPACE AT START
+--->  
+      __TEXT                      100c34000-100c38000    [   16K] r-x/r-x SM=COW  /opt/homebrew/*/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python
+
+Thread 15 Crashed:
+0   libomp.dylib                  	       0x106fdff48 __kmp_suspend_initialize_thread + 16
+1   libomp.dylib                  	       0x106fe0800 void __kmp_suspend_64<false, true>(int, kmp_flag_64<false, true>*) + 60
+2   libomp.dylib                  	       0x1095667a8 kmp_flag_64<false, true>::wait(kmp_info*, int, void*) + 1696
+3   libomp.dylib                  	       0x1095629d8 __kmp_hyper_barrier_release(barrier_type, kmp_info*, int, int, int, void*) + 156
+4   libomp.dylib                  	       0x109565630 __kmp_fork_barrier(int, int) + 580
+5   libomp.dylib                  	       0x10954a150 __kmp_launch_thread + 220
+6   libomp.dylib                  	       0x10957f718 __kmp_launch_worker(void*) + 252
+7   libsystem_pthread.dylib       	       0x18fc6bc08 _pthread_start + 136
+8   libsystem_pthread.dylib       	       0x18fc66ba8 thread_start + 8
+```
+
+## Problem
+When running `rag --query`, the CLI crashed with SIGSEGV (segmentation fault) in libomp.dylib (OpenMP library).
+
+## Root Cause
+- System had Python 3.14 installed
+- torch==2.8.0 (specified in requirements.txt) is not compatible with Python 3.14
+- PyTorch and OpenMP have compatibility issues with Python 3.14
+
+## Solution
+Create a virtual environment with Python 3.13 (or 3.10/3.11):
+
+```bash
+cd /Users/niladri/Desktop/rag
+rm -rf .venv .venv313 venv
+python3.13 -m venv .venv313
+source .venv313/bin/activate
+pip install -e .
+```
+
+## To Run
+```bash
+source .venv313/bin/activate
+rag --query "Your question"
+```
+
+Or for interactive TUI mode:
+```bash
+source .venv313/bin/activate
+rag-tui
+```
+
+## References
+- CI uses Python 3.10 (.github/workflows/ci.yml)
+- pyproject.toml requires python>=3.8
+- release-webpage/index.html documents .venv313 with Python 3.13

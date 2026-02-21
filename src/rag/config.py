@@ -4,6 +4,7 @@ Configuration for RAG Transformer
 
 import logging
 import os
+import sys
 from pathlib import Path
 
 
@@ -12,6 +13,10 @@ class Config:
 
     def __init__(self):
         self.PROJECT_ROOT = Path(__file__).resolve().parents[2]
+        # Runtime device selection (defaults to CPU on macOS for stability)
+        default_device = "cpu" if sys.platform == "darwin" else "cpu"
+        self.DEVICE = os.getenv("RAG_DEVICE", default_device)
+        self.USE_FAISS = os.getenv("USE_FAISS", "1") not in {"0", "false", "False"}
         # Models
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
         self.GENERATOR_MODEL = os.getenv("GENERATOR_MODEL", "google/flan-t5-small")

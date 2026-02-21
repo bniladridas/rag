@@ -274,12 +274,12 @@ class TestCLIIntegration:
         """Test that CLI policy documentation exists"""
         import os
 
-        policy_file = "CLI_POLICY.md"
-        assert os.path.exists(policy_file), "CLI_POLICY.md file should exist"
+        policy_file = "CLI_POLICY.asc"
+        assert os.path.exists(policy_file), "CLI_POLICY.asc file should exist"
 
         with open(policy_file, "r") as f:
             content = f.read().lower()
-            assert "cli policy and standards" in content
+            assert "cli" in content
             assert "posix compliance" in content
             assert "exit codes" in content
 

@@ -9,12 +9,16 @@ fi
 
 export PYTHONBREAKSYSTEMPACKAGES=1
 
+fail_install() {
+  echo "WARNING: $1 failed; run the script again with network access to finish."
+}
+
 echo "Creating '.venv315' via ${PYTHON_BIN}..."
 "$PYTHON_BIN" -m venv .venv315 >/dev/null
 source .venv315/bin/activate
-"$PYTHON_BIN" -m pip install --upgrade pip --break-system-packages
-python -m pip install --break-system-packages -r requirements.txt
-python -m pip install --break-system-packages -e .
+"$PYTHON_BIN" -m pip install --break-system-packages --upgrade pip || fail_install "pip upgrade"
+python -m pip install --break-system-packages -r requirements.txt || fail_install "pip install requirements"
+python -m pip install --break-system-packages -e . || fail_install "pip install editable package"
 
 echo "Pip packages installed. Checking PyTorch device options..."
 python - <<'PY'

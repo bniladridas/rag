@@ -10,6 +10,10 @@ import sys
 from typing import List
 
 import faiss
+try:
+    import torch
+except Exception:  # pragma: no cover - optional
+    torch = None  # type: ignore
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from .config import Config
@@ -35,6 +39,15 @@ class RAGEngine:
             "embedding_model_loaded": False,
             "generator_model_loaded": False,
         }
+        os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+        if sys.platform == "darwin":
+            os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+            os.environ.setdefault("OMP_NUM_THREADS", "1")
+            if torch is not None:
+                try:
+                    torch.set_num_threads(1)
+                except Exception:
+                    pass
 
         # Handle non-interactive CI/Docker environment
         if not sys.stdin.isatty():
@@ -44,7 +57,9 @@ class RAGEngine:
         self.embedding_model = None
         if SentenceTransformer is not None:
             try:
-                self.embedding_model = SentenceTransformer(self.config.EMBEDDING_MODEL)
+                self.embedding_model = SentenceTransformer(
+                    self.config.EMBEDDING_MODEL, device=self.config.DEVICE
+                )
                 self.model_status["embedding_model_loaded"] = True
             except Exception:
                 logger.warning("Failed to load embedding model. Using fallback.")
@@ -98,7 +113,7 @@ class RAGEngine:
 
         self.knowledge_base.extend(documents)
 
-        if self.embedding_model:
+        if self.embedding_model and self.config.USE_FAISS:
             embeddings = self.embedding_model.encode(documents)
             dimension = int(embeddings.shape[1])  # type: ignore
             self.index = faiss.IndexFlatL2(dimension)
@@ -132,13 +147,33 @@ class RAGEngine:
         """Generate response using RAG with tool support"""
         query = query.strip().strip('"').strip("'")
 
+        if not query:
+            return "Please enter a valid query."
+
+        lowered = query.lower()
+
         greetings = ["hi", "hello", "hey", "greetings"]
-        if query.lower().split()[0] in greetings:
+        if lowered.split()[0] in greetings:
             return (
                 "Hello! I'm an agentic AI assistant with knowledge about "
                 "machine learning, sci-fi movies, and cosmos. I can use tools "
                 "like calculations. How can I help you today?"
             )
+
+        # Basic small-talk handling for non-domain queries
+        if lowered in {"am", "uh", "um"}:
+            return "Could you share a bit more detail so I can help?"
+        if lowered.startswith(("i am ", "i'm ")):
+            name = query.split(" ", 2)[-1].strip()
+            if name:
+                return (
+                    f"Nice to meet you, {name}. "
+                    "Want to ask about machine learning, sci-fi, or the cosmos?"
+                )
+        if lowered in {"how are you", "how are you?", "how r u", "how r u?"}:
+            return "Doing well—thanks. What would you like to explore?"
+        if "math" in lowered:
+            return "Sure—ask a math question or use CALC:, e.g. `CALC: 2^10`."
 
         if query.upper().startswith(("CALC:", "WIKI:", "TIME:")):
             return self.tool_executor.execute_tool(query)
@@ -194,9 +229,8 @@ class RAGEngine:
 
             if not response or len(response.split()) < 3:
                 response = (
-                    "I couldn't generate a detailed response. "
-                    "Please rephrase your query about machine learning, "
-                    "sci-fi movies, or cosmos."
+                    "I didn't get enough signal to answer that. "
+                    "Try a question about machine learning, sci-fi, or the cosmos."
                 )
             return response
 

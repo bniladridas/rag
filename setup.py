@@ -11,7 +11,7 @@ with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
 # Read long description from README
-long_description = Path("README.md").read_text(encoding="utf-8")
+long_description = Path("README.asc").read_text(encoding="utf-8")
 
 setup(
     name="rag",
@@ -30,7 +30,7 @@ setup(
     author="RAG Transformer Team",
     description="Agentic RAG system for ML, Sci-Fi, and Cosmos knowledge",
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/asciidoc",
     python_requires=">=3.8",
     zip_safe=False,
     extras_require={

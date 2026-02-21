@@ -1,0 +1,52 @@
+# Labeler configuration
+# https://github.com/actions/labeler
+
+app:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**'
+          - 'container/**'
+          - 'release-webpage/**'
+
+shared:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'scripts/**'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/**'
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '*.md'
+          - '*.asc'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/actions/**'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'pyproject.toml'
+          - 'requirements*.txt'
+          - '*.json'
+          - 'setup.cfg'
+          - 'setup.py'
+          - 'MANIFEST.in'
+          - 'container/Dockerfile'
+          - '.pre-commit-config.yaml'
+          - '.flake8'
+          - '.yamllint'
+
+release:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'CHANGELOG.md'
+          - 'release-webpage/**'

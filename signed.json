@@ -1,0 +1,9 @@
+{
+  "signed": [
+    "bniladridas",
+    "dependabot[bot]",
+    "github-actions[bot]",
+    "github-advanced-security[bot]",
+    "semantic-release"
+  ]
+}

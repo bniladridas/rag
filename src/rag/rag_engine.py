@@ -10,6 +10,7 @@ import sys
 from typing import List
 
 import faiss
+
 try:
     import torch
 except Exception:  # pragma: no cover - optional

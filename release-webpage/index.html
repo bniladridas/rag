@@ -6,68 +6,83 @@
     <title>Release Workflow</title>
     <style>
         :root {
-            color-scheme: light;
+            color-scheme: dark;
         }
         body {
-            font-family: "Iowan Old Style", "Palatino", "Times New Roman", serif;
+            font-family: "Inter", "Work Sans", system-ui, sans-serif;
             margin: 0;
-            background: #ffffff;
-            color: #0b0b0b;
+            background: #111111;
+            color: #f3f3f3;
         }
-        .page-content {
-            max-width: 860px;
-            margin: 56px auto 80px;
-            padding: 0 24px;
+        .page {
+            max-width: 900px;
+            margin: 48px auto 64px;
+            padding: 0 24px 32px;
             opacity: 0;
             animation: fadeIn 0.8s ease 0.2s forwards;
         }
         h1, h2 {
-            font-weight: 600;
-            letter-spacing: 0.2px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            margin: 0;
         }
         h1 {
             font-size: 36px;
-            margin: 0 0 12px;
+            margin-bottom: 8px;
         }
         h2 {
             font-size: 22px;
-            margin: 36px 0 10px;
+            margin: 40px 0 12px;
         }
         p {
-            line-height: 1.6;
-            margin: 8px 0 12px;
+            line-height: 1.54;
+            margin: 8px 0 10px;
+            max-width: 720px;
         }
-        ol, ul {
-            padding-left: 22px;
-            margin: 8px 0 12px;
+        .steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 14px;
         }
-        code {
-            background: #f4f4f4;
-            padding: 2px 6px;
-            border-radius: 4px;
+        .steps li {
+            background: #1d1d1d;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px 18px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+            font-size: 17px;
+        }
+        code,
+        pre {
+            font-family: "JetBrains Mono", "Space Mono", monospace;
+            background: #1e1e1e;
+            color: #fdfdfd;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
         }
         pre {
-            background: #f7f7f7;
             padding: 16px;
-            border-radius: 8px;
+            line-height: 1.5;
             overflow-x: auto;
-            line-height: 1.4;
         }
         details {
-            margin-top: 12px;
-            border: 1px solid #e6e6e6;
-            border-radius: 8px;
-            padding: 10px 12px;
-            background: #fcfcfc;
+            margin-top: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            background: #1c1c1c;
+            padding: 12px 16px;
         }
         details summary {
             cursor: pointer;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 500;
         }
         .loading-screen {
             position: fixed;
             inset: 0;
-            background: #ffffff;
+            background: #111111;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -76,7 +91,7 @@
         }
         .loading-inner {
             text-align: center;
-            color: #111111;
+            color: #f7f7f7;
         }
         .loading-text {
             font-size: 18px;
@@ -88,7 +103,7 @@
             width: 64px;
             height: 64px;
             border-radius: 50%;
-            border: 3px solid #111111;
+            border: 3px solid #f7f7f7;
             border-top-color: transparent;
             animation: spin 1s linear infinite;
         }
@@ -113,6 +128,13 @@
         @keyframes fadeIn {
             to { opacity: 1; }
         }
+        a {
+            color: #cbd5ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 
 </head>
@@ -124,29 +146,22 @@
         </div>
     </div>
 
-    <div class="page-content">
+    <div class="page">
     <h1>Release Workflow</h1>
-    <p>Automated releases run on pushes to <code>main</code>.</p>
+    <p>A single push to <code>main</code> triggers the release job, running <code>semantic-release</code> with the Harper bot token.</p>
 
-    <h2>Steps</h2>
-    <ol>
-        <li><strong>Checkout:</strong> Fetch repository history.</li>
-        <li><strong>Python:</strong> Configure Python 3.10.</li>
-        <li><strong>Dependencies:</strong> Upgrade pip, install requirements, add wheel.</li>
-        <li><strong>Git:</strong> Set release bot identity.</li>
-        <li><strong>Semantic release:</strong> Version, tag, changelog, release.</li>
-        <li><strong>Changelog:</strong> Run enhancement script.</li>
-    </ol>
+    <h2>Process</h2>
+    <ul class="steps">
+        <li>Checkout the repository with full history.</li>
+        <li>Spin up Python 3.10, upgrade pip, install requirements, and prepare wheel.</li>
+        <li>Configure git as the release bot to create tags, changelog entries, and the GitHub release.</li>
+        <li>Run <code>semantic-release</code>, then run <code>python scripts/enhance_changelog.py</code>.</li>
+    </ul>
 
-    <p>Reference: <a href="https://github.com/harper-release-bot">Harper Release Bot</a> and the <a href="https://github.com/bniladridas/rag">repository</a>.</p>
-
-    <h2>Local Setup Notes</h2>
-    <p>Use a virtual environment and install in editable mode to keep dependencies isolated and predictable.</p>
-    <pre>.venv313/bin/python -m pip install -e .
-.venv313/bin/python -m rag.ui.tui</pre>
+    <p>Keep your local run minimal: always activate a virtual environment, install the package with <code>pip install -e .</code>, and rerun <code>rag.ui.tui</code> from the same shell to ensure the entry point is discoverable.</p>
 
     <details>
-        <summary>First run: install and fix missing module</summary>
+        <summary>Recent terminal transcript for reference</summary>
         <pre>$ .venv313/bin/python -m rag.ui.tui
 /Users/niladri/Desktop/rag/.venv313/bin/python: Error while finding module specification for 'rag.ui.tui' (ModuleNotFoundError: No module named 'rag')
 $ .venv313/bin/python -m pip install -e .

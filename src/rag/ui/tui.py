@@ -70,7 +70,9 @@ def _display_welcome(console: Console, no_color: bool) -> None:
     console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
 
 
-def _display_model_status(console: Console, rag_engine: RAGEngine, no_color: bool) -> None:
+def _display_model_status(
+    console: Console, rag_engine: RAGEngine, no_color: bool
+) -> None:
     """Display warnings for missing models."""
     status = rag_engine.get_status()
     if not status.get("embedding_model_loaded"):

@@ -1,6 +1,7 @@
 # Virtual Environment
 venv/
 *.venv
+.venv313/
 env/
 .env
 

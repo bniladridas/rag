@@ -2,6 +2,7 @@
 venv/
 *.venv
 .venv313/
+.venv315/
 env/
 .env
 

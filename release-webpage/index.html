@@ -4,28 +4,291 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Release Workflow</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+        body {
+            font-family: "Iowan Old Style", "Palatino", "Times New Roman", serif;
+            margin: 0;
+            background: #ffffff;
+            color: #0b0b0b;
+        }
+        .page-content {
+            max-width: 860px;
+            margin: 56px auto 80px;
+            padding: 0 24px;
+            opacity: 0;
+            animation: fadeIn 0.8s ease 0.2s forwards;
+        }
+        h1, h2 {
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        h1 {
+            font-size: 36px;
+            margin: 0 0 12px;
+        }
+        h2 {
+            font-size: 22px;
+            margin: 36px 0 10px;
+        }
+        p {
+            line-height: 1.6;
+            margin: 8px 0 12px;
+        }
+        ol, ul {
+            padding-left: 22px;
+            margin: 8px 0 12px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        pre {
+            background: #f7f7f7;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+        details {
+            margin-top: 12px;
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #fcfcfc;
+        }
+        details summary {
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        .loading-inner {
+            text-align: center;
+            color: #111111;
+        }
+        .loading-text {
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .loader {
+            margin: 16px auto 8px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 3px solid #111111;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+        .dots::after {
+            content: "";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes dots {
+            0% { content: ""; }
+            25% { content: "."; }
+            50% { content: ".."; }
+            75% { content: "..."; }
+            100% { content: ""; }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
 
 </head>
 <body>
-    <h1>Release Workflow</h1>
-    <p>This GitHub Actions workflow automates releases on pushes to <code>main</code>.</p>
+    <div class="loading-screen" id="loading-screen" aria-live="polite">
+        <div class="loading-inner">
+            <div class="loader" aria-hidden="true"></div>
+            <div class="loading-text">Searching<span class="dots"></span></div>
+        </div>
+    </div>
 
-    <h2>Job</h2>
-    <p>Runs on Ubuntu with permissions for repository, packages, pull requests, issues, deployments, and ID tokens.</p>
+    <div class="page-content">
+    <h1>Release Workflow</h1>
+    <p>Automated releases run on pushes to <code>main</code>.</p>
 
     <h2>Steps</h2>
     <ol>
-        <li><strong>Checkout:</strong> Fetches full repository history.</li>
-        <li><strong>Python Setup:</strong> Configures Python 3.10.</li>
-        <li><strong>Dependencies:</strong> Upgrades pip, installs requirements, and adds wheel.</li>
-        <li><strong>Git Config:</strong> Sets user to harper-release-bot.</li>
-        <li><strong>Semantic Release:</strong> Versions, pushes, tags, updates changelog, and creates release using HARPER_RELEASE_BOT_TOKEN.</li>
-        <li><strong>Changelog Enhancement:</strong> Runs script to improve changelog.</li>
+        <li><strong>Checkout:</strong> Fetch repository history.</li>
+        <li><strong>Python:</strong> Configure Python 3.10.</li>
+        <li><strong>Dependencies:</strong> Upgrade pip, install requirements, add wheel.</li>
+        <li><strong>Git:</strong> Set release bot identity.</li>
+        <li><strong>Semantic release:</strong> Version, tag, changelog, release.</li>
+        <li><strong>Changelog:</strong> Run enhancement script.</li>
     </ol>
 
-    <p>Ensures semantic versioning for automated release management.</p>
+    <p>Reference: <a href="https://github.com/harper-release-bot">Harper Release Bot</a> and the <a href="https://github.com/bniladridas/rag">repository</a>.</p>
 
-    <p>See <a href="https://github.com/harper-release-bot">Harper Release Bot</a> and <a href="https://github.com/bniladridas/rag">repository</a> for details.</p>
+    <h2>Local Setup Notes</h2>
+    <p>Use a virtual environment and install in editable mode to keep dependencies isolated and predictable.</p>
+    <pre>.venv313/bin/python -m pip install -e .
+.venv313/bin/python -m rag.ui.tui</pre>
+
+    <details>
+        <summary>First run: install and fix missing module</summary>
+        <pre>$ .venv313/bin/python -m rag.ui.tui
+/Users/niladri/Desktop/rag/.venv313/bin/python: Error while finding module specification for 'rag.ui.tui' (ModuleNotFoundError: No module named 'rag')
+$ .venv313/bin/python -m pip install -e .
+Obtaining file:///Users/niladri/Desktop/rag
+  Installing build dependencies ... done
+  Checking if build backend supports build_editable ... done
+  Getting requirements to build editable ... done
+  Preparing editable metadata (pyproject.toml) ... done
+Collecting torch==2.8.0 (from rag==1.1.0)
+  Downloading torch-2.8.0-cp313-none-macosx_11_0_arm64.whl.metadata (30 kB)
+Requirement already satisfied: transformers==4.57.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (4.57.3)
+Requirement already satisfied: sentence-transformers==5.1.2 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (5.1.2)
+Requirement already satisfied: faiss-cpu==1.13.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (1.13.0)
+Requirement already satisfied: numpy&lt;3.0.0,&gt;=1.26.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.4.2)
+Requirement already satisfied: pandas==2.3.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.3.3)
+Requirement already satisfied: scikit-learn==1.6.1 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (1.6.1)
+Requirement already satisfied: openai==2.14.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.14.0)
+Requirement already satisfied: requests==2.32.5 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.32.5)
+Requirement already satisfied: beautifulsoup4==4.14.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (4.14.3)
+Requirement already satisfied: tmdbsimple==2.9.1 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.9.1)
+Requirement already satisfied: python-dotenv==1.2.1 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (1.2.1)
+Requirement already satisfied: psutil==7.1.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (7.1.3)
+Requirement already satisfied: time-machine==2.19.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.19.0)
+Requirement already satisfied: memory-profiler==0.61.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (0.61.0)
+Requirement already satisfied: networkx==3.4 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (3.4)
+Requirement already satisfied: matplotlib==3.9.4 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (3.9.4)
+Requirement already satisfied: rich~=14.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (14.3.3)
+Requirement already satisfied: types-requests==2.32.4.20250913 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.32.4.20250913)
+Requirement already satisfied: python-semantic-release==10.5.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (10.5.3)
+Requirement already satisfied: soupsieve&gt;=1.6.1 in ./.venv313/lib/python3.13/site-packages (from beautifulsoup4==4.14.3-&gt;rag==1.1.0) (2.8.3)
+Requirement already satisfied: typing-extensions&gt;=4.0.0 in ./.venv313/lib/python3.13/site-packages (from beautifulsoup4==4.14.3-&gt;rag==1.1.0) (4.15.0)
+Requirement already satisfied: packaging in ./.venv313/lib/python3.13/site-packages (from faiss-cpu==1.13.0-&gt;rag==1.1.0) (26.0)
+Requirement already satisfied: contourpy&gt;=1.0.1 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (1.3.3)
+Requirement already satisfied: cycler&gt;=0.10 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (0.12.1)
+Requirement already satisfied: fonttools&gt;=4.22.0 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (4.61.1)
+Requirement already satisfied: kiwisolver&gt;=1.3.1 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (1.4.9)
+Requirement already satisfied: pillow&gt;=8 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (12.1.1)
+Requirement already satisfied: pyparsing&gt;=2.3.1 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (3.3.2)
+Requirement already satisfied: python-dateutil&gt;=2.7 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (2.9.0.post0)
+Requirement already satisfied: anyio&lt;5,&gt;=3.5.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (4.12.1)
+Requirement already satisfied: distro&lt;2,&gt;=1.7.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (1.9.0)
+Requirement already satisfied: httpx&lt;1,&gt;=0.23.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (0.28.1)
+Requirement already satisfied: jiter&lt;1,&gt;=0.10.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (0.13.0)
+Requirement already satisfied: pydantic&lt;3,&gt;=1.9.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (2.12.5)
+Requirement already satisfied: sniffio in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (1.3.1)
+Requirement already satisfied: tqdm&gt;4 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (4.67.3)
+Requirement already satisfied: pytz&gt;=2020.1 in ./.venv313/lib/python3.13/site-packages (from pandas==2.3.3-&gt;rag==1.1.0) (2025.2)
+Requirement already satisfied: tzdata&gt;=2022.7 in ./.venv313/lib/python3.13/site-packages (from pandas==2.3.3-&gt;rag==1.1.0) (2025.3)
+Requirement already satisfied: click~=8.1.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (8.1.8)
+Requirement already satisfied: click-option-group~=0.5 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (0.5.9)
+Requirement already satisfied: gitpython~=3.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (3.1.46)
+Requirement already satisfied: jinja2~=3.1 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (3.1.6)
+Requirement already satisfied: python-gitlab&lt;7.0.0,&gt;=4.0.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (6.5.0)
+Requirement already satisfied: tomlkit~=0.13.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (0.13.3)
+Requirement already satisfied: dotty-dict~=1.3 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.3.1)
+Requirement already satisfied: importlib-resources~=6.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (6.5.2)
+Requirement already satisfied: shellingham~=1.5 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.5.4)
+Requirement already satisfied: Deprecated~=1.2 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.3.1)
+Requirement already satisfied: charset_normalizer&lt;4,&gt;=2 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (3.4.4)
+Requirement already satisfied: idna&lt;4,&gt;=2.5 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (3.11)
+Requirement already satisfied: urllib3&lt;3,&gt;=1.21.1 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (2.6.3)
+Requirement already satisfied: certifi&gt;=2017.4.17 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (2026.1.4)
+Requirement already satisfied: scipy&gt;=1.6.0 in ./.venv313/lib/python3.13/site-packages (from scikit-learn==1.6.1-&gt;rag==1.1.0) (1.17.0)
+Requirement already satisfied: joblib&gt;=1.2.0 in ./.venv313/lib/python3.13/site-packages (from scikit-learn==1.6.1-&gt;rag==1.1.0) (1.5.3)
+Requirement already satisfied: threadpoolctl&gt;=3.1.0 in ./.venv313/lib/python3.13/site-packages (from scikit-learn==1.6.1-&gt;rag==1.1.0) (3.6.0)
+Requirement already satisfied: huggingface-hub&gt;=0.20.0 in ./.venv313/lib/python3.13/site-packages (from sentence-transformers==5.1.2-&gt;rag==1.1.0) (0.36.2)
+Requirement already satisfied: filelock in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (3.24.3)
+Requirement already satisfied: pyyaml&gt;=5.1 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (6.0.3)
+Requirement already satisfied: regex!=2019.12.17 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (2026.2.19)
+Requirement already satisfied: tokenizers&lt;=0.23.0,&gt;=0.22.0 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (0.22.2)
+Requirement already satisfied: safetensors&gt;=0.4.3 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (0.7.0)
+Requirement already satisfied: setuptools in ./.venv313/lib/python3.13/site-packages (from torch==2.8.0-&gt;rag==1.1.0) (82.0.0)
+Requirement already satisfied: sympy&gt;=1.13.3 in ./.venv313/lib/python3.13/site-packages (from torch==2.8.0-&gt;rag==1.1.0) (1.14.0)
+Requirement already satisfied: fsspec in ./.venv313/lib/python3.13/site-packages (from torch==2.8.0-&gt;rag==1.1.0) (2026.2.0)
+Requirement already satisfied: wrapt&lt;3,&gt;=1.10 in ./.venv313/lib/python3.13/site-packages (from Deprecated~=1.2-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (2.1.1)
+Requirement already satisfied: gitdb&lt;5,&gt;=4.0.1 in ./.venv313/lib/python3.13/site-packages (from gitpython~=3.0-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (4.0.12)
+Requirement already satisfied: smmap&lt;6,&gt;=3.0.1 in ./.venv313/lib/python3.13/site-packages (from gitdb&lt;5,&gt;=4.0.1-&gt;gitpython~=3.0-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (5.0.2)
+Requirement already satisfied: httpcore==1.* in ./.venv313/lib/python3.13/site-packages (from httpx&lt;1,&gt;=0.23.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (1.0.9)
+Requirement already satisfied: h11&gt;=0.16 in ./.venv313/lib/python3.13/site-packages (from httpcore==1.*-&gt;httpx&lt;1,&gt;=0.23.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (0.16.0)
+Requirement already satisfied: hf-xet&lt;2.0.0,&gt;=1.1.3 in ./.venv313/lib/python3.13/site-packages (from huggingface-hub&gt;=0.20.0-&gt;sentence-transformers==5.1.2-&gt;rag==1.1.0) (1.2.0)
+Requirement already satisfied: MarkupSafe&gt;=2.0 in ./.venv313/lib/python3.13/site-packages (from jinja2~=3.1-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (3.0.3)
+Requirement already satisfied: annotated-types&gt;=0.6.0 in ./.venv313/lib/python3.13/site-packages (from pydantic&lt;3,&gt;=1.9.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.5 in ./.venv313/lib/python3.13/site-packages (from pydantic&lt;3,&gt;=1.9.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (2.41.5)
+Requirement already satisfied: typing-inspection&gt;=0.4.2 in ./.venv313/lib/python3.13/site-packages (from pydantic&lt;3,&gt;=1.9.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (0.4.2)
+Requirement already satisfied: requests-toolbelt&gt;=1.0.0 in ./.venv313/lib/python3.13/site-packages (from python-gitlab&lt;7.0.0,&gt;=4.0.0-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.0.0)
+Requirement already satisfied: markdown-it-py&gt;=2.2.0 in ./.venv313/lib/python3.13/site-packages (from rich~=14.0-&gt;rag==1.1.0) (4.0.0)
+Requirement already satisfied: pygments&lt;3.0.0,&gt;=2.13.0 in ./.venv313/lib/python3.13/site-packages (from rich~=14.0-&gt;rag==1.1.0) (2.19.2)
+Requirement already satisfied: mdurl~=0.1 in ./.venv313/lib/python3.13/site-packages (from markdown-it-py&gt;=2.2.0-&gt;rich~=14.0-&gt;rag==1.1.0) (0.1.2)
+Requirement already satisfied: six&gt;=1.5 in ./.venv313/lib/python3.13/site-packages (from python-dateutil&gt;=2.7-&gt;matplotlib==3.9.4-&gt;rag==1.1.0) (1.17.0)
+Requirement already satisfied: mpmath&lt;1.4,&gt;=1.1.0 in ./.venv313/lib/python3.13/site-packages (from sympy&gt;=1.13.3-&gt;torch==2.8.0-&gt;rag==1.1.0) (1.3.0)
+Downloading torch-2.8.0-cp313-none-macosx_11_0_arm64.whl (73.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.6/73.6 MB 3.3 MB/s  0:00:22
+Building wheels for collected packages: rag
+  Building editable for rag (pyproject.toml) ... done
+  Created wheel for rag: filename=rag-1.1.0-0.editable-py2.py3-none-any.whl size=2833 sha256=8581b714e3daa21c5d869a8503064e741838cd3a7470fa66d4629bad92ff1cb5
+  Stored in directory: /private/var/folders/15/k786vjpj1d5b32r9dr2_rqk80000gn/T/pip-ephem-wheel-cache-dmrrerpm/wheels/75/aa/bf/3ace7fe1d595a63b61f17d4c49c1f9642b44f80d8733087463
+Successfully built rag
+Installing collected packages: torch, rag
+  Attempting uninstall: torch
+    Found existing installation: torch 2.10.0
+    Uninstalling torch-2.10.0:
+      Successfully uninstalled torch-2.10.0
+Successfully installed rag-1.1.0 torch-2.8.0
+
+[notice] A new release of pip is available: 26.0 -> 26.0.1
+[notice] To update, run: /Users/niladri/Desktop/rag/.venv313/bin/python -m pip install --upgrade pip</pre>
+    </details>
+
+    <details>
+        <summary>Second run: successful TUI startup</summary>
+        <pre>$ .venv313/bin/python -m rag.ui.tui
+INFO: Loading faiss.
+INFO: Successfully loaded faiss.
+INFO: Use pytorch device_name: mps
+INFO: Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+modules.json: 100%|███████████████████████████████████████████████████████████████████| 349/349 [00:00<00:00, 512kB/s]
+config_sentence_transformers.json: 100%|██████████████████████████████████████████████| 116/116 [00:00<00:00, 340kB/s]
+README.md: 10.5kB [00:00, 14.0MB/s]
+sentence_bert_config.json: 100%|████████████████████████████████████████████████████| 53.0/53.0 [00:00<00:00, 132kB/s]
+config.json: 100%|███████████████████████████████████████████████████████████████████| 612/612 [00:00<00:00, 3.43MB/s]
+model.safetensors: 100%|█████████████████████████████████████████████████████████| 90.9M/90.9M [00:15<00:00, 6.03MB/s]
+tokenizer_config.json: 100%|█████████████████████████████████████████████████████████| 350/350 [00:00<00:00, 1.35MB/s]
+vocab.txt: 232kB [00:00, 2.76MB/s]
+tokenizer.json: 466kB [00:00, 6.75MB/s]
+special_tokens_map.json: 100%|████████████████████████████████████████████████████████| 112/112 [00:00<00:00, 360kB/s]
+config.json: 100%|████████████████████████████████████████████████████████████████████| 190/190 [00:00<00:00, 706kB/s]
+tokenizer_config.json: 2.54kB [00:00, 3.32MB/s]
+spiece.model: 100%|█████████████████████████████████████████████████████████████████| 792k/792k [00:05<00:00, 147kB/s]
+tokenizer.json: 2.42MB [00:00, 27.4MB/s]
+special_tokens_map.json: 2.20kB [00:00, 5.07MB/s]
+config.json: 1.40kB [00:00, 2.85MB/s]
+model.safetensors: 100%|███████████████████████████████████████████████████████████| 308M/308M [02:10<00:00, 2.36MB/s]
+generation_config.json: 100%|█████████████████████████████████████████████████████████| 147/147 [00:00<00:00, 471kB/s]
+Batches: 100%|██████████████████████████████████████████████████████████████████████████| 1/1 [00:02<00:00,  2.18s/it]
+INFO: Loaded 8 documents from knowledge base
+╭──────────────────────────────────╮
+│ 🤖 Agentic RAG Transformer       │
+│ ML, Sci-Fi, and Cosmos Assistant │
+│ Version 1.1.0                    │
+╰──────────────────────────────────╯
+Type 'exit'/'quit' to quit, 'help' for instructions.</pre>
+    </details>
 
     <footer>
         <a href="https://github.com/harpertoken">
@@ -34,5 +297,16 @@
         <br>
         <a href="https://github.com/harpertoken/rag">rag</a>
     </footer>
+    </div>
+
+    <script>
+        window.addEventListener("load", () => {
+            const screen = document.getElementById("loading-screen");
+            const minDelayMs = 900;
+            setTimeout(() => {
+                screen.classList.add("hidden");
+            }, minDelayMs);
+        });
+    </script>
 </body>
 </html>

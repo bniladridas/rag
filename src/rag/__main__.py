@@ -33,6 +33,26 @@ def format_message(message: str, emoji: str = "", no_color: bool = False) -> str
     return message
 
 
+def _print_model_status(rag_engine: RAGEngine, no_color: bool) -> None:
+    status = rag_engine.get_status()
+    if not status.get("embedding_model_loaded"):
+        print(
+            format_message(
+                "Warning: embedding model not loaded. Retrieval will be limited.",
+                "⚠️",
+                no_color,
+            )
+        )
+    if not status.get("generator_model_loaded"):
+        print(
+            format_message(
+                "Warning: generator model not loaded. Responses will be limited.",
+                "⚠️",
+                no_color,
+            )
+        )
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure the argument parser with CLI policies"""
     parser = argparse.ArgumentParser(
@@ -113,6 +133,8 @@ def handle_single_query(
 
     try:
         rag_engine = RAGEngine()
+        if not quiet:
+            _print_model_status(rag_engine, no_color)
         response = rag_engine.generate_response(query)
         print(response)
     except Exception as e:
@@ -146,6 +168,8 @@ def interactive_mode(
 
     try:
         rag_engine = RAGEngine()
+        if not quiet:
+            _print_model_status(rag_engine, no_color)
     except Exception as e:
         print(f"Failed to initialize RAG engine: {e}", file=sys.stderr)
         sys.exit(1)

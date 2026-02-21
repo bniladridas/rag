@@ -31,6 +31,10 @@ class RAGEngine:
     def __init__(self):
         self.config = Config()
         self.tool_executor = ToolExecutor()
+        self.model_status = {
+            "embedding_model_loaded": False,
+            "generator_model_loaded": False,
+        }
 
         # Handle non-interactive CI/Docker environment
         if not sys.stdin.isatty():
@@ -41,6 +45,7 @@ class RAGEngine:
         if SentenceTransformer is not None:
             try:
                 self.embedding_model = SentenceTransformer(self.config.EMBEDDING_MODEL)
+                self.model_status["embedding_model_loaded"] = True
             except Exception:
                 logger.warning("Failed to load embedding model. Using fallback.")
 
@@ -49,6 +54,7 @@ class RAGEngine:
             self.generator = AutoModelForSeq2SeqLM.from_pretrained(
                 self.config.GENERATOR_MODEL
             )
+            self.model_status["generator_model_loaded"] = True
         except Exception:
             logger.warning("Failed to load generator model. Responses may be limited.")
             self.tokenizer = None
@@ -61,6 +67,10 @@ class RAGEngine:
 
         # Load knowledge base
         self.load_knowledge_base()
+
+    def get_status(self) -> dict:
+        """Return model status flags for user-facing messaging."""
+        return dict(self.model_status)
 
     def load_knowledge_base(self):
         """Load documents from knowledge base file"""

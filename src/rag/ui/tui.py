@@ -70,6 +70,17 @@ def _display_welcome(console: Console, no_color: bool) -> None:
     console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
 
 
+def _display_model_status(console: Console, rag_engine: RAGEngine, no_color: bool) -> None:
+    """Display warnings for missing models."""
+    status = rag_engine.get_status()
+    if not status.get("embedding_model_loaded"):
+        msg = "Warning: embedding model not loaded. Retrieval will be limited."
+        console.print(msg if no_color else f"[yellow]{msg}[/yellow]")
+    if not status.get("generator_model_loaded"):
+        msg = "Warning: generator model not loaded. Responses will be limited."
+        console.print(msg if no_color else f"[yellow]{msg}[/yellow]")
+
+
 def _display_help(console: Console, no_color: bool) -> None:
     """Display help message with available commands and features."""
     if no_color:
@@ -149,6 +160,7 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
         sys.exit(1)
 
     _display_welcome(console, no_color)
+    _display_model_status(console, rag_engine, no_color)
 
     while True:
         try:

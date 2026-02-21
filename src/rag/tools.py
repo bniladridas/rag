@@ -2,10 +2,14 @@
 Tool definitions for the RAG agent
 """
 
+import ast
 import math
+import re
 from datetime import datetime
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from .config import Config
 
@@ -17,6 +21,15 @@ class ToolExecutor:
         self.config = Config()
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "RAG-Transformer/1.0"})
+        retry = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=("GET",),
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
 
     def get_available_tools(self) -> str:
         """Get description of available tools"""
@@ -41,19 +54,14 @@ TIME: Get current date and time"""
         """Execute calculator tool safely"""
         expr = tool_call[5:].strip()
         try:
-            allowed_names = {
-                "__builtins__": None,
-                "sqrt": math.sqrt,
-                "sin": math.sin,
-                "cos": math.cos,
-                "tan": math.tan,
-                "log": math.log,
-                "exp": math.exp,
-                "pi": math.pi,
-                "e": math.e,
-            }
-            result = eval(expr, allowed_names)
-            return f"Calculation result: {result}"
+            result = _safe_eval_math(expr)
+            if re.search(r"[A-Za-z]", expr):
+                result_str = str(result)
+            elif float(result).is_integer():
+                result_str = str(int(result))
+            else:
+                result_str = str(result)
+            return f"Calculation result: {result_str}"
         except Exception as e:
             return f"Invalid calculation: {e}"
 
@@ -77,3 +85,60 @@ TIME: Get current date and time"""
         """Execute time tool"""
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return f"Current date and time: {current_time}"
+
+
+_ALLOWED_FUNCS = {
+    "sqrt": math.sqrt,
+    "sin": math.sin,
+    "cos": math.cos,
+    "tan": math.tan,
+    "log": math.log,
+    "exp": math.exp,
+}
+_ALLOWED_CONSTS = {"pi": math.pi, "e": math.e}
+
+
+def _safe_eval_math(expr: str) -> float:
+    """Safely evaluate a math expression using a restricted AST."""
+    expr = expr.replace("^", "**")
+    node = ast.parse(expr, mode="eval")
+
+    def _eval(n):
+        if isinstance(n, ast.Expression):
+            return _eval(n.body)
+        if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)):
+            return float(n.value)
+        if isinstance(n, ast.UnaryOp) and isinstance(n.op, (ast.UAdd, ast.USub)):
+            val = _eval(n.operand)
+            return val if isinstance(n.op, ast.UAdd) else -val
+        if isinstance(n, ast.BinOp) and isinstance(
+            n.op, (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow, ast.Mod)
+        ):
+            left = _eval(n.left)
+            right = _eval(n.right)
+            if isinstance(n.op, ast.Add):
+                return left + right
+            if isinstance(n.op, ast.Sub):
+                return left - right
+            if isinstance(n.op, ast.Mult):
+                return left * right
+            if isinstance(n.op, ast.Div):
+                return left / right
+            if isinstance(n.op, ast.Pow):
+                return left**right
+            if isinstance(n.op, ast.Mod):
+                return left % right
+        if isinstance(n, ast.Name):
+            if n.id in _ALLOWED_CONSTS:
+                return float(_ALLOWED_CONSTS[n.id])
+            raise ValueError(f"Unknown identifier: {n.id}")
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name):
+            func = _ALLOWED_FUNCS.get(n.func.id)
+            if not func:
+                raise ValueError(f"Function not allowed: {n.func.id}")
+            if len(n.args) != 1:
+                raise ValueError("Only single-argument functions are allowed")
+            return float(func(_eval(n.args[0])))
+        raise ValueError("Unsupported expression")
+
+    return _eval(node)

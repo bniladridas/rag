@@ -11,6 +11,7 @@ class Config:
     """Project configuration for RAG Transformer."""
 
     def __init__(self):
+        self.PROJECT_ROOT = Path(__file__).resolve().parents[2]
         # Models
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
         self.GENERATOR_MODEL = os.getenv("GENERATOR_MODEL", "google/flan-t5-small")
@@ -20,16 +21,27 @@ class Config:
         self.NASA_API_KEY = os.getenv("NASA_API_KEY", "")
 
         # Dataset and knowledge base
-        self.DATASET_DIR = Path(os.getenv("DATASET_DIR", "datasets"))
-        self.KNOWLEDGE_BASE_FILE = Path(
-            os.getenv("KNOWLEDGE_BASE_FILE", "knowledge_base.json")
+        self.DATASET_DIR = self._resolve_project_path(
+            os.getenv("DATASET_DIR", "datasets"),
+            fallback="datasets",
+        )
+        self.KNOWLEDGE_BASE_FILE = self._resolve_project_path(
+            os.getenv("KNOWLEDGE_BASE_FILE", "knowledge_base.json"),
+            allow_file=True,
+            fallback="knowledge_base.json",
         )
         self.MOVIE_PAGES = self._get_int_env("MOVIE_PAGES", 5)
         self.COSMOS_DAYS = self._get_int_env("COSMOS_DAYS", 7)
 
         # Output and cache directories
-        self.OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "outputs"))
-        self.CACHE_DIR = Path(os.getenv("CACHE_DIR", ".cache"))
+        self.OUTPUT_DIR = self._resolve_project_path(
+            os.getenv("OUTPUT_DIR", "outputs"),
+            fallback="outputs",
+        )
+        self.CACHE_DIR = self._resolve_project_path(
+            os.getenv("CACHE_DIR", ".cache"),
+            fallback=".cache",
+        )
 
         # System settings
         self.MAX_WORKERS = self._get_int_env("MAX_WORKERS", 5)
@@ -58,6 +70,23 @@ class Config:
             level=getattr(logging, self.LOG_LEVEL, logging.INFO),
             format="%(asctime)s - %(levelname)s - %(message)s",
         )
+
+    def _resolve_project_path(
+        self, value: str, allow_file: bool = False, fallback: str = "datasets"
+    ) -> Path:
+        """Resolve a path safely within the project root."""
+        candidate = Path(value)
+        if not candidate.is_absolute():
+            candidate = (self.PROJECT_ROOT / candidate).resolve()
+        try:
+            candidate.relative_to(self.PROJECT_ROOT)
+        except ValueError:
+            fallback = self.PROJECT_ROOT / fallback
+            logging.warning(
+                f"Path '{value}' is outside project root. Using '{fallback}'."
+            )
+            return fallback
+        return candidate
 
     def _validate_paths(self):
         """Ensure directories exist, create if needed."""

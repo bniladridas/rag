@@ -13,6 +13,8 @@ import traceback
 from typing import List
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from .config import Config
 
@@ -34,6 +36,15 @@ class DataFetcher:
 
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "RAG-Transformer/1.0"})
+        retry = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=(429, 500, 502, 503, 504),
+            allowed_methods=("GET",),
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
 
     def fetch_ml_knowledge(self) -> List[str]:
         """Fetch machine learning knowledge from Wikipedia"""

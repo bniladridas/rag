@@ -27,7 +27,7 @@ repos:
     rev: 7.3.0
     hooks:
       - id: flake8
-        args: [--exclude, venv, .]
+        args: [--exclude, venv,.venv,.venv313, .]
         pass_filenames: false
 
   - repo: https://github.com/adrienverge/yamllint.git

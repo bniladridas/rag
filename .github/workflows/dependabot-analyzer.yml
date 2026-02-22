@@ -36,7 +36,6 @@ jobs:
             COMMENT_BODY="${{ github.event.comment.body }}"
             if echo "$COMMENT_BODY" | grep -qiE "^\/(analyze|run analysis|check pr)"; then
               echo "RUN=true" >> $GITHUB_OUTPUT
-              # Extract PR number from comment URL
               echo "PR_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
               echo "TRIGGER_USER=${{ github.event.comment.user.login }}" >> $GITHUB_OUTPUT
               exit 0
@@ -54,66 +53,54 @@ jobs:
             echo "RUN=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get PR details
+      - name: Get changed files from GitHub API
         if: steps.should-run.outputs.RUN == 'true'
-        id: pr-details
+        id: changed-files
         run: |
           PR_NUM="${{ steps.should-run.outputs.PR_NUMBER }}"
-          echo "Fetching PR #$PR_NUM details..."
+          echo "Fetching changed files for PR #$PR_NUM..."
 
+          # Get PR details
           PR_DATA=$(curl -s -H "Authorization: token ${{ github.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUM")
 
           echo "PR_TITLE=$(echo '$PR_DATA' | jq -r '.title')" >> $GITHUB_OUTPUT
           echo "PR_USER=$(echo '$PR_DATA' | jq -r '.user.login')" >> $GITHUB_OUTPUT
-          echo "PR_HEAD_BRANCH=$(echo '$PR_DATA' | jq -r '.head.ref')" >> $GITHUB_OUTPUT
-          echo "PR_BASE_BRANCH=$(echo '$PR_DATA' | jq -r '.base.ref')" >> $GITHUB_OUTPUT
 
-      - name: Checkout code
-        if: steps.should-run.outputs.RUN == 'true'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.pr-details.outputs.PR_HEAD_BRANCH }}
-          fetch-depth: 0
+          # Get list of changed files from GitHub API
+          FILES_JSON=$(curl -s -H "Authorization: token ${{ github.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUM/files?per_page=100")
 
-      - name: Fetch base branch
-        if: steps.should-run.outputs.RUN == 'true'
-        run: |
-          git fetch origin ${{ steps.pr-details.outputs.PR_BASE_BRANCH }}:${{ steps.pr-details.outputs.PR_BASE_BRANCH }}
+          # Extract filenames
+          FILES=$(echo "$FILES_JSON" | jq -r '.[].filename' 2>/dev/null || echo "")
 
-      - name: Get diff details
-        if: steps.should-run.outputs.RUN == 'true'
-        id: diff-details
-        run: |
-          echo "### Changed Files Details" >> $GITHUB_STEP_SUMMARY
+          echo "Changed files: $FILES" >> $GITHUB_STEP_SUMMARY
 
-          BASE_BRANCH=${{ steps.pr-details.outputs.PR_BASE_BRANCH }}
-          echo "Comparing with base branch: $BASE_BRANCH" >> $GITHUB_STEP_SUMMARY
-
-          # Debug: show all changed files
-          echo "All changed files:" >> $GITHUB_STEP_SUMMARY
-          git diff $BASE_BRANCH...HEAD --name-only >> $GITHUB_STEP_SUMMARY 2>&1 || true
-
-          for file in requirements.txt setup.py pyproject.toml; do
-            if git diff $BASE_BRANCH...HEAD -- "$file" > /tmp/diff_$file 2>/dev/null; then
-              if [ -s /tmp/diff_$file ]; then
-                echo "" >> $GITHUB_STEP_SUMMARY
-                echo "**$file**" >> $GITHUB_STEP_SUMMARY
-                echo '```diff' >> $GITHUB_STEP_SUMMARY
-                cat /tmp/diff_$file >> $GITHUB_STEP_SUMMARY
-                echo '```' >> $GITHUB_STEP_SUMMARY
-
-                echo "DIFF_$file<<EOF" >> $GITHUB_OUTPUT
-                cat /tmp/diff_$file >> $GITHUB_OUTPUT
-                echo "EOF" >> $GITHUB_OUTPUT
-              fi
-            fi
+          # Filter dependency files
+          DEP_FILES=""
+          for file in $FILES; do
+            case "$file" in
+              requirements*.txt|setup.py|pyproject.toml|Pipfile|package*.json)
+                DEP_FILES="$DEP_FILES $file"
+                ;;
+            esac
           done
 
-          CHANGED=$(git diff $BASE_BRANCH...HEAD --name-only | \
-            grep -iE "requirements|setup.py|pyproject.toml|Pipfile|package.json" || true)
-          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_OUTPUT
-          echo "DEBUG_CHANGED=$CHANGED" >> $GITHUB_STEP_SUMMARY
+          echo "CHANGED_FILES=$DEP_FILES" >> $GITHUB_OUTPUT
+
+          # Get diff content for each dependency file
+          for file in $DEP_FILES; do
+            FILE_CONTENT=$(echo "$FILES_JSON" | \
+              jq -r ".[] | select(.filename == \"$file\") | .patch" 2>/dev/null || echo "")
+            if [ -n "$FILE_CONTENT" ]; then
+              SAFE_NAME=$(echo "$file" | tr '/' '_' | tr '.' '_')
+              echo "DIFF_$SAFE_NAME<<EOF" >> $GITHUB_OUTPUT
+              echo "$FILE_CONTENT" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+          done
 
       - name: Analyze PR for breaking changes
         if: steps.should-run.outputs.RUN == 'true'
@@ -121,14 +108,14 @@ jobs:
         run: |
           echo "### Dependabot PR Analysis" >> $GITHUB_STEP_SUMMARY
 
-          PR_TITLE="${{ steps.pr-details.outputs.PR_TITLE }}"
+          PR_TITLE="${{ steps.changed-files.outputs.PR_TITLE }}"
           PR_NUMBER="${{ steps.should-run.outputs.PR_NUMBER }}"
-          PR_USER="${{ steps.pr-details.outputs.PR_USER }}"
+          PR_USER="${{ steps.changed-files.outputs.PR_USER }}"
           echo "- **PR**: #$PR_NUMBER" >> $GITHUB_STEP_SUMMARY
           echo "- **Title**: $PR_TITLE" >> $GITHUB_STEP_SUMMARY
           echo "- **User**: @$PR_USER" >> $GITHUB_STEP_SUMMARY
 
-          CHANGED="${{ steps.diff-details.outputs.CHANGED_FILES }}"
+          CHANGED="${{ steps.changed-files.outputs.CHANGED_FILES }}"
           echo "- **Changed**: '$CHANGED'" >> $GITHUB_STEP_SUMMARY
 
           if [ -z "$CHANGED" ]; then
@@ -139,7 +126,6 @@ jobs:
           fi
 
           echo "impact=medium" >> $GITHUB_OUTPUT
-          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_OUTPUT
 
           if echo "$PR_TITLE" | grep -qi "security"; then
             echo "status=Security update - Review carefully before merging" >> $GITHUB_OUTPUT
@@ -167,18 +153,27 @@ jobs:
           script: |
             const impact = '${{ steps.analysis.outputs.impact }}';
             const status = '${{ steps.analysis.outputs.status }}';
-            const changedFiles = '${{ steps.analysis.outputs.changed_files }}';
+            const changedFiles = '${{ steps.changed-files.outputs.CHANGED_FILES }}';
             const prNumber = '${{ steps.should-run.outputs.PR_NUMBER }}';
             const triggerUser = '${{ steps.should-run.outputs.TRIGGER_USER }}';
 
-            const diffRequirements = `${{ steps.diff-details.outputs.DIFF_requirements.txt }}`;
-            const diffSetup = `${{ steps.diff-details.outputs.DIFF_setup.py }}`;
-            const diffPyproject = `${{ steps.diff-details.outputs.DIFF_pyproject.toml }}`;
+            const diffReqTxt = `${{ steps.changed-files.outputs.DIFF_requirements_txt }}`;
+            const diffSetupPy = `${{ steps.changed-files.outputs.DIFF_setup_py }}`;
+            const diffPyprojectToml = `${{ steps.changed-files.outputs.DIFF_pyproject_toml }}`;
 
             let diffContent = '';
-            if (diffRequirements) diffContent += '\n\n**requirements.txt**\n```diff\n' + diffRequirements + '\n```';
-            if (diffSetup) diffContent += '\n\n**setup.py**\n```diff\n' + diffSetup + '\n```';
-            if (diffPyproject) diffContent += '\n\n**pyproject.toml**\n```diff\n' + diffPyproject + '\n```';
+            if (diffReqTxt) {
+              diffContent += '\n\n**requirements.txt**\n```diff\n' +
+                diffReqTxt + '\n```';
+            }
+            if (diffSetupPy) {
+              diffContent += '\n\n**setup.py**\n```diff\n' +
+                diffSetupPy + '\n```';
+            }
+            if (diffPyprojectToml) {
+              diffContent += '\n\n**pyproject.toml**\n```diff\n' +
+                diffPyprojectToml + '\n```';
+            }
 
             const emoji = impact === 'high' ? '🚨' : impact === 'medium' ? '⚠️' : '✅';
 

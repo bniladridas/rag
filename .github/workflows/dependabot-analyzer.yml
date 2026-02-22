@@ -78,7 +78,7 @@ jobs:
       - name: Get changed dependency files
         if: steps.should-run.outputs.RUN == 'true'
         id: changed-files
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         with:
           files: |
             requirements*.txt

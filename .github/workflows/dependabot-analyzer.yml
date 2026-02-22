@@ -212,18 +212,25 @@ jobs:
             const prNumber = '${{ steps.should-run.outputs.PR_NUMBER }}';
             const triggerUser = '${{ steps.should-run.outputs.TRIGGER_USER }}';
 
-            // Get all diffs from output
-            const outputs = ${{ steps.changed-files.outputs }};
+            // Get diffs explicitly - the dynamic approach doesn't work in JS
+            const diffRequirementsTxt = '${{ steps.changed-files.outputs.DIFF_requirements_txt }}';
+            const diffRequirementsDevTxt = '${{ steps.changed-files.outputs.DIFF_requirements_dev_txt }}';
+            const diffSetupPy = '${{ steps.changed-files.outputs.DIFF_setup_py }}';
+            const diffPyprojectToml = '${{ steps.changed-files.outputs.DIFF_pyproject_toml }}';
 
             let diffContent = '';
-            const diffKeys = Object.keys(outputs).filter(k => k.startsWith('DIFF_'));
-            diffKeys.forEach(key => {
-              if (outputs[key]) {
-                const filename = key.replace('DIFF_', '').replace(/_/g, '.').replace(/_/g, '-');
-                diffContent += '\n\n**' + filename + '**\n```diff\n' +
-                  outputs[key] + '\n```';
-              }
-            });
+            if (diffRequirementsTxt) {
+              diffContent += '\n\n**requirements.txt**\n```diff\n' + diffRequirementsTxt + '\n```';
+            }
+            if (diffRequirementsDevTxt) {
+              diffContent += '\n\n**requirements-dev.txt**\n```diff\n' + diffRequirementsDevTxt + '\n```';
+            }
+            if (diffSetupPy) {
+              diffContent += '\n\n**setup.py**\n```diff\n' + diffSetupPy + '\n```';
+            }
+            if (diffPyprojectToml) {
+              diffContent += '\n\n**pyproject.toml**\n```diff\n' + diffPyprojectToml + '\n```';
+            }
 
             const emoji = impact === 'high' ? '🚨' : impact === 'medium' ? '⚠️' : '✅';
 

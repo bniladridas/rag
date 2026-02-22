@@ -227,12 +227,13 @@ jobs:
 
             const emoji = impact === 'high' ? '🚨' : impact === 'medium' ? '⚠️' : '✅';
 
+            const repoName = context.repo.repo;
             const commentBody = 'Hi @' + triggerUser + ',\n\n' +
               'I analyzed the Dependabot PR #' + prNumber + ' for you.\n\n' +
               '## Analysis Result ' + emoji + '\n\n' +
               status + '\n\n' +
               '**Changed files:** ' + (changedFiles || 'None') +
-              diffContent + '\n\n---\n*Analyzed by GitHub Actions*';
+              diffContent + '\n\n---\n*Analyzed by GitHub Actions* | Built for ' + repoName;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

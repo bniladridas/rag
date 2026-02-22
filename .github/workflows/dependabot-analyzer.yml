@@ -129,9 +129,9 @@ jobs:
               jq -r ".[] | select(.filename == \"$file\") | .patch" 2>/dev/null || echo "")
             if [ -n "$FILE_CONTENT" ]; then
               SAFE_NAME=$(echo "$file" | tr '/' '_' | tr '.' '_' | tr '-' '_')
-              echo "DIFF_$SAFE_NAME<<EOF" >> $GITHUB_OUTPUT
-              echo "$FILE_CONTENT" >> $GITHUB_OUTPUT
-              echo "EOF" >> $GITHUB_OUTPUT
+              # Base64 encode to handle special characters
+              DIFF_ENCODED=$(echo "$FILE_CONTENT" | base64 -w 0)
+              echo "DIFF_$SAFE_NAME=$DIFF_ENCODED" >> $GITHUB_OUTPUT
             fi
           done
 
@@ -212,11 +212,15 @@ jobs:
             const prNumber = '${{ steps.should-run.outputs.PR_NUMBER }}';
             const triggerUser = '${{ steps.should-run.outputs.TRIGGER_USER }}';
 
-            // Get diffs explicitly - the dynamic approach doesn't work in JS
-            const diffRequirementsTxt = '${{ steps.changed-files.outputs.DIFF_requirements_txt }}';
-            const diffRequirementsDevTxt = '${{ steps.changed-files.outputs.DIFF_requirements_dev_txt }}';
-            const diffSetupPy = '${{ steps.changed-files.outputs.DIFF_setup_py }}';
-            const diffPyprojectToml = '${{ steps.changed-files.outputs.DIFF_pyproject_toml }}';
+            // Get diffs and decode from base64
+            const diffRequirementsTxt = '${{ steps.changed-files.outputs.DIFF_requirements_txt }}' ?
+              Buffer.from('${{ steps.changed-files.outputs.DIFF_requirements_txt }}', 'base64').toString() : '';
+            const diffRequirementsDevTxt = '${{ steps.changed-files.outputs.DIFF_requirements_dev_txt }}' ?
+              Buffer.from('${{ steps.changed-files.outputs.DIFF_requirements_dev_txt }}', 'base64').toString() : '';
+            const diffSetupPy = '${{ steps.changed-files.outputs.DIFF_setup_py }}' ?
+              Buffer.from('${{ steps.changed-files.outputs.DIFF_setup_py }}', 'base64').toString() : '';
+            const diffPyprojectToml = '${{ steps.changed-files.outputs.DIFF_pyproject_toml }}' ?
+              Buffer.from('${{ steps.changed-files.outputs.DIFF_pyproject_toml }}', 'base64').toString() : '';
 
             let diffContent = '';
             if (diffRequirementsTxt) {

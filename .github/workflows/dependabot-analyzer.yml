@@ -67,6 +67,7 @@ jobs:
           echo "PR_TITLE=$(echo '$PR_DATA' | jq -r '.title')" >> $GITHUB_OUTPUT
           echo "PR_USER=$(echo '$PR_DATA' | jq -r '.user.login')" >> $GITHUB_OUTPUT
           echo "PR_HEAD_BRANCH=$(echo '$PR_DATA' | jq -r '.head.ref')" >> $GITHUB_OUTPUT
+          echo "PR_BASE_BRANCH=$(echo '$PR_DATA' | jq -r '.base.ref')" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         if: steps.should-run.outputs.RUN == 'true'
@@ -75,18 +76,10 @@ jobs:
           ref: ${{ steps.pr-details.outputs.PR_HEAD_BRANCH }}
           fetch-depth: 0
 
-      - name: Get changed dependency files
+      - name: Fetch base branch
         if: steps.should-run.outputs.RUN == 'true'
-        id: changed-files
-        uses: tj-actions/changed-files@v44
-        with:
-          files: |
-            requirements*.txt
-            setup.py
-            pyproject.toml
-            Pipfile
-            package.json
-            package-lock.json
+        run: |
+          git fetch origin ${{ steps.pr-details.outputs.PR_BASE_BRANCH }}:${{ steps.pr-details.outputs.PR_BASE_BRANCH }}
 
       - name: Get diff details
         if: steps.should-run.outputs.RUN == 'true'
@@ -94,8 +87,11 @@ jobs:
         run: |
           echo "### Changed Files Details" >> $GITHUB_STEP_SUMMARY
 
+          BASE_BRANCH=${{ steps.pr-details.outputs.PR_BASE_BRANCH }}
+          echo "Comparing with base branch: $BASE_BRANCH" >> $GITHUB_STEP_SUMMARY
+
           for file in requirements.txt setup.py pyproject.toml; do
-            if git diff HEAD...origin/main -- "$file" > /tmp/diff_$file 2>/dev/null; then
+            if git diff $BASE_BRANCH...HEAD -- "$file" > /tmp/diff_$file 2>/dev/null; then
               if [ -s /tmp/diff_$file ]; then
                 echo "" >> $GITHUB_STEP_SUMMARY
                 echo "**$file**" >> $GITHUB_STEP_SUMMARY
@@ -110,7 +106,8 @@ jobs:
             fi
           done
 
-          echo "CHANGED_FILES=${{ steps.changed-files.outputs.all_changed_files }}" >> $GITHUB_OUTPUT
+          CHANGED=$(git diff $BASE_BRANCH...HEAD --name-only | grep -E "requirements|setup.py|pyproject.toml" || true)
+          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_OUTPUT
 
       - name: Analyze PR for breaking changes
         if: steps.should-run.outputs.RUN == 'true'
@@ -125,16 +122,16 @@ jobs:
           echo "- **Title**: $PR_TITLE" >> $GITHUB_STEP_SUMMARY
           echo "- **User**: @$PR_USER" >> $GITHUB_STEP_SUMMARY
 
-          if [ -z "${{ steps.changed-files.outputs.any_changed }}" ]; then
+          CHANGED="${{ steps.diff-details.outputs.CHANGED_FILES }}"
+          if [ -z "$CHANGED" ]; then
             echo "- **Impact**: Low - No dependency files changed" >> $GITHUB_STEP_SUMMARY
             echo "impact=low" >> $GITHUB_OUTPUT
             echo "status=No dependency files modified. This PR likely contains other updates." >> $GITHUB_OUTPUT
-            echo "CHANGED_FILES=" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           echo "impact=medium" >> $GITHUB_OUTPUT
-          echo "CHANGED_FILES=${{ steps.changed-files.outputs.all_changed_files }}" >> $GITHUB_OUTPUT
+          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_OUTPUT
 
           if echo "$PR_TITLE" | grep -qi "security"; then
             echo "status=Security update - Review carefully before merging" >> $GITHUB_OUTPUT

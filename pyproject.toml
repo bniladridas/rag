@@ -2,9 +2,6 @@
 requires = ["setuptools==80.9.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[project]
-requires-python = ">=3.9"
-
 [tool.semantic_release]
 version_variables = ["setup.py:version", "src/rag/__version__.py:__version__"]
 commit_message = "chore(release): {version}"

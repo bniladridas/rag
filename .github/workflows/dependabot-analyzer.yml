@@ -1,0 +1,183 @@
+name: Dependabot PR Analyzer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to analyze'
+        required: false
+        type: string
+
+jobs:
+  analyze-dependabot-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Determine if should run
+        id: should-run
+        run: |
+          # Check if triggered by workflow_dispatch
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] &&
+            [ -n "${{ github.event.inputs.pr_number }}" ]; then
+            echo "RUN=true" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
+            echo "TRIGGER_USER=${{ github.actor }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if triggered by issue_comment with "/analyze"
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            COMMENT_BODY="${{ github.event.comment.body }}"
+            if echo "$COMMENT_BODY" | grep -qiE "^\/(analyze|run analysis|check pr)"; then
+              echo "RUN=true" >> $GITHUB_OUTPUT
+              # Extract PR number from comment URL
+              echo "PR_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+              echo "TRIGGER_USER=${{ github.event.comment.user.login }}" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "RUN=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if triggered by dependabot
+          if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
+            echo "RUN=true" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "TRIGGER_USER=dependabot[bot]" >> $GITHUB_OUTPUT
+          else
+            echo "RUN=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get PR details
+        if: steps.should-run.outputs.RUN == 'true'
+        id: pr-details
+        run: |
+          PR_NUM="${{ steps.should-run.outputs.PR_NUMBER }}"
+          echo "Fetching PR #$PR_NUM details..."
+
+          PR_DATA=$(curl -s -H "Authorization: token ${{ github.token }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUM")
+
+          echo "PR_TITLE=$(echo '$PR_DATA' | jq -r '.title')" >> $GITHUB_OUTPUT
+          echo "PR_USER=$(echo '$PR_DATA' | jq -r '.user.login')" >> $GITHUB_OUTPUT
+          echo "PR_HEAD_BRANCH=$(echo '$PR_DATA' | jq -r '.head.ref')" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        if: steps.should-run.outputs.RUN == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr-details.outputs.PR_HEAD_BRANCH }}
+          fetch-depth: 0
+
+      - name: Get changed dependency files
+        if: steps.should-run.outputs.RUN == 'true'
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            requirements*.txt
+            setup.py
+            pyproject.toml
+            Pipfile
+            package.json
+            package-lock.json
+
+      - name: Analyze PR for breaking changes
+        if: steps.should-run.outputs.RUN == 'true'
+        id: analysis
+        run: |
+          echo "### Dependabot PR Analysis" >> $GITHUB_STEP_SUMMARY
+
+          PR_TITLE="${{ steps.pr-details.outputs.PR_TITLE }}"
+          PR_NUMBER="${{ steps.should-run.outputs.PR_NUMBER }}"
+          PR_USER="${{ steps.pr-details.outputs.PR_USER }}"
+          echo "- **PR**: #$PR_NUMBER" >> $GITHUB_STEP_SUMMARY
+          echo "- **Title**: $PR_TITLE" >> $GITHUB_STEP_SUMMARY
+          echo "- **User**: @$PR_USER" >> $GITHUB_STEP_SUMMARY
+
+          if [ -z "${{ steps.changed-files.outputs.any_changed }}" ]; then
+            echo "- **Impact**: Low - No dependency files changed" >> $GITHUB_STEP_SUMMARY
+            echo "impact=low" >> $GITHUB_OUTPUT
+            echo "status=No dependency files modified. This PR likely contains other updates." >> $GITHUB_OUTPUT
+            echo "CHANGED_FILES=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "impact=medium" >> $GITHUB_OUTPUT
+          echo "CHANGED_FILES=${{ steps.changed-files.outputs.all_changed_files }}" >> $GITHUB_OUTPUT
+
+          if echo "$PR_TITLE" | grep -qi "security"; then
+            echo "status=Security update - Review carefully before merging" >> $GITHUB_OUTPUT
+          elif echo "$PR_TITLE" | grep -qiE "(major|breaking)"; then
+            echo "impact=high" >> $GITHUB_OUTPUT
+            echo "status=Major version bump - Test thoroughly before merging" >> $GITHUB_OUTPUT
+          elif echo "$PR_TITLE" | grep -qiE "(minor|feature)"; then
+            echo "impact=low" >> $GITHUB_OUTPUT
+            echo "status=Minor/feature update - Usually safe to merge" >> $GITHUB_OUTPUT
+          elif echo "$PR_TITLE" | grep -qiE "(patch|fix)"; then
+            echo "impact=low" >> $GITHUB_OUTPUT
+            echo "status=Patch update - Safe to merge" >> $GITHUB_OUTPUT
+          else
+            echo "status=Review the changes before merging" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$PR_TITLE" | grep -qi "torch\|pytorch"; then
+            echo "::warning::PyTorch update - Verify Python 3.13 compatibility for Apple Silicon"
+          fi
+
+      - name: Post analysis comment
+        if: steps.should-run.outputs.RUN == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const impact = '${{ steps.analysis.outputs.impact }}';
+            const status = '${{ steps.analysis.outputs.status }}';
+            const changedFiles = '${{ steps.analysis.outputs.changed_files }}';
+            const prNumber = '${{ steps.should-run.outputs.PR_NUMBER }}';
+            const triggerUser = '${{ steps.should-run.outputs.TRIGGER_USER }}';
+
+            const emoji = impact === 'high' ? '🚨' : impact === 'medium' ? '⚠️' : '✅';
+
+            const commentBody = 'Hi @' + triggerUser + ',\n\n' +
+              'I analyzed the Dependabot PR #' + prNumber + ' for you.\n\n' +
+              '## Analysis Result ' + emoji + '\n\n' +
+              status + '\n\n' +
+              '**Analysis:**\n- Changed files: ' + (changedFiles || 'None') + '\n\n' +
+              '---\n*Analyzed by GitHub Actions*';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(prNumber),
+            });
+
+            const existingComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes('Dependabot PR Analyzer')
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(prNumber),
+                body: commentBody
+              });
+            }
+
+      - name: Skip message
+        if: steps.should-run.outputs.RUN != 'true'
+        run: echo "Not a dependabot PR or no trigger comment - skipping analysis"

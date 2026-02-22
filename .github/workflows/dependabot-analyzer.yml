@@ -90,6 +90,10 @@ jobs:
           BASE_BRANCH=${{ steps.pr-details.outputs.PR_BASE_BRANCH }}
           echo "Comparing with base branch: $BASE_BRANCH" >> $GITHUB_STEP_SUMMARY
 
+          # Debug: show all changed files
+          echo "All changed files:" >> $GITHUB_STEP_SUMMARY
+          git diff $BASE_BRANCH...HEAD --name-only >> $GITHUB_STEP_SUMMARY 2>&1 || true
+
           for file in requirements.txt setup.py pyproject.toml; do
             if git diff $BASE_BRANCH...HEAD -- "$file" > /tmp/diff_$file 2>/dev/null; then
               if [ -s /tmp/diff_$file ]; then
@@ -106,8 +110,9 @@ jobs:
             fi
           done
 
-          CHANGED=$(git diff $BASE_BRANCH...HEAD --name-only | grep -E "requirements|setup.py|pyproject.toml" || true)
+          CHANGED=$(git diff $BASE_BRANCH...HEAD --name-only | grep -iE "requirements|setup.py|pyproject.toml|Pipfile|package.json" || true)
           echo "CHANGED_FILES=$CHANGED" >> $GITHUB_OUTPUT
+          echo "DEBUG_CHANGED=$CHANGED" >> $GITHUB_STEP_SUMMARY
 
       - name: Analyze PR for breaking changes
         if: steps.should-run.outputs.RUN == 'true'
@@ -123,6 +128,8 @@ jobs:
           echo "- **User**: @$PR_USER" >> $GITHUB_STEP_SUMMARY
 
           CHANGED="${{ steps.diff-details.outputs.CHANGED_FILES }}"
+          echo "- **Changed**: '$CHANGED'" >> $GITHUB_STEP_SUMMARY
+
           if [ -z "$CHANGED" ]; then
             echo "- **Impact**: Low - No dependency files changed" >> $GITHUB_STEP_SUMMARY
             echo "impact=low" >> $GITHUB_OUTPUT

@@ -88,6 +88,30 @@ jobs:
             package.json
             package-lock.json
 
+      - name: Get diff details
+        if: steps.should-run.outputs.RUN == 'true'
+        id: diff-details
+        run: |
+          echo "### Changed Files Details" >> $GITHUB_STEP_SUMMARY
+
+          for file in requirements.txt setup.py pyproject.toml; do
+            if git diff HEAD...origin/main -- "$file" > /tmp/diff_$file 2>/dev/null; then
+              if [ -s /tmp/diff_$file ]; then
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "**$file**" >> $GITHUB_STEP_SUMMARY
+                echo '```diff' >> $GITHUB_STEP_SUMMARY
+                cat /tmp/diff_$file >> $GITHUB_STEP_SUMMARY
+                echo '```' >> $GITHUB_STEP_SUMMARY
+
+                echo "DIFF_$file<<EOF" >> $GITHUB_OUTPUT
+                cat /tmp/diff_$file >> $GITHUB_OUTPUT
+                echo "EOF" >> $GITHUB_OUTPUT
+              fi
+            fi
+          done
+
+          echo "CHANGED_FILES=${{ steps.changed-files.outputs.all_changed_files }}" >> $GITHUB_OUTPUT
+
       - name: Analyze PR for breaking changes
         if: steps.should-run.outputs.RUN == 'true'
         id: analysis
@@ -142,14 +166,23 @@ jobs:
             const prNumber = '${{ steps.should-run.outputs.PR_NUMBER }}';
             const triggerUser = '${{ steps.should-run.outputs.TRIGGER_USER }}';
 
+            const diffRequirements = `${{ steps.diff-details.outputs.DIFF_requirements.txt }}`;
+            const diffSetup = `${{ steps.diff-details.outputs.DIFF_setup.py }}`;
+            const diffPyproject = `${{ steps.diff-details.outputs.DIFF_pyproject.toml }}`;
+
+            let diffContent = '';
+            if (diffRequirements) diffContent += '\n\n**requirements.txt**\n```diff\n' + diffRequirements + '\n```';
+            if (diffSetup) diffContent += '\n\n**setup.py**\n```diff\n' + diffSetup + '\n```';
+            if (diffPyproject) diffContent += '\n\n**pyproject.toml**\n```diff\n' + diffPyproject + '\n```';
+
             const emoji = impact === 'high' ? '🚨' : impact === 'medium' ? '⚠️' : '✅';
 
             const commentBody = 'Hi @' + triggerUser + ',\n\n' +
               'I analyzed the Dependabot PR #' + prNumber + ' for you.\n\n' +
               '## Analysis Result ' + emoji + '\n\n' +
               status + '\n\n' +
-              '**Analysis:**\n- Changed files: ' + (changedFiles || 'None') + '\n\n' +
-              '---\n*Analyzed by GitHub Actions*';
+              '**Changed files:** ' + (changedFiles || 'None') +
+              diffContent + '\n\n---\n*Analyzed by GitHub Actions*';
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

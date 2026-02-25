@@ -48,7 +48,10 @@ jobs:
           PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "$TAG")
 
           # Generate changelog entries between tags
-          CHANGES=$(git log --oneline $PREV_TAG..$TAG 2>/dev/null | grep -v "chore(release)" | grep -v "docs: update changelog" | grep -v "docs: update webpage version" || true)
+          CHANGES=$(git log --oneline $PREV_TAG..$TAG 2>/dev/null | \
+            grep -v "chore(release)" | \
+            grep -v "docs: update changelog" | \
+            grep -v "docs: update webpage version" || true)
 
           # Prepend to CHANGELOG.md if there are entries
           if [ -n "$CHANGES" ]; then

@@ -42,7 +42,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Enhance changelog
-        run: python scripts/enhance_changelog.py
+        run: |
+          python scripts/enhance_changelog.py
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changelog changes"
+          else
+            git add CHANGELOG.md
+            git commit -m "docs: update changelog"
+            git push
+          fi
 
       - name: Update webpage version
         run: |

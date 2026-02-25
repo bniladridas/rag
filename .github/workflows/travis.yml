@@ -52,7 +52,7 @@ jobs:
       - name: Type check with mypy
         run: |
           pip install mypy types-requests
-          mypy src/ --ignore-missing-imports
+          mypy src/
 
       - name: Run unit tests with pytest
         run: |

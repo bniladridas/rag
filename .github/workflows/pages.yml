@@ -7,6 +7,8 @@ on:
       - 'release-webpage/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
+  repository_dispatch:
+    types: [deploy]
 
 permissions:
   contents: read

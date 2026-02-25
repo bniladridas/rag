@@ -214,7 +214,7 @@
 
 ### Test
 
-* test: fix executor mock (#53) ([`0e194f3`](https://github.com/bniladridas/rag/commit/0e194f3c290b97d883c97b37aeb8861b96442f07))
+* test: fix executor mock ([#53](https://github.com/bniladridas/rag/issues/53)) ([`0e194f3`](https://github.com/bniladridas/rag/commit/0e194f3c290b97d883c97b37aeb8861b96442f07))
 
 ## v1.1.1 (2026-02-25)
 
@@ -260,13 +260,13 @@
 
 ### Feature
 
-* feat[rag]: improve code robustness (#52) ([`79a31a5`](https://github.com/bniladridas/rag/commit/79a31a5be71bb1a4479058f88c74999b81c443de))
+* feat[rag]: improve code robustness ([#52](https://github.com/bniladridas/rag/issues/52)) ([`79a31a5`](https://github.com/bniladridas/rag/commit/79a31a5be71bb1a4479058f88c74999b81c443de))
 
 ### Chore
 
-* chore(deps): bump faiss-cpu from 1.12.0 to 1.13.0 (#51) ([`93f39a6`](https://github.com/bniladridas/rag/commit/93f39a66058a10e4b2ab824ec974bce183dc8bf7))
-* chore(deps-dev): bump black from 25.9.0 to 25.11.0 (#50) ([`08b3179`](https://github.com/bniladridas/rag/commit/08b31798a34a720445df93986482a0170b6894ef))
-* chore(deps): bump openai from 2.12.0 to 2.14.0 (#49) ([`95812db`](https://github.com/bniladridas/rag/commit/95812db2946f147d2727e90b5941c7c18f7a1bd2))
+* chore(deps): bump faiss-cpu from 1.12.0 to 1.13.0 ([#51](https://github.com/bniladridas/rag/issues/51)) ([`93f39a6`](https://github.com/bniladridas/rag/commit/93f39a66058a10e4b2ab824ec974bce183dc8bf7))
+* chore(deps-dev): bump black from 25.9.0 to 25.11.0 ([#50](https://github.com/bniladridas/rag/issues/50)) ([`08b3179`](https://github.com/bniladridas/rag/commit/08b31798a34a720445df93986482a0170b6894ef))
+* chore(deps): bump openai from 2.12.0 to 2.14.0 ([#49](https://github.com/bniladridas/rag/issues/49)) ([`95812db`](https://github.com/bniladridas/rag/commit/95812db2946f147d2727e90b5941c7c18f7a1bd2))
 * chore(deps): bump python-semantic-release from 10.5.2 to 10.5.3 ([`2cb4172`](https://github.com/bniladridas/rag/commit/2cb41721678860a713bb63a4182465227dc79ca1))
 * chore(deps): bump sentence-transformers from 5.1.1 to 5.1.2 ([`0ba2e63`](https://github.com/bniladridas/rag/commit/0ba2e6324d965ffc4762b2aeafed335445da8485))
 * chore(deps): bump openai from 2.6.1 to 2.12.0 ([`4185f42`](https://github.com/bniladridas/rag/commit/4185f42e05a56e0b272a6a7330605bc2a3b403fc))
@@ -277,23 +277,23 @@
 
 ### Chore
 
-* chore: update dev dependencies and fix imports (#43) ([`eb8457f`](https://github.com/bniladridas/rag/commit/eb8457f9641fb3c82d1dc0a607b1951407ff4264))
-* chore(deps): bump transformers from 4.53.0 to 4.57.3 (#42) ([`d37b953`](https://github.com/bniladridas/rag/commit/d37b9535e20bb92a0a484a9927d72302fc27fe63))
-* chore(deps-dev): bump pytest-cov from 5.0.0 to 7.0.0 (#40) ([`3e5c7c1`](https://github.com/bniladridas/rag/commit/3e5c7c19392253896b2a298865e8f5ba2ac953a1))
-* chore(deps): bump psutil from 7.1.2 to 7.1.3 (#38) ([`736c5bd`](https://github.com/bniladridas/rag/commit/736c5bdd035fd30facca59eafa38f42a24165d74))
-* chore(deps): bump actions/checkout from 4 to 6 (#37) ([`ff399fc`](https://github.com/bniladridas/rag/commit/ff399fcaae0062516c8682108a1cdc611b6929ac))
-* chore(deps-dev): bump setuptools from 68.0.0 to 80.9.0 (#36) ([`1dd7769`](https://github.com/bniladridas/rag/commit/1dd7769873e05318dd53c5b148c4ce343c7779ac))
-* chore(deps): bump matplotlib from 3.9.0 to 3.9.4 (#35) ([`a319ea4`](https://github.com/bniladridas/rag/commit/a319ea4818ab4505dfd3ab612e75f9e42e474374))
-* chore(deps): bump time-machine from 2.15.0 to 2.19.0 (#34) ([`8d99250`](https://github.com/bniladridas/rag/commit/8d99250814bd75f614ec4acbd3f9381bb553998d))
-* chore(deps): bump scikit-learn from 1.5.0 to 1.6.1 (#33) ([`85d67cb`](https://github.com/bniladridas/rag/commit/85d67cbbd8f207fe185e222e82b05a248cbcab3b))
-* chore(deps): bump requests from 2.32.4 to 2.32.5 (#32) ([`d635f14`](https://github.com/bniladridas/rag/commit/d635f14190f53cab516941d0c4803b573f100490))
-* chore(deps): bump actions/setup-python from 4 to 6 (#31) ([`949ad5f`](https://github.com/bniladridas/rag/commit/949ad5f19d743c2136fbc6cf90632c9560dc0de1))
-* chore(deps): bump softprops/action-gh-release from 1 to 2 (#29) ([`9050319`](https://github.com/bniladridas/rag/commit/905031995ecb448b0f571413d3bf4cb0103c7005))
-* chore(deps): bump openai from 2.6.0 to 2.6.1 (#25) ([`55075e0`](https://github.com/bniladridas/rag/commit/55075e090f925adc0263b33d1dc9afcc79bc4689))
-* chore(deps): bump python-dotenv from 1.0.1 to 1.2.1 (#26) ([`270ad88`](https://github.com/bniladridas/rag/commit/270ad881453d4dd8a67616f84284bf79c4df7da8))
-* chore(deps): bump psutil from 6.0.0 to 7.1.2 (#24) ([`4ebe3c3`](https://github.com/bniladridas/rag/commit/4ebe3c3118acadeda00f7bd5561cbe43b8e03ac1))
-* chore(deps): bump beautifulsoup4 from 4.12.3 to 4.14.2 (#23) ([`135ff3a`](https://github.com/bniladridas/rag/commit/135ff3a72e69d69b1264e369f66608881fb8c5ae))
-* chore(deps): bump flake8 from 7.1.1 to 7.3.0 (#27) ([`533d0c1`](https://github.com/bniladridas/rag/commit/533d0c14efcbf9a3eea311aaaa4f4ac7caa22017))
+* chore: update dev dependencies and fix imports ([#43](https://github.com/bniladridas/rag/issues/43)) ([`eb8457f`](https://github.com/bniladridas/rag/commit/eb8457f9641fb3c82d1dc0a607b1951407ff4264))
+* chore(deps): bump transformers from 4.53.0 to 4.57.3 ([#42](https://github.com/bniladridas/rag/issues/42)) ([`d37b953`](https://github.com/bniladridas/rag/commit/d37b9535e20bb92a0a484a9927d72302fc27fe63))
+* chore(deps-dev): bump pytest-cov from 5.0.0 to 7.0.0 ([#40](https://github.com/bniladridas/rag/issues/40)) ([`3e5c7c1`](https://github.com/bniladridas/rag/commit/3e5c7c19392253896b2a298865e8f5ba2ac953a1))
+* chore(deps): bump psutil from 7.1.2 to 7.1.3 ([#38](https://github.com/bniladridas/rag/issues/38)) ([`736c5bd`](https://github.com/bniladridas/rag/commit/736c5bdd035fd30facca59eafa38f42a24165d74))
+* chore(deps): bump actions/checkout from 4 to 6 ([#37](https://github.com/bniladridas/rag/issues/37)) ([`ff399fc`](https://github.com/bniladridas/rag/commit/ff399fcaae0062516c8682108a1cdc611b6929ac))
+* chore(deps-dev): bump setuptools from 68.0.0 to 80.9.0 ([#36](https://github.com/bniladridas/rag/issues/36)) ([`1dd7769`](https://github.com/bniladridas/rag/commit/1dd7769873e05318dd53c5b148c4ce343c7779ac))
+* chore(deps): bump matplotlib from 3.9.0 to 3.9.4 ([#35](https://github.com/bniladridas/rag/issues/35)) ([`a319ea4`](https://github.com/bniladridas/rag/commit/a319ea4818ab4505dfd3ab612e75f9e42e474374))
+* chore(deps): bump time-machine from 2.15.0 to 2.19.0 ([#34](https://github.com/bniladridas/rag/issues/34)) ([`8d99250`](https://github.com/bniladridas/rag/commit/8d99250814bd75f614ec4acbd3f9381bb553998d))
+* chore(deps): bump scikit-learn from 1.5.0 to 1.6.1 ([#33](https://github.com/bniladridas/rag/issues/33)) ([`85d67cb`](https://github.com/bniladridas/rag/commit/85d67cbbd8f207fe185e222e82b05a248cbcab3b))
+* chore(deps): bump requests from 2.32.4 to 2.32.5 ([#32](https://github.com/bniladridas/rag/issues/32)) ([`d635f14`](https://github.com/bniladridas/rag/commit/d635f14190f53cab516941d0c4803b573f100490))
+* chore(deps): bump actions/setup-python from 4 to 6 ([#31](https://github.com/bniladridas/rag/issues/31)) ([`949ad5f`](https://github.com/bniladridas/rag/commit/949ad5f19d743c2136fbc6cf90632c9560dc0de1))
+* chore(deps): bump softprops/action-gh-release from 1 to 2 ([#29](https://github.com/bniladridas/rag/issues/29)) ([`9050319`](https://github.com/bniladridas/rag/commit/905031995ecb448b0f571413d3bf4cb0103c7005))
+* chore(deps): bump openai from 2.6.0 to 2.6.1 ([#25](https://github.com/bniladridas/rag/issues/25)) ([`55075e0`](https://github.com/bniladridas/rag/commit/55075e090f925adc0263b33d1dc9afcc79bc4689))
+* chore(deps): bump python-dotenv from 1.0.1 to 1.2.1 ([#26](https://github.com/bniladridas/rag/issues/26)) ([`270ad88`](https://github.com/bniladridas/rag/commit/270ad881453d4dd8a67616f84284bf79c4df7da8))
+* chore(deps): bump psutil from 6.0.0 to 7.1.2 ([#24](https://github.com/bniladridas/rag/issues/24)) ([`4ebe3c3`](https://github.com/bniladridas/rag/commit/4ebe3c3118acadeda00f7bd5561cbe43b8e03ac1))
+* chore(deps): bump beautifulsoup4 from 4.12.3 to 4.14.2 ([#23](https://github.com/bniladridas/rag/issues/23)) ([`135ff3a`](https://github.com/bniladridas/rag/commit/135ff3a72e69d69b1264e369f66608881fb8c5ae))
+* chore(deps): bump flake8 from 7.1.1 to 7.3.0 ([#27](https://github.com/bniladridas/rag/issues/27)) ([`533d0c1`](https://github.com/bniladridas/rag/commit/533d0c14efcbf9a3eea311aaaa4f4ac7caa22017))
 * chore(deps): bump openai from 2.3.0 to 2.6.0 ([`8add61d`](https://github.com/bniladridas/rag/commit/8add61d2fad90e7718eed28aa15e0d7a59e27ef9))
 * chore(deps): bump pytest from 8.3.0 to 8.4.2 ([`c3d9e6b`](https://github.com/bniladridas/rag/commit/c3d9e6b86a3ca2bd57b7587be38d5c7e481b552e))
 * chore(deps): bump pandas from 2.2.0 to 2.3.3 ([`6403b22`](https://github.com/bniladridas/rag/commit/6403b223f02d10c17703b4a96c12819c53750db6))
@@ -301,14 +301,14 @@
 * chore(deps): update numpy requirement ([`ec5539f`](https://github.com/bniladridas/rag/commit/ec5539fa354d7664164e0a34ff8282f1d2a1d692))
 * chore(deps): bump actions/configure-pages from 4 to 5 ([`3f9467a`](https://github.com/bniladridas/rag/commit/3f9467a190461d813713f860e1853dbbe42670e5))
 * chore(deps): bump the pip group across 1 directory with 3 updates ([`bc284b2`](https://github.com/bniladridas/rag/commit/bc284b20d23f8b8458d31905da21e4c9a773dd88))
-* chore(deps): bump openai from 1.12.0 to 2.3.0 (#9) ([`6c9aee0`](https://github.com/bniladridas/rag/commit/6c9aee08e6278fd7d968940e413c6f5ffcb064cb))
-* chore(deps): bump the pip group across 1 directory with 3 updates (#14) ([`1d8a8b9`](https://github.com/bniladridas/rag/commit/1d8a8b98620ab3b227567d8aaca2b3996e4dbdc0))
+* chore(deps): bump openai from 1.12.0 to 2.3.0 ([#9](https://github.com/bniladridas/rag/issues/9)) ([`6c9aee0`](https://github.com/bniladridas/rag/commit/6c9aee08e6278fd7d968940e413c6f5ffcb064cb))
+* chore(deps): bump the pip group across 1 directory with 3 updates ([#14](https://github.com/bniladridas/rag/issues/14)) ([`1d8a8b9`](https://github.com/bniladridas/rag/commit/1d8a8b98620ab3b227567d8aaca2b3996e4dbdc0))
 * chore(deps): bump actions/checkout from 4 to 5 ([`4e0c499`](https://github.com/bniladridas/rag/commit/4e0c499631fd4a704f0c4bdbf7d7f4723be7e262))
 * chore(deps): bump actions/setup-python from 4 to 6 ([`d810cc2`](https://github.com/bniladridas/rag/commit/d810cc22fbf6ef9a6e3adcfbd409604ad8784208))
 
 ### Ci
 
-* ci: fix workflow permissions issue (alert #21) ([`d5f2950`](https://github.com/bniladridas/rag/commit/d5f2950aa14b689abe11cd7527779d153dd9cc69))
+* ci: fix workflow permissions issue (alert [#21](https://github.com/bniladridas/rag/issues/21)) ([`d5f2950`](https://github.com/bniladridas/rag/commit/d5f2950aa14b689abe11cd7527779d153dd9cc69))
 
 ### Documentation
 
@@ -317,7 +317,7 @@
 
 ### Feature
 
-* feat[cli]: add cli policy and standards (features #28) ([`733ccc8`](https://github.com/bniladridas/rag/commit/733ccc864e737e53b42ee82b534fcf03ddcbce80))
+* feat[cli]: add cli policy and standards (features [#28](https://github.com/bniladridas/rag/issues/28)) ([`733ccc8`](https://github.com/bniladridas/rag/commit/733ccc864e737e53b42ee82b534fcf03ddcbce80))
 
 ## v0.3.1 (2025-10-13)
 
@@ -441,7 +441,7 @@
 
 ### Fix
 
-* fix: test issue link [[#1](https://github.com/bniladridas/rag/issues/1)](https://github.com/bniladridas/rag/issues/1) ([`f9f02a5`](https://github.com/bniladridas/rag/commit/f9f02a56dc013ff945317967a1be0b0c471c2fd4))
+* fix: test issue link [[[#1](https://github.com/bniladridas/rag/issues/1)](https://github.com/bniladridas/rag/issues/1)](https://github.com/bniladridas/rag/issues/1) ([`f9f02a5`](https://github.com/bniladridas/rag/commit/f9f02a56dc013ff945317967a1be0b0c471c2fd4))
 
 ### Test
 

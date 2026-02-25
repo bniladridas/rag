@@ -1,5 +1,5 @@
 # Core ML and AI dependencies
-torch==2.8.0  # Note: CI installs CPU version with specific index URL for performance
+torch>=2.8.0  # Note: CI installs CPU version with specific index URL for performance
 transformers==4.57.3
 sentence-transformers==5.1.2
 faiss-cpu==1.13.0
@@ -22,7 +22,7 @@ time-machine==2.19.0
 memory-profiler==0.61.0
 
 networkx>=3.2
-matplotlib==3.9.4
+matplotlib>=3.9.4
 
 # UI and display
 rich~=14.0

@@ -37,6 +37,8 @@ jobs:
       # ============================================================
       - name: Determine if should run
         id: should-run
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
           # Check if triggered by workflow_dispatch
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] &&
@@ -49,7 +51,6 @@ jobs:
 
           # Check if triggered by issue_comment with "/analyze"
           if [ "${{ github.event_name }}" == "issue_comment" ]; then
-            COMMENT_BODY="${{ github.event.comment.body }}"
             if echo "$COMMENT_BODY" | grep -qiE "^\/(analyze|run analysis|check pr)"; then
               echo "RUN=true" >> $GITHUB_OUTPUT
               echo "PR_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT

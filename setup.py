@@ -15,7 +15,7 @@ long_description = Path("README.asc").read_text(encoding="utf-8")
 
 setup(
     name="rag",
-    version="1.6.5",
+    version="1.6.6",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,

@@ -12,6 +12,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: read
 
 concurrency:
   group: "pages"
@@ -22,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
       - uses: actions/configure-pages@v5
         with:
           enablement: auto

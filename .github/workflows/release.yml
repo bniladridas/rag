@@ -42,7 +42,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Generate changelog
-        run: semantic-release changelog
+        run: semantic-release changelog --output CHANGELOG.md
 
       - name: Enhance changelog
         run: |

@@ -14,7 +14,7 @@ import faiss
 try:
     import torch
 except Exception:  # pragma: no cover - optional
-    torch = None
+    torch = None  # type: ignore[assignment]
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from .config import Config
@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 # Optional: use fallback embeddings if SentenceTransformer not available
 try:
     from sentence_transformers import SentenceTransformer
-except ImportError:
-    SentenceTransformer = None
+except ImportError:  # pragma: no cover - optional
+    SentenceTransformer = None  # type: ignore[assignment]
     logger.warning("sentence_transformers not installed. Using fallback embeddings.")
 
 

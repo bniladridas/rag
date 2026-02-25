@@ -41,6 +41,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
 
+      - name: Generate changelog
+        run: semantic-release changelog
+
       - name: Enhance changelog
         run: |
           python scripts/enhance_changelog.py

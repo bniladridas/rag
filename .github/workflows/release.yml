@@ -48,21 +48,21 @@ jobs:
           PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "$TAG")
 
           # Generate changelog entries between tags
-          {
-            echo "## $TAG"
-            echo ""
-            git log --oneline $PREV_TAG..$TAG | grep -v "chore(release)" | sed 's/^[a-f0-9]* /- /' || true
-          } > /tmp/new_entries.md
+          CHANGES=$(git log --oneline $PREV_TAG..$TAG 2>/dev/null | grep -v "chore(release)" | grep -v "docs: update changelog" | grep -v "docs: update webpage version" || true)
 
           # Prepend to CHANGELOG.md if there are entries
-          if [ -s /tmp/new_entries.md ]; then
-            # Get date
+          if [ -n "$CHANGES" ]; then
             DATE=$(date +%Y-%m-%d)
-            sed -i "s/## $TAG/## $TAG ($DATE)/" /tmp/new_entries.md
-            # Combine with existing changelog
-            cat /tmp/new_entries.md > CHANGELOG_NEW.md
-            cat CHANGELOG.md >> CHANGELOG_NEW.md
-            mv CHANGELOG_NEW.md CHANGELOG.md
+            {
+              echo "## $TAG ($DATE)"
+              echo ""
+              echo "$CHANGES" | sed 's/^[a-f0-9]* /- /'
+              echo ""
+            } > /tmp/new_entries.md
+
+            # Remove old header and combine
+            tail -n +2 CHANGELOG.md > /tmp/old_changelog.md
+            cat /tmp/new_entries.md /tmp/old_changelog.md > CHANGELOG.md
             echo "Updated CHANGELOG.md with $TAG entries"
           else
             echo "No new entries to add"

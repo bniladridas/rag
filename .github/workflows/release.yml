@@ -47,9 +47,13 @@ jobs:
       - name: Update webpage version
         run: |
           python scripts/update_webpage_version.py
-          git add release-webpage/index.html
-          git commit -m "docs: update webpage version"
-          git push
+          if git diff --quiet release-webpage/index.html; then
+            echo "No version change needed"
+          else
+            git add release-webpage/index.html
+            git commit -m "docs: update webpage version"
+            git push
+          fi
 
       - name: Trigger pages deployment
         uses: peter-evans/repository-dispatch@v3

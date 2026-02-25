@@ -1,12 +1,24 @@
+# Yamllint configuration for this project
+
 extends: default
 
 ignore: |
   */venv/*
+  .venv313/
 
 rules:
+  # Maximum line length
   line-length:
     max: 120
+  
+  # Disable document-start warning
   document-start: disable
+  
+  # Truthy values check
   truthy:
     allowed-values: ['true', 'false']
     check-keys: false
+  
+  # Comments
+  comments:
+    min-spaces-from-content: 1

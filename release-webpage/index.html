@@ -3,335 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Release Workflow</title>
+    <title>rag - Documentation</title>
     <style>
         :root {
-            color-scheme: dark;
+            --bg-primary: #111111;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #222222;
+            --text-primary: #f3f3f3;
+            --text-secondary: #a0a0a0;
+            --accent: #6b8aff;
+            --accent-hover: #8da6ff;
+            --border: rgba(255, 255, 255, 0.08);
+            --code-bg: #1e1e1e;
+            --sidebar-width: 260px;
+        }
+        * {
+            box-sizing: border-box;
         }
         body {
             font-family: "Inter", "Work Sans", system-ui, sans-serif;
             margin: 0;
-            background: #111111;
-            color: #f3f3f3;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
         }
-        .page {
-            max-width: 900px;
-            margin: 48px auto 64px;
-            padding: 0 24px 32px;
-            opacity: 0;
-            animation: fadeIn 0.8s ease 0.2s forwards;
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            padding: 24px 0;
         }
-        h1, h2 {
-            font-weight: 500;
-            letter-spacing: 0.3px;
-            margin: 0;
+        .sidebar-header {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+        .version {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .nav-section {
+            padding: 0 16px;
+            margin-bottom: 20px;
+        }
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            padding: 0 8px;
+            margin-bottom: 8px;
+        }
+        .nav-link {
+            display: block;
+            padding: 8px 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.15s ease;
+        }
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .nav-link.active {
+            background: rgba(107, 138, 255, 0.15);
+            color: var(--accent);
+        }
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            min-width: 0;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 48px 40px 80px;
+        }
+        .page-header {
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
         }
         h1 {
             font-size: 36px;
-            margin-bottom: 8px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            margin: 0 0 12px;
+        }
+        .page-description {
+            color: var(--text-secondary);
+            font-size: 16px;
+            line-height: 1.5;
         }
         h2 {
             font-size: 22px;
-            margin: 40px 0 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            margin: 40px 0 16px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+        h3 {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 24px 0 12px;
         }
         p {
-            line-height: 1.54;
-            margin: 8px 0 10px;
-            max-width: 720px;
+            line-height: 1.6;
+            margin: 12px 0;
+            color: var(--text-secondary);
         }
         .steps {
             list-style: none;
             padding: 0;
-            margin: 0;
+            margin: 16px 0;
             display: grid;
-            gap: 14px;
+            gap: 12px;
         }
         .steps li {
-            background: #1d1d1d;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 14px 18px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-            font-size: 17px;
-        }
-        code,
-        pre {
-            font-family: "JetBrains Mono", "Space Mono", monospace;
-            background: #1e1e1e;
-            color: #fdfdfd;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             border-radius: 10px;
+            padding: 16px 20px;
+            font-size: 15px;
+        }
+        code {
+            font-family: "JetBrains Mono", "Space Mono", monospace;
+            background: var(--code-bg);
+            color: #fdfdfd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
         }
         pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
             padding: 16px;
-            line-height: 1.5;
             overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        pre code {
+            background: none;
+            padding: 0;
         }
         details {
-            margin-top: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 16px;
+            border: 1px solid var(--border);
             border-radius: 10px;
-            background: #1c1c1c;
-            padding: 12px 16px;
+            background: var(--bg-secondary);
         }
         details summary {
             cursor: pointer;
-            font-size: 16px;
+            padding: 14px 18px;
+            font-size: 14px;
             font-weight: 500;
+            list-style: none;
         }
-        .loading-screen {
-            position: fixed;
-            inset: 0;
-            background: #111111;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.6s ease, visibility 0.6s ease;
+        details summary::-webkit-details-marker {
+            display: none;
         }
-        .loading-inner {
+        details summary::after {
+            content: "+";
+            float: right;
+            color: var(--text-secondary);
+        }
+        details[open] summary::after {
+            content: "-";
+        }
+        details .content {
+            padding: 0 18px 18px;
+            margin: 0;
+            border-top: 1px solid var(--border);
+        }
+        .footer {
+            padding: 24px 40px;
+            border-top: 1px solid var(--border);
             text-align: center;
-            color: #f7f7f7;
+            color: var(--text-secondary);
+            font-size: 14px;
         }
-        .loading-text {
-            font-size: 18px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .loader {
-            margin: 16px auto 8px;
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            border: 3px solid #f7f7f7;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-        }
-        .dots::after {
-            content: "";
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-        .loading-screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        @keyframes dots {
-            0% { content: ""; }
-            25% { content: "."; }
-            50% { content: ".."; }
-            75% { content: "..."; }
-            100% { content: ""; }
-        }
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-        a {
-            color: #cbd5ff;
+        .footer a {
+            color: var(--accent);
             text-decoration: none;
         }
-        a:hover {
+        .footer a:hover {
             text-decoration: underline;
         }
-        footer {
-            margin-top: 32px;
-            text-align: center;
-        }
-        .footer-logo {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: block;
-            margin: 0 auto 8px;
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .main {
+                margin-left: 0;
+            }
+            .content {
+                padding: 32px 20px;
+            }
         }
     </style>
-
 </head>
 <body>
-    <div class="loading-screen" id="loading-screen" aria-live="polite">
-        <div class="loading-inner">
-            <div class="loader" aria-hidden="true"></div>
-            <div class="loading-text">Searching<span class="dots"></span></div>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="logo">
+                <img class="logo-img" src="https://avatars.githubusercontent.com/u/203538727?s=200&v=4" alt="Logo">
+                rag
+            </a>
+            <div class="version">v1.4.2</div>
         </div>
-    </div>
-
-    <div class="page">
-    <h1>Release Workflow</h1>
-    <p>A single push to <code>main</code> triggers the release job, running <code>semantic-release</code> with the Harper bot token.</p>
-
-    <h2>Process</h2>
-    <ul class="steps">
-        <li>Checkout the repository with full history.</li>
-        <li>Spin up Python 3.10, upgrade pip, install requirements, and prepare wheel.</li>
-        <li>Configure git as the release bot to create tags, changelog entries, and the GitHub release.</li>
-        <li>Run <code>semantic-release</code>, then run <code>python scripts/enhance_changelog.py</code>.</li>
-    </ul>
-
-    <p>Keep your local run minimal: always activate a virtual environment, install the package with <code>pip install -e .</code>, and rerun <code>rag.ui.tui</code> from the same shell to ensure the entry point is discoverable.</p>
-
-    <details>
-        <summary>Recent terminal transcript for reference</summary>
-        <pre>$ .venv313/bin/python -m rag.ui.tui
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Getting Started</div>
+            <a href="#introduction" class="nav-link active">Introduction</a>
+            <a href="#installation" class="nav-link">Installation</a>
+            <a href="#quick-start" class="nav-link">Quick Start</a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Reference</div>
+            <a href="#release-workflow" class="nav-link">Release Workflow</a>
+            <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-section-title">Resources</div>
+            <a href="https://github.com/harpertoken/rag" target="_blank" class="nav-link">GitHub</a>
+            <a href="https://github.com/harpertoken/rag/issues" target="_blank" class="nav-link">Issues</a>
+        </div>
+    </nav>
+    
+    <main class="main">
+        <div class="content">
+            <header class="page-header">
+                <h1>Documentation</h1>
+                <p class="page-description">Agentic RAG Transformer - ML, Sci-Fi, and Cosmos Assistant</p>
+            </header>
+            
+            <section id="introduction">
+                <h2>Introduction</h2>
+                <p>rag is an intelligent retrieval-augmented generation system that helps you get answers from your knowledge base using advanced ML techniques.</p>
+            </section>
+            
+            <section id="installation">
+                <h2>Installation</h2>
+                <p>Install the package in editable mode with all dependencies:</p>
+                <pre><code>pip install -e .</code></pre>
+                <p>Always activate a virtual environment before installing.</p>
+            </section>
+            
+            <section id="quick-start">
+                <h2>Quick Start</h2>
+                <p>Run the TUI (Terminal User Interface):</p>
+                <pre><code>python -m rag.ui.tui</code></pre>
+                <p>Type <code>exit</code> or <code>quit</code> to exit, or <code>help</code> for instructions.</p>
+            </section>
+            
+            <section id="release-workflow">
+                <h2>Release Workflow</h2>
+                <p>A single push to <code>main</code> triggers the release job, running <code>semantic-release</code> with the GitHub Actions bot.</p>
+                
+                <h3>Process</h3>
+                <ul class="steps">
+                    <li>Checkout the repository with full history.</li>
+                    <li>Spin up Python 3.13, upgrade pip, install requirements, and prepare wheel.</li>
+                    <li>Configure git as the GitHub Actions bot to create tags, changelog entries, and the GitHub release.</li>
+                    <li>Run <code>semantic-release</code>, then run <code>python scripts/enhance_changelog.py</code>.</li>
+                    <li>Run <code>python scripts/update_webpage_version.py</code> to sync version in HTML.</li>
+                </ul>
+            </section>
+            
+            <section id="troubleshooting">
+                <h2>Troubleshooting</h2>
+                <p>Keep your local run minimal: always activate a virtual environment, install the package with <code>pip install -e .</code>, and rerun <code>rag.ui.tui</code> from the same shell to ensure the entry point is discoverable.</p>
+                
+                <details>
+                    <summary>Common error: ModuleNotFoundError</summary>
+                    <div class="content">
+                        <p>If you see <code>ModuleNotFoundError: No module named 'rag'</code>, run:</p>
+                        <pre><code>pip install -e .</code></pre>
+                    </div>
+                </details>
+                
+                <details>
+                    <summary>Recent terminal transcript for reference</summary>
+                    <div class="content">
+                        <pre>$ .venv313/bin/python -m rag.ui.tui
 /Users/niladri/Desktop/rag/.venv313/bin/python: Error while finding module specification for 'rag.ui.tui' (ModuleNotFoundError: No module named 'rag')
 $ .venv313/bin/python -m pip install -e .
-Obtaining file:///Users/niladri/Desktop/rag
-  Installing build dependencies ... done
-  Checking if build backend supports build_editable ... done
-  Getting requirements to build editable ... done
-  Preparing editable metadata (pyproject.toml) ... done
-Collecting torch==2.8.0 (from rag==1.1.0)
-  Downloading torch-2.8.0-cp313-none-macosx_11_0_arm64.whl.metadata (30 kB)
-Requirement already satisfied: transformers==4.57.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (4.57.3)
-Requirement already satisfied: sentence-transformers==5.1.2 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (5.1.2)
-Requirement already satisfied: faiss-cpu==1.13.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (1.13.0)
-Requirement already satisfied: numpy&lt;3.0.0,&gt;=1.26.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.4.2)
-Requirement already satisfied: pandas==2.3.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.3.3)
-Requirement already satisfied: scikit-learn==1.6.1 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (1.6.1)
-Requirement already satisfied: openai==2.14.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.14.0)
-Requirement already satisfied: requests==2.32.5 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.32.5)
-Requirement already satisfied: beautifulsoup4==4.14.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (4.14.3)
-Requirement already satisfied: tmdbsimple==2.9.1 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.9.1)
-Requirement already satisfied: python-dotenv==1.2.1 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (1.2.1)
-Requirement already satisfied: psutil==7.1.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (7.1.3)
-Requirement already satisfied: time-machine==2.19.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.19.0)
-Requirement already satisfied: memory-profiler==0.61.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (0.61.0)
-Requirement already satisfied: networkx==3.4 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (3.4)
-Requirement already satisfied: matplotlib==3.9.4 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (3.9.4)
-Requirement already satisfied: rich~=14.0 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (14.3.3)
-Requirement already satisfied: types-requests==2.32.4.20250913 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (2.32.4.20250913)
-Requirement already satisfied: python-semantic-release==10.5.3 in ./.venv313/lib/python3.13/site-packages (from rag==1.1.0) (10.5.3)
-Requirement already satisfied: soupsieve&gt;=1.6.1 in ./.venv313/lib/python3.13/site-packages (from beautifulsoup4==4.14.3-&gt;rag==1.1.0) (2.8.3)
-Requirement already satisfied: typing-extensions&gt;=4.0.0 in ./.venv313/lib/python3.13/site-packages (from beautifulsoup4==4.14.3-&gt;rag==1.1.0) (4.15.0)
-Requirement already satisfied: packaging in ./.venv313/lib/python3.13/site-packages (from faiss-cpu==1.13.0-&gt;rag==1.1.0) (26.0)
-Requirement already satisfied: contourpy&gt;=1.0.1 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (1.3.3)
-Requirement already satisfied: cycler&gt;=0.10 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (0.12.1)
-Requirement already satisfied: fonttools&gt;=4.22.0 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (4.61.1)
-Requirement already satisfied: kiwisolver&gt;=1.3.1 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (1.4.9)
-Requirement already satisfied: pillow&gt;=8 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (12.1.1)
-Requirement already satisfied: pyparsing&gt;=2.3.1 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (3.3.2)
-Requirement already satisfied: python-dateutil&gt;=2.7 in ./.venv313/lib/python3.13/site-packages (from matplotlib==3.9.4-&gt;rag==1.1.0) (2.9.0.post0)
-Requirement already satisfied: anyio&lt;5,&gt;=3.5.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (4.12.1)
-Requirement already satisfied: distro&lt;2,&gt;=1.7.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (1.9.0)
-Requirement already satisfied: httpx&lt;1,&gt;=0.23.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (0.28.1)
-Requirement already satisfied: jiter&lt;1,&gt;=0.10.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (0.13.0)
-Requirement already satisfied: pydantic&lt;3,&gt;=1.9.0 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (2.12.5)
-Requirement already satisfied: sniffio in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (1.3.1)
-Requirement already satisfied: tqdm&gt;4 in ./.venv313/lib/python3.13/site-packages (from openai==2.14.0-&gt;rag==1.1.0) (4.67.3)
-Requirement already satisfied: pytz&gt;=2020.1 in ./.venv313/lib/python3.13/site-packages (from pandas==2.3.3-&gt;rag==1.1.0) (2025.2)
-Requirement already satisfied: tzdata&gt;=2022.7 in ./.venv313/lib/python3.13/site-packages (from pandas==2.3.3-&gt;rag==1.1.0) (2025.3)
-Requirement already satisfied: click~=8.1.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (8.1.8)
-Requirement already satisfied: click-option-group~=0.5 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (0.5.9)
-Requirement already satisfied: gitpython~=3.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (3.1.46)
-Requirement already satisfied: jinja2~=3.1 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (3.1.6)
-Requirement already satisfied: python-gitlab&lt;7.0.0,&gt;=4.0.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (6.5.0)
-Requirement already satisfied: tomlkit~=0.13.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (0.13.3)
-Requirement already satisfied: dotty-dict~=1.3 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.3.1)
-Requirement already satisfied: importlib-resources~=6.0 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (6.5.2)
-Requirement already satisfied: shellingham~=1.5 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.5.4)
-Requirement already satisfied: Deprecated~=1.2 in ./.venv313/lib/python3.13/site-packages (from python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.3.1)
-Requirement already satisfied: charset_normalizer&lt;4,&gt;=2 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (3.4.4)
-Requirement already satisfied: idna&lt;4,&gt;=2.5 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (3.11)
-Requirement already satisfied: urllib3&lt;3,&gt;=1.21.1 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (2.6.3)
-Requirement already satisfied: certifi&gt;=2017.4.17 in ./.venv313/lib/python3.13/site-packages (from requests==2.32.5-&gt;rag==1.1.0) (2026.1.4)
-Requirement already satisfied: scipy&gt;=1.6.0 in ./.venv313/lib/python3.13/site-packages (from scikit-learn==1.6.1-&gt;rag==1.1.0) (1.17.0)
-Requirement already satisfied: joblib&gt;=1.2.0 in ./.venv313/lib/python3.13/site-packages (from scikit-learn==1.6.1-&gt;rag==1.1.0) (1.5.3)
-Requirement already satisfied: threadpoolctl&gt;=3.1.0 in ./.venv313/lib/python3.13/site-packages (from scikit-learn==1.6.1-&gt;rag==1.1.0) (3.6.0)
-Requirement already satisfied: huggingface-hub&gt;=0.20.0 in ./.venv313/lib/python3.13/site-packages (from sentence-transformers==5.1.2-&gt;rag==1.1.0) (0.36.2)
-Requirement already satisfied: filelock in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (3.24.3)
-Requirement already satisfied: pyyaml&gt;=5.1 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (6.0.3)
-Requirement already satisfied: regex!=2019.12.17 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (2026.2.19)
-Requirement already satisfied: tokenizers&lt;=0.23.0,&gt;=0.22.0 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (0.22.2)
-Requirement already satisfied: safetensors&gt;=0.4.3 in ./.venv313/lib/python3.13/site-packages (from transformers==4.57.3-&gt;rag==1.1.0) (0.7.0)
-Requirement already satisfied: setuptools in ./.venv313/lib/python3.13/site-packages (from torch==2.8.0-&gt;rag==1.1.0) (82.0.0)
-Requirement already satisfied: sympy&gt;=1.13.3 in ./.venv313/lib/python3.13/site-packages (from torch==2.8.0-&gt;rag==1.1.0) (1.14.0)
-Requirement already satisfied: fsspec in ./.venv313/lib/python3.13/site-packages (from torch==2.8.0-&gt;rag==1.1.0) (2026.2.0)
-Requirement already satisfied: wrapt&lt;3,&gt;=1.10 in ./.venv313/lib/python3.13/site-packages (from Deprecated~=1.2-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (2.1.1)
-Requirement already satisfied: gitdb&lt;5,&gt;=4.0.1 in ./.venv313/lib/python3.13/site-packages (from gitpython~=3.0-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (4.0.12)
-Requirement already satisfied: smmap&lt;6,&gt;=3.0.1 in ./.venv313/lib/python3.13/site-packages (from gitdb&lt;5,&gt;=4.0.1-&gt;gitpython~=3.0-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (5.0.2)
-Requirement already satisfied: httpcore==1.* in ./.venv313/lib/python3.13/site-packages (from httpx&lt;1,&gt;=0.23.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (1.0.9)
-Requirement already satisfied: h11&gt;=0.16 in ./.venv313/lib/python3.13/site-packages (from httpcore==1.*-&gt;httpx&lt;1,&gt;=0.23.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (0.16.0)
-Requirement already satisfied: hf-xet&lt;2.0.0,&gt;=1.1.3 in ./.venv313/lib/python3.13/site-packages (from huggingface-hub&gt;=0.20.0-&gt;sentence-transformers==5.1.2-&gt;rag==1.1.0) (1.2.0)
-Requirement already satisfied: MarkupSafe&gt;=2.0 in ./.venv313/lib/python3.13/site-packages (from jinja2~=3.1-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (3.0.3)
-Requirement already satisfied: annotated-types&gt;=0.6.0 in ./.venv313/lib/python3.13/site-packages (from pydantic&lt;3,&gt;=1.9.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (0.7.0)
-Requirement already satisfied: pydantic-core==2.41.5 in ./.venv313/lib/python3.13/site-packages (from pydantic&lt;3,&gt;=1.9.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (2.41.5)
-Requirement already satisfied: typing-inspection&gt;=0.4.2 in ./.venv313/lib/python3.13/site-packages (from pydantic&lt;3,&gt;=1.9.0-&gt;openai==2.14.0-&gt;rag==1.1.0) (0.4.2)
-Requirement already satisfied: requests-toolbelt&gt;=1.0.0 in ./.venv313/lib/python3.13/site-packages (from python-gitlab&lt;7.0.0,&gt;=4.0.0-&gt;python-semantic-release==10.5.3-&gt;rag==1.1.0) (1.0.0)
-Requirement already satisfied: markdown-it-py&gt;=2.2.0 in ./.venv313/lib/python3.13/site-packages (from rich~=14.0-&gt;rag==1.1.0) (4.0.0)
-Requirement already satisfied: pygments&lt;3.0.0,&gt;=2.13.0 in ./.venv313/lib/python3.13/site-packages (from rich~=14.0-&gt;rag==1.1.0) (2.19.2)
-Requirement already satisfied: mdurl~=0.1 in ./.venv313/lib/python3.13/site-packages (from markdown-it-py&gt;=2.2.0-&gt;rich~=14.0-&gt;rag==1.1.0) (0.1.2)
-Requirement already satisfied: six&gt;=1.5 in ./.venv313/lib/python3.13/site-packages (from python-dateutil&gt;=2.7-&gt;matplotlib==3.9.4-&gt;rag==1.1.0) (1.17.0)
-Requirement already satisfied: mpmath&lt;1.4,&gt;=1.1.0 in ./.venv313/lib/python3.13/site-packages (from sympy&gt;=1.13.3-&gt;torch==2.8.0-&gt;rag==1.1.0) (1.3.0)
-Downloading torch-2.8.0-cp313-none-macosx_11_0_arm64.whl (73.6 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.6/73.6 MB 3.3 MB/s  0:00:22
-Building wheels for collected packages: rag
-  Building editable for rag (pyproject.toml) ... done
-  Created wheel for rag: filename=rag-1.1.0-0.editable-py2.py3-none-any.whl size=2833 sha256=8581b714e3daa21c5d869a8503064e741838cd3a7470fa66d4629bad92ff1cb5
-  Stored in directory: /private/var/folders/15/k786vjpj1d5b32r9dr2_rqk80000gn/T/pip-ephem-wheel-cache-dmrrerpm/wheels/75/aa/bf/3ace7fe1d595a63b61f17d4c49c1f9642b44f80d8733087463
-Successfully built rag
-Installing collected packages: torch, rag
-  Attempting uninstall: torch
-    Found existing installation: torch 2.10.0
-    Uninstalling torch-2.10.0:
-      Successfully uninstalled torch-2.10.0
-Successfully installed rag-1.1.0 torch-2.8.0
+...
+Successfully installed rag-1.4.2 torch-2.8.0
 
-[notice] A new release of pip is available: 26.0 -> 26.0.1
-[notice] To update, run: /Users/niladri/Desktop/rag/.venv313/bin/python -m pip install --upgrade pip</pre>
-    </details>
-
-    <details>
-        <summary>Second run: successful TUI startup</summary>
-        <pre>$ .venv313/bin/python -m rag.ui.tui
+$ .venv313/bin/python -m rag.ui.tui
 INFO: Loading faiss.
 INFO: Successfully loaded faiss.
 INFO: Use pytorch device_name: mps
 INFO: Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-modules.json: 100%|███████████████████████████████████████████████████████████████████| 349/349 [00:00<00:00, 512kB/s]
-config_sentence_transformers.json: 100%|██████████████████████████████████████████████| 116/116 [00:00<00:00, 340kB/s]
-README.md: 10.5kB [00:00, 14.0MB/s]
-sentence_bert_config.json: 100%|████████████████████████████████████████████████████| 53.0/53.0 [00:00<00:00, 132kB/s]
-config.json: 100%|███████████████████████████████████████████████████████████████████| 612/612 [00:00<00:00, 3.43MB/s]
-model.safetensors: 100%|█████████████████████████████████████████████████████████| 90.9M/90.9M [00:15<00:00, 6.03MB/s]
-tokenizer_config.json: 100%|█████████████████████████████████████████████████████████| 350/350 [00:00<00:00, 1.35MB/s]
-vocab.txt: 232kB [00:00, 2.76MB/s]
-tokenizer.json: 466kB [00:00, 6.75MB/s]
-special_tokens_map.json: 100%|████████████████████████████████████████████████████████| 112/112 [00:00<00:00, 360kB/s]
-config.json: 100%|████████████████████████████████████████████████████████████████████| 190/190 [00:00<00:00, 706kB/s]
-tokenizer_config.json: 2.54kB [00:00, 3.32MB/s]
-spiece.model: 100%|█████████████████████████████████████████████████████████████████| 792k/792k [00:05<00:00, 147kB/s]
-tokenizer.json: 2.42MB [00:00, 27.4MB/s]
-special_tokens_map.json: 2.20kB [00:00, 5.07MB/s]
-config.json: 1.40kB [00:00, 2.85MB/s]
-model.safetensors: 100%|███████████████████████████████████████████████████████████| 308M/308M [02:10<00:00, 2.36MB/s]
-generation_config.json: 100%|█████████████████████████████████████████████████████████| 147/147 [00:00<00:00, 471kB/s]
-Batches: 100%|██████████████████████████████████████████████████████████████████████████| 1/1 [00:02<00:00,  2.18s/it]
 INFO: Loaded 8 documents from knowledge base
 ╭──────────────────────────────────╮
 │ 🤖 Agentic RAG Transformer       │
 │ ML, Sci-Fi, and Cosmos Assistant │
-│ Version 1.1.0                    │
+│ Version 1.4.2                    │
 ╰──────────────────────────────────╯
 Type 'exit'/'quit' to quit, 'help' for instructions.</pre>
-    </details>
-
-    <footer>
-        <a href="https://github.com/harpertoken">
-            <img class="footer-logo" src="https://avatars.githubusercontent.com/u/203538727?s=200&v=4" alt="Harper Token Org">
-        </a>
-        <br>
-        <a href="https://github.com/harpertoken/rag">rag</a>
-    </footer>
-    </div>
-
+                    </div>
+                </details>
+            </section>
+        </div>
+        
+        <footer class="footer">
+            <a href="https://github.com/harpertoken/rag">GitHub</a> ·
+            <a href="https://github.com/harpertoken/rag/issues">Issues</a>
+        </footer>
+    </main>
+    
     <script>
-        window.addEventListener("load", () => {
-            const screen = document.getElementById("loading-screen");
-            const minDelayMs = 900;
-            setTimeout(() => {
-                screen.classList.add("hidden");
-            }, minDelayMs);
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
         });
     </script>
 </body>

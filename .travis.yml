@@ -1,0 +1,58 @@
+language: python
+
+dist: focal
+
+os: linux
+
+cache:
+  pip: true
+  directories:
+    - $HOME/.cache/pip
+
+matrix:
+  include:
+    - python: '3.9'
+      name: 'Python 3.9'
+    - python: '3.10'
+      name: 'Python 3.10'
+    - python: '3.11'
+      name: 'Python 3.11'
+    - python: '3.12'
+      name: 'Python 3.12'
+  allow_failures:
+    - python: '3.13-dev'
+    - python: 'pypy3'
+  fast_finish: true
+
+before_install:
+  - python --version
+  - pip install --upgrade pip
+
+install:
+  - pip install -r requirements.txt
+  - pip install pytest pytest-cov pytest-mock flake8 black mypy types-requests codecov
+
+script:
+  - flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics || true
+  - flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics || true
+  - mypy src/ || true
+  - pytest tests/ -v -m unit --cov=src --cov-report=xml --cov-report=term-missing
+  - pytest tests/ -v -m integration --cov=src --cov-report=xml --cov-report=term-missing --cov-append || true
+
+after_success:
+  - codecov || true
+
+jobs:
+  include:
+    - name: 'Lint'
+      python: '3.10'
+      script:
+        - flake8 src/ tests/
+        - black --check src/ tests/
+        - mypy src/
+
+notifications:
+  email: false
+  webhooks:
+    on_success: always
+    on_failure: always

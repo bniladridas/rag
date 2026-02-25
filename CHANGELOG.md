@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.6.5 (2026-02-25)
+
+### Fix
+
+* fix: correct semantic-release cli ([`9a620e7`](https://github.com/bniladridas/rag/commit/9a620e75d60ef4be253ea58b73edc87999ec4429))
+
 ## v1.6.4 (2026-02-25)
 
 ### Fix

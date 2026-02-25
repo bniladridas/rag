@@ -61,6 +61,7 @@ jobs:
 
       - name: Run integration tests with pytest
         run: |
+          export PYTHONPATH="$PWD/src:$PYTHONPATH"
           pytest tests/ -v -m integration --cov=src --cov-report=xml --cov-report=term-missing --cov-append
 
       - name: Upload coverage to Codecov

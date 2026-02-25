@@ -46,14 +46,14 @@ jobs:
           # Get the latest tag
           TAG=$(git describe --tags --abbrev=0)
           PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "$TAG")
-          
+
           # Generate changelog entries between tags
           {
             echo "## $TAG"
             echo ""
             git log --oneline $PREV_TAG..$TAG | grep -v "chore(release)" | sed 's/^[a-f0-9]* /- /' || true
           } > /tmp/new_entries.md
-          
+
           # Prepend to CHANGELOG.md if there are entries
           if [ -s /tmp/new_entries.md ]; then
             # Get date

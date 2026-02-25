@@ -32,14 +32,16 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name "harper-release-bot"
-          git config user.email "237646224+harper-release-bot@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Run semantic release
         run: semantic-release version --push --tag --changelog --vcs-release
         env:
-          GITHUB_TOKEN: ${{ secrets.HARPER_RELEASE_BOT_TOKEN }}
-          GH_TOKEN: ${{ secrets.HARPER_RELEASE_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enhance changelog
         run: python scripts/enhance_changelog.py
+
+      - name: Update webpage version
+        run: python scripts/update_webpage_version.py

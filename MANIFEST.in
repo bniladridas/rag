@@ -1,8 +1,8 @@
 # Include license and readme
-include LICENSE
-include README.md
+include LICENSE.asc
+include README.asc
 include CHANGELOG.md
-include SECURITY.md
+include SECURITY.asc
 
 # Include type stubs
 recursive-include src/rag *.pyi
@@ -12,3 +12,6 @@ recursive-include src/rag/*.pyi
 recursive-include src/rag *.json
 recursive-include src/rag *.yaml
 recursive-include src/rag *.yml
+
+# Include harper config
+recursive-include .harper *

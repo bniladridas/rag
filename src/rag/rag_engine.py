@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 try:
     from sentence_transformers import SentenceTransformer
 except ImportError:  # pragma: no cover - optional
-    SentenceTransformer = None  # type: ignore[assignment]
+    SentenceTransformer = None  # type: ignore[assignment,misc]
     logger.warning("sentence_transformers not installed. Using fallback embeddings.")
 
 

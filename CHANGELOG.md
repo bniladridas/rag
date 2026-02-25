@@ -122,7 +122,7 @@
 
 ### Fix
 
-* fix: test issue link #1 ([`f9f02a5`](https://github.com/bniladridas/rag/commit/f9f02a56dc013ff945317967a1be0b0c471c2fd4))
+* fix: test issue link [#1](https://github.com/bniladridas/rag/issues/1) ([`f9f02a5`](https://github.com/bniladridas/rag/commit/f9f02a56dc013ff945317967a1be0b0c471c2fd4))
 
 ### Test
 

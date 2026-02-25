@@ -11,7 +11,7 @@ from pathlib import Path
 class Config:
     """Project configuration for RAG Transformer."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.PROJECT_ROOT = Path(__file__).resolve().parents[2]
         # Runtime device selection (defaults to CPU on macOS for stability)
         default_device = "cpu" if sys.platform == "darwin" else "cpu"
@@ -69,7 +69,7 @@ class Config:
             logging.warning(f"Invalid integer for {var_name}, defaulting to {default}")
             return default
 
-    def _setup_logging(self):
+    def _setup_logging(self) -> None:
         """Set up basic logging configuration."""
         logging.basicConfig(
             level=getattr(logging, self.LOG_LEVEL, logging.INFO),
@@ -86,14 +86,14 @@ class Config:
         try:
             candidate.relative_to(self.PROJECT_ROOT)
         except ValueError:
-            fallback = self.PROJECT_ROOT / fallback
+            fallback_path = self.PROJECT_ROOT / fallback
             logging.warning(
-                f"Path '{value}' is outside project root. Using '{fallback}'."
+                f"Path '{value}' is outside project root. Using '{fallback_path}'."
             )
-            return fallback
+            return fallback_path
         return candidate
 
-    def _validate_paths(self):
+    def _validate_paths(self) -> None:
         """Ensure directories exist, create if needed."""
         for path in [self.DATASET_DIR, self.OUTPUT_DIR, self.CACHE_DIR]:
             path.mkdir(parents=True, exist_ok=True)

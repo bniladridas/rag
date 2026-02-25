@@ -7,14 +7,14 @@ import logging
 import os
 import re
 import sys
-from typing import List
+from typing import List, Optional
 
 import faiss
 
 try:
     import torch
 except Exception:  # pragma: no cover - optional
-    torch = None  # type: ignore
+    torch = None
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from .config import Config
@@ -26,14 +26,14 @@ logger = logging.getLogger(__name__)
 try:
     from sentence_transformers import SentenceTransformer
 except ImportError:
-    SentenceTransformer = None  # type: ignore
+    SentenceTransformer = None
     logger.warning("sentence_transformers not installed. Using fallback embeddings.")
 
 
 class RAGEngine:
     """Retrieval-Augmented Generation engine"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = Config()
         self.tool_executor = ToolExecutor()
         self.model_status = {
@@ -82,9 +82,9 @@ class RAGEngine:
             self.generator = None
 
         # Knowledge base
-        self.knowledge_base = []
-        self.index = None
-        self.query_cache = {}
+        self.knowledge_base: List[str] = []
+        self.index: Optional[faiss.Index] = None
+        self.query_cache: dict = {}
 
         # Load knowledge base
         self.load_knowledge_base()
@@ -93,7 +93,7 @@ class RAGEngine:
         """Return model status flags for user-facing messaging."""
         return dict(self.model_status)
 
-    def load_knowledge_base(self):
+    def load_knowledge_base(self) -> None:
         """Load documents from knowledge base file"""
         kb_path = os.path.join(self.config.DATASET_DIR, self.config.KNOWLEDGE_BASE_FILE)
         try:
@@ -112,7 +112,7 @@ class RAGEngine:
             ]
             self.add_documents(fallback_docs)
 
-    def add_documents(self, documents: List[str]):
+    def add_documents(self, documents: List[str]) -> None:
         """Add documents to knowledge base and create FAISS index if embeddings exist"""
         if not documents:
             return
@@ -121,15 +121,19 @@ class RAGEngine:
 
         if self.embedding_model and self.config.USE_FAISS:
             embeddings = self.embedding_model.encode(documents)
-            dimension = int(embeddings.shape[1])  # type: ignore
+            dimension = int(embeddings.shape[1])
             self.index = faiss.IndexFlatL2(dimension)
-            self.index.add(embeddings)  # type: ignore
+            assert self.index is not None
+            self.index.add(embeddings)
         else:
             self.index = None  # fallback: no index
 
     def retrieve_context(self, query: str) -> List[str]:
         """Retrieve most relevant documents for a query"""
-        if not self.index or len(self.knowledge_base) == 0:
+        if not self.index:
+            return self.knowledge_base[: self.config.TOP_K_RETRIEVAL]
+
+        if len(self.knowledge_base) == 0:
             return self.knowledge_base[: self.config.TOP_K_RETRIEVAL]
 
         if len(query.split()) < 2:
@@ -144,7 +148,7 @@ class RAGEngine:
 
         distances, indices = self.index.search(
             query_embedding, self.config.TOP_K_RETRIEVAL
-        )  # type: ignore
+        )
 
         retrieved_docs = [self.knowledge_base[idx] for idx in indices[0]]
         return retrieved_docs
@@ -206,6 +210,7 @@ class RAGEngine:
             )
 
         for _ in range(self.config.MAX_ITERATIONS):
+            assert self.tokenizer is not None
             input_text = (
                 f"Context information: {context}\n\n"
                 f"{self.tool_executor.get_available_tools()}\n\n"
@@ -226,7 +231,7 @@ class RAGEngine:
                 temperature=0.7,
             )
 
-            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            response: str = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
             if response.upper().startswith(("CALC:", "WIKI:", "TIME:")):
                 tool_result = self.tool_executor.execute_tool(response)

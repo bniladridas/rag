@@ -3,6 +3,7 @@ Tool definitions for the RAG agent
 """
 
 import ast
+from typing import Callable
 import math
 import re
 from datetime import datetime
@@ -17,7 +18,7 @@ from .config import Config
 class ToolExecutor:
     """Handles execution of various tools"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = Config()
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "RAG-Transformer/1.0"})
@@ -87,7 +88,7 @@ TIME: Get current date and time"""
         return f"Current date and time: {current_time}"
 
 
-_ALLOWED_FUNCS = {
+_ALLOWED_FUNCS: dict[str, Callable[[float], float]] = {
     "sqrt": math.sqrt,
     "sin": math.sin,
     "cos": math.cos,
@@ -103,7 +104,7 @@ def _safe_eval_math(expr: str) -> float:
     expr = expr.replace("^", "**")
     node = ast.parse(expr, mode="eval")
 
-    def _eval(n):
+    def _eval(n: ast.AST) -> float:
         if isinstance(n, ast.Expression):
             return _eval(n.body)
         if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)):
@@ -125,7 +126,7 @@ def _safe_eval_math(expr: str) -> float:
             if isinstance(n.op, ast.Div):
                 return left / right
             if isinstance(n.op, ast.Pow):
-                return left**right
+                return float(left**right)
             if isinstance(n.op, ast.Mod):
                 return left % right
         if isinstance(n, ast.Name):

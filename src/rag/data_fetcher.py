@@ -10,7 +10,7 @@ import os
 import sys
 import time
 import traceback
-from typing import List
+from typing import List, Optional
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -30,7 +30,7 @@ except ImportError:
 class DataFetcher:
     """Handles parallel data collection from multiple sources"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = Config()
         os.makedirs(self.config.DATASET_DIR, exist_ok=True)
 
@@ -85,7 +85,8 @@ class DataFetcher:
             url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
             response = self.session.get(url, timeout=10)
             if response.status_code == 200:
-                return response.json().get("extract", "")
+                data = response.json()
+                return data.get("extract", "")  # type: ignore[no-any-return]
             return ""
         except Exception:
             return ""
@@ -100,7 +101,7 @@ class DataFetcher:
 
         movie_documents = []
 
-        def fetch_page(page):
+        def fetch_page(page: int) -> List[str]:
             try:
                 url = (
                     f"https://api.themoviedb.org/3/discover/movie?"
@@ -144,7 +145,7 @@ class DataFetcher:
 
         cosmos_documents = []
 
-        def fetch_day(days_ago):
+        def fetch_day(days_ago: int) -> str:
             try:
                 base_url = "https://api.nasa.gov/planetary/apod"
                 params = {
@@ -198,7 +199,7 @@ class DataFetcher:
             "Overfitting_(machine_learning)",
         ]
 
-        def fetch_topic(topic):
+        def fetch_topic(topic: str) -> List[str]:
             try:
                 url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}?redirect=true"
                 response = self.session.get(url, timeout=10)
@@ -215,7 +216,7 @@ class DataFetcher:
                 logger.error(f"Error fetching {topic}: {e}")
                 return []
 
-        def fetch_page(page):
+        def fetch_page(page: int) -> List[str]:
             try:
                 url = (
                     f"https://api.themoviedb.org/3/discover/movie?"
@@ -242,7 +243,7 @@ class DataFetcher:
             except Exception as e:
                 raise ValueError(f"Failed to fetch TMDB page {page}: {e}")
 
-        def fetch_day(days_ago):
+        def fetch_day(days_ago: int) -> Optional[str]:
             try:
                 base_url = "https://api.nasa.gov/planetary/apod"
                 params = {
@@ -274,7 +275,7 @@ class DataFetcher:
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.config.MAX_WORKERS
         ) as executor:
-            futures = []
+            futures: List[concurrent.futures.Future] = []
             futures.extend(executor.submit(fetch_topic, topic) for topic in ml_topics)
             futures.extend(
                 executor.submit(fetch_page, page)
@@ -295,7 +296,7 @@ class DataFetcher:
         logger.info(f"Fetched {len(all_documents)} documents total")
         return all_documents
 
-    def save_documents(self, documents: List[str]):
+    def save_documents(self, documents: List[str]) -> None:
         """Save documents to knowledge base file"""
         filepath = self.config.KNOWLEDGE_BASE_FILE
         with open(filepath, "w") as f:
@@ -303,7 +304,7 @@ class DataFetcher:
         logger.info(f"Saved {len(documents)} documents to {filepath}")
 
 
-def create_collector_parser():
+def create_collector_parser() -> argparse.ArgumentParser:
     """Create argument parser for data collection"""
     parser = argparse.ArgumentParser(
         prog="rag-collect",
@@ -348,7 +349,7 @@ API Keys:
     return parser
 
 
-def main(args=None):
+def main(args: Optional[List[str]] = None) -> int:
     """Main function for data collection with CLI policy compliance"""
     parser = create_collector_parser()
     parsed_args = parser.parse_args(args)

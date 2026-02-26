@@ -204,7 +204,7 @@ jobs:
       # ============================================================
       - name: Post analysis comment
         if: steps.should-run.outputs.RUN == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const impact = '${{ steps.analysis.outputs.impact }}';

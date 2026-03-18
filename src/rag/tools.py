@@ -5,10 +5,12 @@ Tool definitions for the RAG agent
 import ast
 from typing import Callable
 import math
+import os
 import re
 from datetime import datetime
 
 import requests
+from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -34,10 +36,14 @@ class ToolExecutor:
 
     def get_available_tools(self) -> str:
         """Get description of available tools"""
-        return """Available tools:
+        tools = """Available tools:
 CALC: Calculate a mathematical expression (e.g., CALC: 2 + 3 * 4)
 WIKI: Search Wikipedia for information (e.g., WIKI: Machine Learning)
 TIME: Get current date and time"""
+        if self.config.ENABLE_WEB:
+            tools += "\nSEARCH: Search the web (e.g., SEARCH: latest LLM news)"
+            tools += "\nWEB: Fetch a URL and extract readable text (e.g., WEB: https://example.com)"
+        return tools
 
     def execute_tool(self, tool_call: str) -> str:
         """Execute a tool based on the tool call string"""
@@ -48,6 +54,10 @@ TIME: Get current date and time"""
             return self._execute_wiki(tool_call)
         elif tool_call_upper.startswith("TIME:"):
             return self._execute_time(tool_call)
+        elif tool_call_upper.startswith("SEARCH:"):
+            return self._execute_search(tool_call)
+        elif tool_call_upper.startswith("WEB:"):
+            return self._execute_web(tool_call)
         else:
             return "Unknown tool"
 
@@ -86,6 +96,132 @@ TIME: Get current date and time"""
         """Execute time tool"""
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return f"Current date and time: {current_time}"
+
+    def _execute_search(self, tool_call: str) -> str:
+        """Search the web for a query (best-effort; may require API key)."""
+        if not self.config.ENABLE_WEB:
+            return "Web tools are disabled. Set RAG_ENABLE_WEB=1 to enable SEARCH/WEB."
+
+        query = tool_call[7:].strip()
+        if not query:
+            return "SEARCH tool requires a query, e.g. `SEARCH: transformers 4.57.3`."
+
+        provider = (self.config.SEARCH_PROVIDER or "duckduckgo").lower()
+        if provider == "brave":
+            api_key = os.getenv("BRAVE_API_KEY", "")
+            if not api_key:
+                return "BRAVE search requires BRAVE_API_KEY. Set RAG_SEARCH_PROVIDER=duckduckgo for no-key search."
+            return self._search_brave(query, api_key)
+        if provider == "serper":
+            api_key = os.getenv("SERPER_API_KEY", "")
+            if not api_key:
+                return "Serper search requires SERPER_API_KEY. Set RAG_SEARCH_PROVIDER=duckduckgo for no-key search."
+            return self._search_serper(query, api_key)
+
+        # Default: DuckDuckGo HTML (no API key; may be rate-limited).
+        return self._search_duckduckgo(query)
+
+    def _search_duckduckgo(self, query: str) -> str:
+        try:
+            url = "https://duckduckgo.com/html/"
+            resp = self.session.get(url, params={"q": query}, timeout=10)
+            if resp.status_code != 200:
+                return f"Search failed with status {resp.status_code}."
+            soup = BeautifulSoup(resp.text, "html.parser")
+            results = []
+            for a in soup.select("a.result__a")[:5]:
+                title = a.get_text(" ", strip=True)
+                href = a.get("href", "")
+                if title and href:
+                    results.append((title, href))
+            if not results:
+                return "No search results found."
+            lines = ["Top results:"]
+            for i, (title, href) in enumerate(results, start=1):
+                lines.append(f"{i}. {title} — {href}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error searching the web: {e}"
+
+    def _search_brave(self, query: str, api_key: str) -> str:
+        try:
+            resp = self.session.get(
+                "https://api.search.brave.com/res/v1/web/search",
+                params={"q": query, "count": 5},
+                headers={"X-Subscription-Token": api_key},
+                timeout=10,
+            )
+            if resp.status_code != 200:
+                return f"Brave search failed with status {resp.status_code}."
+            data = resp.json()
+            web = data.get("web", {}).get("results", [])
+            lines = ["Top results:"]
+            for i, r in enumerate(web[:5], start=1):
+                title = r.get("title", "")
+                url = r.get("url", "")
+                desc = r.get("description", "")
+                lines.append(f"{i}. {title} — {url}\n   {desc}".rstrip())
+            return "\n".join(lines) if len(lines) > 1 else "No search results found."
+        except Exception as e:
+            return f"Error searching with Brave: {e}"
+
+    def _search_serper(self, query: str, api_key: str) -> str:
+        try:
+            resp = self.session.post(
+                "https://google.serper.dev/search",
+                headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+                json={"q": query, "num": 5},
+                timeout=10,
+            )
+            if resp.status_code != 200:
+                return f"Serper search failed with status {resp.status_code}."
+            data = resp.json()
+            organic = data.get("organic", [])
+            lines = ["Top results:"]
+            for i, r in enumerate(organic[:5], start=1):
+                title = r.get("title", "")
+                link = r.get("link", "")
+                snippet = r.get("snippet", "")
+                lines.append(f"{i}. {title} — {link}\n   {snippet}".rstrip())
+            return "\n".join(lines) if len(lines) > 1 else "No search results found."
+        except Exception as e:
+            return f"Error searching with Serper: {e}"
+
+    def _execute_web(self, tool_call: str) -> str:
+        """Fetch a URL and extract readable text."""
+        if not self.config.ENABLE_WEB:
+            return "Web tools are disabled. Set RAG_ENABLE_WEB=1 to enable SEARCH/WEB."
+
+        url = tool_call[4:].strip()
+        if not url:
+            return "WEB tool requires a URL, e.g. `WEB: https://example.com`."
+        if not re.match(r"^https?://", url, flags=re.IGNORECASE):
+            return "Only http(s) URLs are allowed."
+
+        try:
+            resp = self.session.get(url, timeout=10)
+            if resp.status_code != 200:
+                return f"Fetch failed with status {resp.status_code}."
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            for tag in soup(["script", "style", "noscript"]):
+                tag.decompose()
+
+            title = soup.title.get_text(" ", strip=True) if soup.title else ""
+            text = soup.get_text(" ", strip=True)
+            text = re.sub(r"\s+", " ", text).strip()
+            if not text:
+                return "No readable text found on the page."
+
+            max_chars = 4000
+            if len(text) > max_chars:
+                text = text[:max_chars].rstrip() + "…"
+
+            if title:
+                return f"Page title: {title}\n\n{text}"
+            return text
+        except Exception as e:
+            return f"Error fetching URL: {e}"
 
 
 _ALLOWED_FUNCS: dict[str, Callable[[float], float]] = {

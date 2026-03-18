@@ -20,6 +20,8 @@ def test_get_available_tools(tool_executor):
     assert "CALC:" in tools
     assert "WIKI:" in tools
     assert "TIME:" in tools
+    assert "SEARCH:" not in tools
+    assert "WEB:" not in tools
 
 
 def test_execute_tool_unknown(tool_executor):
@@ -61,3 +63,12 @@ def test_execute_wiki_not_found(mock_get, tool_executor):
 def test_execute_time(tool_executor):
     result = tool_executor._execute_time("TIME:")
     assert "Current date and time:" in result
+
+
+def test_web_tools_disabled_by_default(tool_executor):
+    assert tool_executor.execute_tool("SEARCH: test").startswith(
+        "Web tools are disabled"
+    )
+    assert tool_executor.execute_tool("WEB: https://example.com").startswith(
+        "Web tools are disabled"
+    )

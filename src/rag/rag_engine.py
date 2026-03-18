@@ -359,26 +359,26 @@ class RAGEngine:
                 # Keep this explicit to avoid guessing model names.
                 return "OpenAI backend is enabled but OPENAI_MODEL is not set."
             try:
-                resp = self.openai_client.responses.create(
+                response = self.openai_client.responses.create(
                     model=model,
                     instructions=self.system_instructions,
                     input=prompt,
                     max_output_tokens=max(64, int(self.config.MAX_LENGTH)),
                 )
-                text = getattr(resp, "output_text", None)
+                text = getattr(response, "output_text", None)
                 if text:
                     return str(text).strip()
             except Exception:
                 # Fallback to chat.completions for older surfaces.
                 try:
-                    resp = self.openai_client.chat.completions.create(
+                    completion = self.openai_client.chat.completions.create(
                         model=model,
                         messages=[
                             {"role": "system", "content": self.system_instructions},
                             {"role": "user", "content": prompt},
                         ],
                     )
-                    return (resp.choices[0].message.content or "").strip()
+                    return (completion.choices[0].message.content or "").strip()
                 except Exception as e:
                     return f"OpenAI request failed: {e}"
 

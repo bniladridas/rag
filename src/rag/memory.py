@@ -124,7 +124,7 @@ class MemoryStore:
             + " AND ".join(where_clauses)
             + " ORDER BY ts DESC LIMIT ?"
         )
-        params.append(int(limit))
+        params.append(str(limit))
         cur = self._conn.execute(sql, tuple(params))
         return [
             MemoryFact(key=str(k), value=str(v), updated_at=float(ts))

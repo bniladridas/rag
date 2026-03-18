@@ -12,6 +12,16 @@ from .__version__ import __version__
 from .rag_engine import RAGEngine
 
 
+def _load_env_file() -> None:
+    try:
+        from dotenv import load_dotenv  # type: ignore
+
+        load_dotenv()
+    except Exception:
+        # Optional: dotenv is a convenience only.
+        return
+
+
 def should_use_color(no_color: bool = False) -> bool:
     """Determine if colored output should be used"""
     # Respect --no-color flag
@@ -142,7 +152,7 @@ def handle_single_query(
         sys.exit(1)
 
 
-def interactive_mode(
+def interactive_mode(  # noqa: C901
     verbose: bool = False,
     quiet: bool = False,
     no_color: bool = False,
@@ -177,8 +187,16 @@ def interactive_mode(
     while True:
         try:
             # Use colored or plain prompt
-            prompt = "❯ " if should_use_color(no_color) else "> "
-            query = input(f"\n{prompt}").strip()
+            model_tag = ""
+            if not quiet:
+                try:
+                    model_tag = f"[{rag_engine.current_backend_and_model()}] "
+                except Exception:
+                    model_tag = ""
+            prompt = (
+                f"❯ {model_tag}" if should_use_color(no_color) else f"> {model_tag}"
+            )
+            query = input(prompt).strip()
 
             if query.lower() in ["exit", "quit", "q"]:
                 print(format_message("Goodbye!", "👋", no_color))
@@ -197,6 +215,15 @@ def interactive_mode(
                 print(
                     "• Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message"
                 )
+                continue
+
+            if query.lower() == "models":
+                print(f"Current: {rag_engine.current_backend_and_model()}")
+                continue
+
+            if query.lower().startswith("model:"):
+                model_name = query.split(":", 1)[-1].strip()
+                print(rag_engine.set_active_model(model_name))
                 continue
 
             if not query:
@@ -225,6 +252,7 @@ def interactive_mode(
 
 def main(args: Optional[list] = None) -> None:
     """Main entry point with argument parsing and CLI policy enforcement"""
+    _load_env_file()
     parser = create_parser()
     parsed_args = parser.parse_args(args)
 

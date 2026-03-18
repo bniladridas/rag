@@ -10,6 +10,12 @@ echo "=== RAG Setup ==="
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Create a starter .env (never overwrites an existing one)
+if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+    cp ".env.example" ".env"
+    echo "Created .env from .env.example (fill in keys as needed)"
+fi
+
 # Create venv if needed
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."

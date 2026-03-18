@@ -11,6 +11,12 @@ echo "=== Setting up RAG Assistant ==="
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$REPO_DIR/venv"
 
+# Create a starter .env (never overwrites an existing one)
+if [ ! -f "$REPO_DIR/.env" ] && [ -f "$REPO_DIR/.env.example" ]; then
+    cp "$REPO_DIR/.env.example" "$REPO_DIR/.env"
+    echo "Created $REPO_DIR/.env from .env.example (fill in keys as needed)"
+fi
+
 # 1. Create virtual environment if it doesn't exist
 if [ ! -d "$VENV_DIR" ]; then
     echo "Creating virtual environment..."

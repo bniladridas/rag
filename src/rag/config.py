@@ -48,6 +48,49 @@ class Config:
             fallback=".cache",
         )
 
+        # Memory (privacy-sensitive; defaults to in-session only)
+        # off: no memory, session: in-memory, persist: sqlite on disk in CACHE_DIR
+        self.MEMORY_MODE = os.getenv("RAG_MEMORY_MODE", "session").lower()
+        self.MEMORY_DB = os.getenv("RAG_MEMORY_DB", "memory.sqlite3")
+
+        # Web tools (disabled by default)
+        self.ENABLE_WEB = os.getenv("RAG_ENABLE_WEB", "0") in {"1", "true", "True"}
+        self.SEARCH_PROVIDER = os.getenv("RAG_SEARCH_PROVIDER", "duckduckgo").lower()
+
+        # LLM backend selection (local transformers by default)
+        self.LLM_BACKEND = os.getenv("RAG_LLM_BACKEND", "local").lower()
+        openai_model = os.getenv("OPENAI_MODEL", "").strip()
+        if openai_model in {"gpt5.3", "gpt-5.3"}:
+            openai_model = "gpt-5.3-chat-latest"
+        self.OPENAI_MODEL = openai_model or "gpt-5.3-chat-latest"
+        self.SKILL_FILE = self._resolve_project_path(
+            os.getenv("RAG_SKILL_FILE", "skill.asc"),
+            allow_file=True,
+            fallback="skill.asc",
+        )
+
+        # Cerebras backend (OpenAI-compatible HTTP API)
+        self.CEREBRAS_BASE_URL = os.getenv(
+            "CEREBRAS_BASE_URL", "https://api.cerebras.ai/v1"
+        ).rstrip("/")
+        self.CEREBRAS_MODELS = [
+            m.strip()
+            for m in os.getenv(
+                "CEREBRAS_MODELS",
+                "llama3.1-8b,qwen-3-235b-a22b-instruct-2507",
+            ).split(",")
+            if m.strip()
+        ]
+        self.CEREBRAS_MODEL = os.getenv(
+            "CEREBRAS_MODEL", self.CEREBRAS_MODELS[0] if self.CEREBRAS_MODELS else ""
+        )
+
+        # Ollama backend (local server)
+        self.OLLAMA_BASE_URL = os.getenv(
+            "OLLAMA_BASE_URL", "http://localhost:11434"
+        ).rstrip("/")
+        self.OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+
         # System settings
         self.MAX_WORKERS = self._get_int_env("MAX_WORKERS", 5)
         self.TOP_K_RETRIEVAL = self._get_int_env("TOP_K_RETRIEVAL", 3)
@@ -70,11 +113,36 @@ class Config:
             return default
 
     def _setup_logging(self) -> None:
-        """Set up basic logging configuration."""
-        logging.basicConfig(
-            level=getattr(logging, self.LOG_LEVEL, logging.INFO),
-            format="%(asctime)s - %(levelname)s - %(message)s",
-        )
+        """Set up logging configuration and avoid duplicate third-party logs.
+
+        Several upstream libraries (notably Hugging Face / Transformers) may attach
+        their own handlers. If our root logger also has a handler, messages can be
+        emitted twice (once via the library handler and once via propagation to
+        root). We prefer a single, consistent stream, so we clear known
+        third-party handlers and let records propagate to root.
+        """
+        level = getattr(logging, self.LOG_LEVEL, logging.INFO)
+
+        root_logger = logging.getLogger()
+        if not root_logger.handlers:
+            logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
+        else:
+            root_logger.setLevel(level)
+
+        self._dedupe_third_party_loggers()
+
+    def _dedupe_third_party_loggers(self) -> None:
+        """Remove extra handlers from noisy third-party loggers to avoid repeats."""
+        for logger_name in (
+            "huggingface_hub",
+            "transformers",
+            "sentence_transformers",
+            "urllib3",
+        ):
+            third_party_logger = logging.getLogger(logger_name)
+            if third_party_logger.handlers and third_party_logger.propagate:
+                third_party_logger.handlers.clear()
+            third_party_logger.propagate = True
 
     def _resolve_project_path(
         self, value: str, allow_file: bool = False, fallback: str = "datasets"

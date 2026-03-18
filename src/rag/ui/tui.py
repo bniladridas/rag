@@ -4,15 +4,26 @@ Text User Interface for RAG Transformer
 
 import argparse
 import os
+import shutil
 import sys
+from pathlib import Path
 from typing import Optional
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Prompt
+from rich.markdown import Markdown
 
 from ..__version__ import __version__
 from ..rag_engine import RAGEngine
+
+
+def _load_env_file() -> None:
+    try:
+        from dotenv import load_dotenv  # type: ignore
+
+        load_dotenv()
+    except Exception:
+        return
 
 
 def create_tui_parser() -> argparse.ArgumentParser:
@@ -67,7 +78,10 @@ def _display_welcome(console: Console, no_color: bool) -> None:
                 f"[dim]Version {__version__}[/]"
             )
         )
-    console.print("Type 'exit'/'quit' to quit, 'help' for instructions.\n")
+    console.print(
+        "Commands: exit/quit, help, clear, models, model, model:<name>, backends, backend, backend:<name>, "
+        "refresh, cache:clear, memory:clear, hf:clear, update\n"
+    )
 
 
 def _display_model_status(
@@ -95,6 +109,14 @@ def _display_help(console: Console, no_color: bool) -> None:
             "• CALC: <expression>  (e.g., 'CALC: 2^10')\n"
             "• WIKI: <topic>       (e.g., 'WIKI: Quantum Computing')\n"
             "• TIME:               (current date and time)\n\n"
+            "Optional Web Tools (enable with RAG_ENABLE_WEB=1):\n"
+            "• SEARCH: <query>     (e.g., 'SEARCH: latest LLM news')\n"
+            "• WEB: <url>          (e.g., 'WEB: https://example.com')\n\n"
+            "LLM Backends (select with RAG_LLM_BACKEND):\n"
+            "• local   (default)\n"
+            "• openai   (OPENAI_API_KEY + OPENAI_MODEL)\n"
+            "• cerebras (CEREBRAS_API_KEY + CEREBRAS_MODEL)\n"
+            "• ollama   (OLLAMA_BASE_URL + OLLAMA_MODEL)\n\n"
             "Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message"
         )
         console.print(Panel(help_text, title="Help"))
@@ -108,9 +130,34 @@ def _display_help(console: Console, no_color: bool) -> None:
             "• [cyan]CALC:[/] <expression>  (e.g., 'CALC: 2^10')\n"
             "• [cyan]WIKI:[/] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
             "• [cyan]TIME:[/]               (current date and time)\n\n"
+            "[bold]Optional Web Tools[/] (enable with `RAG_ENABLE_WEB=1`):\n"
+            "• [cyan]SEARCH:[/] <query>     (e.g., 'SEARCH: latest LLM news')\n"
+            "• [cyan]WEB:[/] <url>          (e.g., 'WEB: https://example.com')\n\n"
+            "[bold]LLM Backends[/] (select with `RAG_LLM_BACKEND`):\n"
+            "• [cyan]local[/]   (default)\n"
+            "• [cyan]openai[/]   (`OPENAI_API_KEY` + `OPENAI_MODEL`)\n"
+            "• [cyan]cerebras[/] (`CEREBRAS_API_KEY` + `CEREBRAS_MODEL`)\n"
+            "• [cyan]ollama[/]   (`OLLAMA_BASE_URL` + `OLLAMA_MODEL`)\n\n"
             "[bold]Commands:[/] 'exit'/'quit'/'q' to quit, 'help'/'h' for this message"
         )
         console.print(Panel(help_text, title="[blue]Help[/]", border_style="blue"))
+
+    console.print(
+        Panel(
+            "MODEL: <name>   Switch active model for current backend\n"
+            "MODELS          Show current backend/model\n"
+            "BACKEND: <name> Switch backend (local|openai|cerebras|ollama)\n"
+            "BACKENDS        Show available backends\n"
+            "BACKEND         Pick backend from a list\n"
+            "REFRESH         Reload engine/session\n"
+            "CACHE:CLEAR     Delete project .cache\n"
+            "MEMORY:CLEAR    Clear conversation memory\n"
+            "HF:CLEAR        Delete Hugging Face cache (~/.cache/huggingface)\n"
+            "UPDATE          Show update commands",
+            title="Models" if no_color else "[blue]Models[/]",
+            border_style="white" if no_color else "blue",
+        )
+    )
 
 
 def _process_query(
@@ -124,10 +171,10 @@ def _process_query(
     else:
         with console.status("[bold green]Processing your query...[/]"):
             response = rag_engine.generate_response(query)
-        # Clean the response to ensure no unclosed tags
-        clean_response = response.replace("[/", "").replace("[", "[")
         console.print(
-            Panel(clean_response, title="[bold]💡 Response[/]", border_style="green")
+            Panel(
+                Markdown(response), title="[bold]💡 Response[/]", border_style="green"
+            )
         )
 
 
@@ -139,7 +186,71 @@ def _handle_exit(console: Console, no_color: bool) -> None:
         console.print("\n[yellow]👋 Goodbye![/yellow]")
 
 
-def run_tui(no_color: bool = False, force: bool = False) -> None:
+def _pick_from_list(
+    console: Console, title: str, options: list[str], no_color: bool
+) -> Optional[str]:
+    if not options:
+        return None
+
+    page_size = 10
+    page = 0
+    while True:
+        start = page * page_size
+        end = start + page_size
+        chunk = options[start:end]
+        if not chunk:
+            page = 0
+            continue
+
+        header = f"{title} (page {page + 1}/{(len(options) - 1) // page_size + 1})"
+        lines = [header, ""]
+        for idx, item in enumerate(chunk, start=start + 1):
+            lines.append(f"{idx}. {item}")
+        lines.append("")
+        lines.append("Choose number, 'n' next, 'p' prev, or 'q' cancel.")
+        console.print(
+            Panel("\n".join(lines), title="Select" if no_color else "[blue]Select[/]")
+        )
+
+        choice = console.input("> ").strip().lower()
+        if choice in {"q", "quit", "exit"}:
+            return None
+        if choice in {"n", "next"}:
+            if end < len(options):
+                page += 1
+            continue
+        if choice in {"p", "prev", "previous"}:
+            if page > 0:
+                page -= 1
+            continue
+        if choice.isdigit():
+            pick = int(choice)
+            if 1 <= pick <= len(options):
+                return options[pick - 1]
+            console.print(
+                "Invalid selection."
+                if no_color
+                else "[yellow]Invalid selection.[/yellow]"
+            )
+            continue
+        console.print(
+            "Invalid input." if no_color else "[yellow]Invalid input.[/yellow]"
+        )
+
+
+def _resolve_hf_cache_dir() -> Path:
+    # Prefer explicit cache env vars when provided.
+    explicit = (
+        os.getenv("HUGGINGFACE_HUB_CACHE")
+        or os.getenv("TRANSFORMERS_CACHE")
+        or os.getenv("HF_HOME")
+    )
+    if explicit:
+        return Path(explicit).expanduser()
+    return Path("~/.cache/huggingface").expanduser()
+
+
+def run_tui(no_color: bool = False, force: bool = False) -> None:  # noqa: C901
     """Run the Text User Interface with CLI policy compliance.
 
     Args:
@@ -153,6 +264,7 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
         print("For non-interactive usage, try: rag --query 'your question'")
         return
 
+    _load_env_file()
     console = Console(force_terminal=force, no_color=no_color)
 
     try:
@@ -166,7 +278,12 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
 
     while True:
         try:
-            query = Prompt.ask("[cyan]❯[/]").strip()
+            prompt = (
+                f"[cyan]❯[/] [dim]{rag_engine.current_backend_and_model()}[/] "
+                if not no_color
+                else f"> {rag_engine.current_backend_and_model()} "
+            )
+            query = console.input(prompt).strip()
 
             # Handle commands
             if query.lower() in ["exit", "quit", "q"]:
@@ -179,6 +296,206 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:
 
             if query.lower() == "clear":
                 console.clear()
+                continue
+
+            if query.lower() == "update":
+                msg = (
+                    "To update to the latest software, run outside the TUI:\n"
+                    "  git pull\n"
+                    "  ./venv/bin/pip install -e .\n"
+                    "Then restart rag-tui."
+                )
+                console.print(
+                    Panel(msg, title="Update" if no_color else "[blue]Update[/]")
+                )
+                continue
+
+            if query.lower() == "refresh":
+                console.print(
+                    "Refreshing session (reloading engine/models/index)..."
+                    if no_color
+                    else "[dim]Refreshing session (reloading engine/models/index)...[/]"
+                )
+                try:
+                    rag_engine = RAGEngine()
+                    _display_model_status(console, rag_engine, no_color)
+                    console.print(
+                        "Refreshed." if no_color else "[green]Refreshed.[/green]"
+                    )
+                except Exception as e:
+                    console.print(
+                        f"Refresh failed: {e}"
+                        if no_color
+                        else f"[red]Refresh failed: {e}[/red]"
+                    )
+                continue
+
+            if query.lower() == "memory:clear":
+                try:
+                    rag_engine.memory.clear()
+                    console.print(
+                        "Memory cleared."
+                        if no_color
+                        else "[green]Memory cleared.[/green]"
+                    )
+                except Exception as e:
+                    console.print(
+                        f"Failed to clear memory: {e}"
+                        if no_color
+                        else f"[red]Failed to clear memory: {e}[/red]"
+                    )
+                continue
+
+            if query.lower() == "cache:clear":
+                cache_dir: Path = rag_engine.config.CACHE_DIR
+                project_root: Path = rag_engine.config.PROJECT_ROOT
+                try:
+                    resolved = cache_dir.resolve()
+                    resolved.relative_to(project_root.resolve())
+                except Exception:
+                    console.print(
+                        f"Refusing to delete cache outside project root: {cache_dir}"
+                        if no_color
+                        else f"[red]Refusing to delete cache outside project root: {cache_dir}[/red]"
+                    )
+                    continue
+
+                confirm = (
+                    console.input(f"Delete cache at {resolved}? (y/N) ").strip().lower()
+                )
+                if confirm != "y":
+                    console.print("Canceled." if no_color else "[dim]Canceled.[/]")
+                    continue
+
+                try:
+                    if resolved.exists():
+                        shutil.rmtree(resolved)
+                    resolved.mkdir(parents=True, exist_ok=True)
+                    console.print(
+                        "Cache cleared. Run `refresh` to reload the engine."
+                        if no_color
+                        else "[green]Cache cleared.[/green] Run [bold]refresh[/] to reload the engine."
+                    )
+                except Exception as e:
+                    console.print(
+                        f"Failed to clear cache: {e}"
+                        if no_color
+                        else f"[red]Failed to clear cache: {e}[/red]"
+                    )
+                continue
+
+            if query.lower() == "hf:clear":
+                hf_dir = _resolve_hf_cache_dir()
+                try:
+                    resolved = hf_dir.resolve()
+                except Exception:
+                    resolved = hf_dir
+
+                home = Path.home()
+                try:
+                    home_resolved = home.resolve()
+                except Exception:
+                    home_resolved = home
+
+                # Safety checks: refuse obviously dangerous deletes.
+                try:
+                    resolved.relative_to(home_resolved)
+                except Exception:
+                    console.print(
+                        f"Refusing to delete Hugging Face cache outside your home directory: {resolved}"
+                        if no_color
+                        else f"[red]Refusing to delete Hugging Face cache outside your home directory: {resolved}[/red]"
+                    )
+                    continue
+                if resolved == home_resolved or str(resolved) in {"/", ""}:
+                    console.print(
+                        f"Refusing to delete unsafe path: {resolved}"
+                        if no_color
+                        else f"[red]Refusing to delete unsafe path: {resolved}[/red]"
+                    )
+                    continue
+
+                msg = (
+                    f"This will delete Hugging Face cache at:\n  {resolved}\n\n"
+                    "This forces models to re-download next time.\n"
+                    "Type DELETE to confirm (or anything else to cancel):"
+                )
+                console.print(
+                    Panel(msg, title="HF Cache" if no_color else "[blue]HF Cache[/]")
+                )
+                confirm = console.input("> ").strip()
+                if confirm != "DELETE":
+                    console.print("Canceled." if no_color else "[dim]Canceled.[/]")
+                    continue
+
+                try:
+                    if resolved.exists():
+                        shutil.rmtree(resolved)
+                    console.print(
+                        "Hugging Face cache cleared. Run `refresh` to reload the engine."
+                        if no_color
+                        else "[green]Hugging Face cache cleared.[/green] Run [bold]refresh[/] to reload the engine."
+                    )
+                except Exception as e:
+                    console.print(
+                        f"Failed to clear Hugging Face cache: {e}"
+                        if no_color
+                        else f"[red]Failed to clear Hugging Face cache: {e}[/red]"
+                    )
+                continue
+
+            if query.lower() == "models":
+                available = rag_engine.available_models()
+                msg = f"Current: {rag_engine.current_backend_and_model()}"
+                console.print(msg if no_color else f"[dim]{msg}[/]")
+                if available:
+                    console.print(
+                        ("Available models: " + ", ".join(available))
+                        if no_color
+                        else "[dim]Available models: " + ", ".join(available) + "[/]"
+                    )
+                else:
+                    hint = rag_engine.models_hint()
+                    if hint:
+                        console.print(hint if no_color else f"[dim]{hint}[/]")
+                continue
+
+            if query.lower() == "backends":
+                msg = "Backends: " + ", ".join(rag_engine.available_backends())
+                console.print(msg if no_color else f"[dim]{msg}[/]")
+                continue
+
+            if query.lower().startswith("backend:"):
+                backend = query.split(":", 1)[-1].strip()
+                msg = rag_engine.set_backend(backend)
+                console.print(msg if no_color else f"[green]{msg}[/green]")
+                continue
+
+            if query.lower() == "backend":
+                options = rag_engine.available_backends()
+                picked = _pick_from_list(console, "Backends", options, no_color)
+                if picked:
+                    msg = rag_engine.set_backend(picked)
+                    console.print(msg if no_color else f"[green]{msg}[/green]")
+                continue
+
+            if query.lower().startswith("model:"):
+                model_name = query.split(":", 1)[-1].strip()
+                msg = rag_engine.set_active_model(model_name)
+                console.print(msg if no_color else f"[green]{msg}[/green]")
+                continue
+
+            if query.lower() == "model":
+                options = rag_engine.available_models()
+                picked = _pick_from_list(
+                    console,
+                    f"Models for {rag_engine.current_backend_and_model().split(':', 1)[0]}",
+                    options,
+                    no_color,
+                )
+                if picked:
+                    msg = rag_engine.set_active_model(picked)
+                    console.print(msg if no_color else f"[green]{msg}[/green]")
                 continue
 
             if not query:

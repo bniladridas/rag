@@ -244,6 +244,9 @@
             <a href="#introduction" class="nav-link active">Introduction</a>
             <a href="#installation" class="nav-link">Installation</a>
             <a href="#quick-start" class="nav-link">Quick Start</a>
+            <a href="#configuration" class="nav-link">Configuration</a>
+            <a href="#backends" class="nav-link">LLM Backends</a>
+            <a href="#tui-commands" class="nav-link">TUI Commands</a>
         </div>
         
         <div class="nav-section">
@@ -273,16 +276,65 @@
             
             <section id="installation">
                 <h2>Installation</h2>
-                <p>Install the package in editable mode with all dependencies:</p>
-                <pre><code>pip install -e .</code></pre>
-                <p>Always activate a virtual environment before installing.</p>
+                <p>Recommended setup (creates <code>venv/</code> and installs dependencies):</p>
+                <pre><code>bash SETUP.sh</code></pre>
+                <p>Manual (editable install):</p>
+                <pre><code>python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install -e .</code></pre>
             </section>
             
             <section id="quick-start">
                 <h2>Quick Start</h2>
                 <p>Run the TUI (Terminal User Interface):</p>
-                <pre><code>python -m rag.ui.tui</code></pre>
-                <p>Type <code>exit</code> or <code>quit</code> to exit, or <code>help</code> for instructions.</p>
+                <pre><code>rag-tui</code></pre>
+                <p>Or run the CLI:</p>
+                <pre><code>rag --query "What is machine learning?"</code></pre>
+                <p>Type <code>help</code> inside the TUI to see available commands.</p>
+            </section>
+
+            <section id="configuration">
+                <h2>Configuration</h2>
+                <p>The app auto-loads a repo-root <code>.env</code> file (gitignored). Start with:</p>
+                <pre><code>cp .env.example .env</code></pre>
+                <p>Common variables:</p>
+                <pre><code>RAG_LLM_BACKEND=local|openai|cerebras|ollama
+RAG_MEMORY_MODE=off|session|persist
+RAG_ENABLE_WEB=0|1</code></pre>
+            </section>
+
+            <section id="backends">
+                <h2>LLM Backends</h2>
+                <p>Select a backend via <code>RAG_LLM_BACKEND</code> in <code>.env</code> or the shell.</p>
+                <h3>OpenAI (GPT‑5.3)</h3>
+                <pre><code>RAG_LLM_BACKEND=openai
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5.3-chat-latest</code></pre>
+                <h3>Cerebras</h3>
+                <pre><code>RAG_LLM_BACKEND=cerebras
+CEREBRAS_API_KEY=...
+CEREBRAS_MODEL=llama3.1-8b
+# or: qwen-3-235b-a22b-instruct-2507</code></pre>
+                <h3>Ollama (local)</h3>
+                <pre><code>ollama pull llama3
+RAG_LLM_BACKEND=ollama
+OLLAMA_MODEL=llama3</code></pre>
+            </section>
+
+            <section id="tui-commands">
+                <h2>TUI Commands</h2>
+                <p>Helpful commands inside <code>rag-tui</code>:</p>
+                <pre><code>models           # show current backend/model and available models (if supported)
+model            # pick a model from a list (Cerebras/Ollama)
+model: &lt;name&gt;     # switch model
+backends         # list available backends
+backend          # pick backend from a list
+backend: &lt;name&gt;   # switch backend
+refresh          # reload engine/session
+cache:clear      # delete project .cache (confirmation required)
+memory:clear     # clear conversation memory
+hf:clear         # delete Hugging Face cache (~/.cache/huggingface) (confirmation required)</code></pre>
             </section>
             
             <section id="release-workflow">
@@ -301,7 +353,7 @@
             
             <section id="troubleshooting">
                 <h2>Troubleshooting</h2>
-                <p>Keep your local run minimal: always activate a virtual environment, install the package with <code>pip install -e .</code>, and rerun <code>rag.ui.tui</code> from the same shell to ensure the entry point is discoverable.</p>
+                <p>Keep your local run minimal: always activate a virtual environment, install the package with <code>pip install -e .</code>, and run <code>rag-tui</code> from the same shell to ensure the entry points resolve correctly.</p>
                 
                 <details>
                     <summary>Common error: ModuleNotFoundError</summary>
@@ -314,24 +366,17 @@
                 <details>
                     <summary>Recent terminal transcript for reference</summary>
                     <div class="content">
-                        <pre>$ .venv313/bin/python -m rag.ui.tui
-/Users/niladri/Desktop/rag/.venv313/bin/python: Error while finding module specification for 'rag.ui.tui' (ModuleNotFoundError: No module named 'rag')
-$ .venv313/bin/python -m pip install -e .
-...
-Successfully installed rag-1.6.18 torch-2.8.0
+                        <pre>$ python3 -m venv venv
+$ source venv/bin/activate
+$ pip install -r requirements.txt
+$ pip install -e .
 
-$ .venv313/bin/python -m rag.ui.tui
+$ rag-tui
 INFO: Loading faiss.
 INFO: Successfully loaded faiss.
-INFO: Use pytorch device_name: mps
 INFO: Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-INFO: Loaded 8 documents from knowledge base
-╭──────────────────────────────────╮
-│ 🤖 Agentic RAG Transformer       │
-│ ML, Sci-Fi, and Cosmos Assistant │
-│ Version 1.4.2                    │
-╰──────────────────────────────────╯
-Type 'exit'/'quit' to quit, 'help' for instructions.</pre>
+INFO: Loaded documents from knowledge base
+Commands: exit/quit, help, clear, models, model, backends, backend, refresh, cache:clear, hf:clear</pre>
                     </div>
                 </details>
             </section>

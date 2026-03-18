@@ -11,6 +11,8 @@ from unittest.mock import Mock, patch  # noqa: E402
 import numpy as np  # noqa: E402
 
 from src.rag.rag_engine import RAGEngine  # noqa: E402
+from src.rag.memory import MemoryStore  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 
 @pytest.fixture
@@ -24,6 +26,17 @@ def mock_config():
     config.MAX_ITERATIONS = 1
     config.MAX_LENGTH = 50
     config.DEVICE = "cpu"
+    config.CACHE_DIR = Path(".cache")
+    config.MEMORY_MODE = "off"
+    config.MEMORY_DB = "memory.sqlite3"
+    config.LLM_BACKEND = "local"
+    config.OPENAI_MODEL = "gpt-5.3-chat-latest"
+    config.SKILL_FILE = Path("skill.asc")
+    config.CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
+    config.CEREBRAS_MODELS = ["llama3.1-8b"]
+    config.CEREBRAS_MODEL = "llama3.1-8b"
+    config.OLLAMA_BASE_URL = "http://localhost:11434"
+    config.OLLAMA_MODEL = "llama3"
     return config
 
 
@@ -65,6 +78,10 @@ def test_generate_response_greeting(mock_tool, mock_config_class):
 
     with patch.object(RAGEngine, "__init__", lambda self: None):
         engine = RAGEngine()
+        engine.memory = MemoryStore(":memory:", enabled=False)
+        engine.openai_client = None
+        engine.llm_backend = "local"
+        engine.system_instructions = ""
         engine.tool_executor = Mock()
         engine.retrieve_context = Mock(return_value=[])
         result = engine.generate_response("hello")
@@ -80,11 +97,66 @@ def test_generate_response_calc(mock_tool, mock_config_class):
 
     with patch.object(RAGEngine, "__init__", lambda self: None):
         engine = RAGEngine()
+        engine.memory = MemoryStore(":memory:", enabled=False)
+        engine.openai_client = None
+        engine.llm_backend = "local"
+        engine.system_instructions = ""
         engine.tool_executor = Mock()
         engine.tool_executor.execute_tool.return_value = "Result: 5"
         engine.retrieve_context = Mock(return_value=[])
         result = engine.generate_response("calculate 2+3")
         assert "Result: 5" in result
+
+
+@patch("src.rag.rag_engine.Config")
+@patch("src.rag.rag_engine.ToolExecutor")
+def test_generate_response_time_routes_to_tool(mock_tool, mock_config_class):
+    mock_config = Mock()
+    mock_config.MAX_ITERATIONS = 1
+    mock_config_class.return_value = mock_config
+
+    with patch.object(RAGEngine, "__init__", lambda self: None):
+        engine = RAGEngine()
+        engine.memory = MemoryStore(":memory:", enabled=False)
+        engine.openai_client = None
+        engine.llm_backend = "local"
+        engine.system_instructions = ""
+        engine.tool_executor = Mock()
+        engine.tool_executor.execute_tool.return_value = (
+            "Current date and time: 2026-03-18 12:00:00"
+        )
+        engine.retrieve_context = Mock(return_value=[])
+
+        result = engine.generate_response("what is the time now")
+        engine.tool_executor.execute_tool.assert_called_with("TIME:")
+        assert "Current date and time:" in result
+
+
+@patch("src.rag.rag_engine.Config")
+@patch("src.rag.rag_engine.ToolExecutor")
+def test_generate_response_remembers_name_and_recalls_it(mock_tool, mock_config_class):
+    mock_config = Mock()
+    mock_config.MAX_ITERATIONS = 1
+    mock_config_class.return_value = mock_config
+
+    with patch.object(RAGEngine, "__init__", lambda self: None):
+        engine = RAGEngine()
+        engine.memory = MemoryStore(":memory:", enabled=True)
+        engine.openai_client = None
+        engine.llm_backend = "local"
+        engine.system_instructions = ""
+        engine.tool_executor = Mock()
+        engine.retrieve_context = Mock(return_value=[])
+        engine.tokenizer = None
+        engine.generator = None
+        engine.config = mock_config
+        engine.user_name = None
+
+        intro = engine.generate_response("hello i am Niladri")
+        assert "Nice to meet you, Niladri" in intro
+
+        recall = engine.generate_response("tell me my name")
+        assert "Niladri" in recall
 
 
 @patch("src.rag.rag_engine.Config")
@@ -110,6 +182,10 @@ def test_retrieve_context(
     with patch("src.rag.rag_engine.faiss.IndexFlatL2", return_value=mock_index):
         with patch.object(RAGEngine, "__init__", lambda self: None):
             engine = RAGEngine()
+            engine.memory = MemoryStore(":memory:", enabled=False)
+            engine.openai_client = None
+            engine.llm_backend = "local"
+            engine.system_instructions = ""
             engine.embedding_model = mock_embedding_model
             engine.knowledge_base = ["doc1", "doc2", "doc3"]
             engine.index = mock_index
@@ -136,6 +212,17 @@ def test_generator_model_failure(
 ):
     """Test initialization when generator model fails to load"""
     mock_config = Mock()
+    mock_config.CACHE_DIR = Path(".cache")
+    mock_config.MEMORY_MODE = "off"
+    mock_config.MEMORY_DB = "memory.sqlite3"
+    mock_config.LLM_BACKEND = "local"
+    mock_config.OPENAI_MODEL = "gpt-5.3-chat-latest"
+    mock_config.SKILL_FILE = Path("skill.asc")
+    mock_config.CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
+    mock_config.CEREBRAS_MODELS = ["llama3.1-8b"]
+    mock_config.CEREBRAS_MODEL = "llama3.1-8b"
+    mock_config.OLLAMA_BASE_URL = "http://localhost:11434"
+    mock_config.OLLAMA_MODEL = "llama3"
     mock_config_class.return_value = mock_config
 
     engine = RAGEngine()
@@ -154,6 +241,10 @@ def test_load_knowledge_base_file_not_found(mock_tool, mock_config_class):
 
     with patch.object(RAGEngine, "__init__", lambda self: None):
         engine = RAGEngine()
+        engine.memory = MemoryStore(":memory:", enabled=False)
+        engine.openai_client = None
+        engine.llm_backend = "local"
+        engine.system_instructions = ""
         engine.config = mock_config
         engine.add_documents = Mock()
         engine.load_knowledge_base()
@@ -176,6 +267,10 @@ def test_generate_response_no_models(mock_tool, mock_config_class):
 
     with patch.object(RAGEngine, "__init__", lambda self: None):
         engine = RAGEngine()
+        engine.memory = MemoryStore(":memory:", enabled=False)
+        engine.openai_client = None
+        engine.llm_backend = "local"
+        engine.system_instructions = ""
         engine.tool_executor = Mock()
         engine.retrieve_context = Mock(return_value=["context doc"])
         engine.tokenizer = None
@@ -211,6 +306,10 @@ def test_generate_response_with_tools(
 
     with patch.object(RAGEngine, "__init__", lambda self: None):
         engine = RAGEngine()
+        engine.memory = MemoryStore(":memory:", enabled=False)
+        engine.openai_client = None
+        engine.llm_backend = "local"
+        engine.system_instructions = ""
         engine.tool_executor = Mock()
         engine.tool_executor.execute_tool.return_value = "4"
         engine.tool_executor.get_available_tools.return_value = "Tools: CALC, WIKI"

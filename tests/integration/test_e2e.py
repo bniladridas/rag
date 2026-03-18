@@ -106,13 +106,15 @@ class TestTUIE2E:
     """End-to-end tests for TUI functionality"""
 
     @patch("sys.stdin.isatty", return_value=True)
-    @patch("rich.prompt.Prompt.ask", side_effect=["hello", "exit"])
+    @patch("rich.console.Console.input", side_effect=["hello", "exit"])
     @patch("rich.console.Console.print")
     @patch("src.rag.ui.tui.RAGEngine")
-    def test_tui_greeting_flow(self, mock_rag, mock_print, mock_ask, mock_isatty):
+    def test_tui_greeting_flow(self, mock_rag, mock_print, mock_input, mock_isatty):
         """Test TUI function with greeting and exit"""
         mock_engine = Mock()
         mock_engine.generate_response.return_value = "Hello response"
+        mock_engine.current_backend_and_model.return_value = "local:test"
+        mock_engine.available_backends.return_value = ["local"]
         mock_rag.return_value = mock_engine
 
         run_tui()
@@ -120,12 +122,14 @@ class TestTUIE2E:
         mock_engine.generate_response.assert_called_with("hello")
 
     @patch("sys.stdin.isatty", return_value=True)
-    @patch("rich.prompt.Prompt.ask", side_effect=["help", "exit"])
+    @patch("rich.console.Console.input", side_effect=["help", "exit"])
     @patch("rich.console.Console.print")
     @patch("src.rag.ui.tui.RAGEngine")
-    def test_tui_help_flow(self, mock_rag, mock_print, mock_ask, mock_isatty):
+    def test_tui_help_flow(self, mock_rag, mock_print, mock_input, mock_isatty):
         """Test TUI function with help command"""
         mock_engine = Mock()
+        mock_engine.current_backend_and_model.return_value = "local:test"
+        mock_engine.available_backends.return_value = ["local"]
         mock_rag.return_value = mock_engine
 
         run_tui()
@@ -147,15 +151,17 @@ class TestTUIE2E:
         assert len(non_interactive_calls) > 0
 
     @patch("sys.stdin.isatty", return_value=True)
-    @patch("rich.prompt.Prompt.ask", side_effect=["clear", "exit"])
+    @patch("rich.console.Console.input", side_effect=["clear", "exit"])
     @patch("rich.console.Console.print")
     @patch("rich.console.Console.clear")
     @patch("src.rag.ui.tui.RAGEngine")
     def test_tui_clear_command(
-        self, mock_rag, mock_clear, mock_print, mock_ask, mock_isatty
+        self, mock_rag, mock_clear, mock_print, mock_input, mock_isatty
     ):
         """Test TUI clear command"""
         mock_engine = Mock()
+        mock_engine.current_backend_and_model.return_value = "local:test"
+        mock_engine.available_backends.return_value = ["local"]
         mock_rag.return_value = mock_engine
 
         run_tui()

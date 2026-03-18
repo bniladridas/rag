@@ -147,7 +147,7 @@ TIME: Get current date and time"""
         try:
             resp = self.session.get(
                 "https://api.search.brave.com/res/v1/web/search",
-                params={"q": query, "count": 5},
+                params={"q": query, "count": "5"},
                 headers={"X-Subscription-Token": api_key},
                 timeout=10,
             )

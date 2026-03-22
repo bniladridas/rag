@@ -73,13 +73,31 @@ jobs:
 
       - name: Enhance changelog
         run: |
+          git fetch origin
+          git rebase origin/main
           python scripts/enhance_changelog.py
           if git diff --quiet CHANGELOG.md; then
-            echo "No changelog changes"
+            echo "No new entries to add"
           else
             git add CHANGELOG.md
             git commit -m "docs: update changelog"
-            git push
+            git push --force-with-lease
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Update webpage version
+        run: |
+          git fetch origin
+          git rebase origin/main
+          python scripts/update_webpage_version.py
+          if git diff --quiet release-webpage/index.html; then
+            echo "No version change needed"
+          else
+            git add release-webpage/index.html
+            git commit -m "docs: update webpage version"
+            git push --force-with-lease
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}

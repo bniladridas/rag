@@ -35,6 +35,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Sync with remote
+        run: |
+          git fetch origin
+          git stash || true
+          git rebase origin/main || true
+          git stash pop || true
+
       - name: Run semantic release
         run: semantic-release version --push --tag --changelog --vcs-release
         env:
@@ -43,17 +50,12 @@ jobs:
 
       - name: Generate changelog
         run: |
-          # Get the latest tag
           TAG=$(git describe --tags --abbrev=0)
           PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "$TAG")
-
-          # Generate changelog entries between tags
           CHANGES=$(git log --oneline $PREV_TAG..$TAG 2>/dev/null | \
             grep -v "chore(release)" | \
             grep -v "docs: update changelog" | \
             grep -v "docs: update webpage version" || true)
-
-          # Prepend to CHANGELOG.md if there are entries
           if [ -n "$CHANGES" ]; then
             DATE=$(date +%Y-%m-%d)
             {
@@ -62,8 +64,6 @@ jobs:
               echo "$CHANGES" | sed 's/^[a-f0-9]* /- /'
               echo ""
             } > /tmp/new_entries.md
-
-            # Remove old header and combine
             tail -n +2 CHANGELOG.md > /tmp/old_changelog.md
             cat /tmp/new_entries.md /tmp/old_changelog.md > CHANGELOG.md
             echo "Updated CHANGELOG.md with $TAG entries"
@@ -73,31 +73,13 @@ jobs:
 
       - name: Enhance changelog
         run: |
-          git fetch origin
-          git rebase origin/main
           python scripts/enhance_changelog.py
           if git diff --quiet CHANGELOG.md; then
-            echo "No new entries to add"
+            echo "No changelog changes"
           else
             git add CHANGELOG.md
             git commit -m "docs: update changelog"
-            git push --force-with-lease
-          fi
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Update webpage version
-        run: |
-          git fetch origin
-          git rebase origin/main
-          python scripts/update_webpage_version.py
-          if git diff --quiet release-webpage/index.html; then
-            echo "No version change needed"
-          else
-            git add release-webpage/index.html
-            git commit -m "docs: update webpage version"
-            git push --force-with-lease
+            git push
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}

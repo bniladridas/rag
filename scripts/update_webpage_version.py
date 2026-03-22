@@ -23,11 +23,14 @@ def main():
 
     patterns = [
         (
+            r'<span class="version">v[\d.]+</span>',
+            f'<span class="version">v{version}</span>',
+        ),
+        (
             r'<div class="version">v[\d.]+</div>',
             f'<div class="version">v{version}</div>',
         ),
         (r"Successfully installed rag-[\d.]+", f"Successfully installed rag-{version}"),
-        (r"Version [\d.]+</div>\s*╰", f"Version {version}</div>\n│"),
     ]
 
     for pattern, replacement in patterns:

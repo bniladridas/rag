@@ -559,10 +559,13 @@ class RAGEngine:
             import sys as _sys
 
             if _sys.platform == "win32":
+                import subprocess as sp
+
+                creationflags = getattr(sp, "CREATE_NEW_CONSOLE", 0)
                 subprocess.Popen(
                     ["start", "ollama", "serve"],
                     shell=True,
-                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                    creationflags=creationflags,
                 )
             else:
                 with open(os.devnull, "w") as devnull:

@@ -69,6 +69,7 @@ jobs:
               echo "### Fix" >> /tmp/new_entries.md
               echo "$FIXES" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
               echo "" >> /tmp/new_entries.md
+            fi
 
             # Output Feature entries
             FEATS=$(echo "$CHANGES" | grep -E "feat:" || true)

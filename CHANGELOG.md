@@ -3,8 +3,13 @@
 ### Fix
 * fix: restore missing v1.8.13
 
+## v1.8.14 (2026-03-23)
 
-No significant changes.
+### Fix
+* fix: include version in changelog always
+
+### Documentation
+* docs: update webpage version
 
 ## v1.8.13 (2026-03-23)
 

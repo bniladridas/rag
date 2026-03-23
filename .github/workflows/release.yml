@@ -42,92 +42,6 @@ jobs:
           git rebase origin/main || true
           git stash pop || true
 
-      - name: Generate changelog
-        run: |
-          TAG=$(git describe --tags --abbrev=0)
-          if grep -q "^## $TAG " CHANGELOG.md; then
-            echo "Tag $TAG already in changelog, skipping"
-          else
-            PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "$TAG")
-            CHANGES=$(git log --oneline $PREV_TAG..$TAG 2>/dev/null | \
-              grep -Ev "chore\(release\)|fix:.*changelog|docs: update changelog|docs: update webpage version" || true)
-            if [ -n "$CHANGES" ]; then
-              DATE=$(date +%Y-%m-%d)
-              {
-                echo "## $TAG ($DATE)"
-                echo ""
-              } > /tmp/new_entries.md
-
-              # Output Fix entries
-              FIXES=$(echo "$CHANGES" | grep -E "fix:" || true)
-              if [ -n "$FIXES" ]; then
-                echo "### Fix" >> /tmp/new_entries.md
-                echo "$FIXES" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              # Output Feature entries
-              FEATS=$(echo "$CHANGES" | grep -E "feat:" || true)
-              if [ -n "$FEATS" ]; then
-                echo "### Feature" >> /tmp/new_entries.md
-                echo "$FEATS" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              # Output Chore entries
-              CHORES=$(echo "$CHANGES" | grep -E "chore:" || true)
-              if [ -n "$CHORES" ]; then
-                echo "### Chore" >> /tmp/new_entries.md
-                echo "$CHORES" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              # Output Documentation entries
-              DOCS=$(echo "$CHANGES" | grep -E "docs:" || true)
-              if [ -n "$DOCS" ]; then
-                echo "### Documentation" >> /tmp/new_entries.md
-                echo "$DOCS" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              # Output Ci entries
-              CIS=$(echo "$CHANGES" | grep -E "ci:" || true)
-              if [ -n "$CIS" ]; then
-                echo "### Ci" >> /tmp/new_entries.md
-                echo "$CIS" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              # Output Test entries
-              TESTS=$(echo "$CHANGES" | grep -E "test:" || true)
-              if [ -n "$TESTS" ]; then
-                echo "### Test" >> /tmp/new_entries.md
-                echo "$TESTS" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              # Output Refactor entries
-              REFS=$(echo "$CHANGES" | grep -E "refactor:" || true)
-              if [ -n "$REFS" ]; then
-                echo "### Refactor" >> /tmp/new_entries.md
-                echo "$REFS" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              # Output Style entries
-              STYLES=$(echo "$CHANGES" | grep -E "style:" || true)
-              if [ -n "$STYLES" ]; then
-                echo "### Style" >> /tmp/new_entries.md
-                echo "$STYLES" | sed 's/^[a-f0-9]* /\* /' >> /tmp/new_entries.md
-                echo "" >> /tmp/new_entries.md
-              fi
-
-              tail -n +2 CHANGELOG.md > /tmp/old_changelog.md
-              cat /tmp/new_entries.md /tmp/old_changelog.md > CHANGELOG.md
-              echo "Updated CHANGELOG.md with $TAG entries"
-            fi
-          fi
-
       - name: Run semantic release
         run: semantic-release version --push --tag --vcs-release
         env:
@@ -180,8 +94,21 @@ jobs:
             if [ "$HAS_ENTRIES" = false ]; then
               echo "No significant changes." >> /tmp/new_entries.md
             fi
-            tail -n +2 CHANGELOG.md > /tmp/old_changelog.md
-            cat /tmp/new_entries.md /tmp/old_changelog.md > CHANGELOG.md
+            # Preserve markdown header if it exists, otherwise use whole file
+            FIRST_LINE=$(head -1 CHANGELOG.md)
+            if [[ "$FIRST_LINE" =~ ^#[^#] ]]; then
+              HEADER="$FIRST_LINE"
+              BLANK_LINE=$(sed -n '2p' CHANGELOG.md)
+              {
+                echo "$HEADER"
+                [ -n "$BLANK_LINE" ] && echo ""
+                cat /tmp/new_entries.md
+                tail -n +3 CHANGELOG.md
+              } > CHANGELOG.md
+            else
+              cat /tmp/new_entries.md CHANGELOG.md > /tmp/combined.md
+              mv /tmp/combined.md CHANGELOG.md
+            fi
             echo "Updated CHANGELOG.md with $TAG"
           fi
 

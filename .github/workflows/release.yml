@@ -42,12 +42,6 @@ jobs:
           git rebase origin/main || true
           git stash pop || true
 
-      - name: Run semantic release
-        run: semantic-release version --push --tag --changelog --vcs-release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GH_TOKEN: ${{ github.token }}
-
       - name: Generate changelog
         run: |
           TAG=$(git describe --tags --abbrev=0)
@@ -133,6 +127,12 @@ jobs:
           else
             echo "No new entries to add"
           fi
+
+      - name: Run semantic release
+        run: semantic-release version --push --tag --vcs-release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
 
       - name: Enhance changelog
         run: |

@@ -3,6 +3,10 @@
 ### Fix
 * fix: changelog workflow order
 
+
+### Fix
+* fix: changelog workflow order
+
 ## v1.8.8 (2026-03-23)
 
 ### Fix

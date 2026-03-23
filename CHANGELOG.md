@@ -1,4 +1,9 @@
-## v1.8.9 (2026-03-23)
+## v1.8.10 (2026-03-23)
+
+### Fix
+* fix: consolidate changelog filters
+* fix: exclude changelog fix commits
+
 
 ### Fix
 * fix: changelog workflow order

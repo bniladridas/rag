@@ -471,6 +471,37 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:  # noqa: C901
                 console.print(msg if no_color else f"[green]{msg}[/green]")
                 continue
 
+            if query.lower().startswith("ollama:"):
+                query_stripped = query[7:].strip()
+                query_lower = query_stripped.lower()
+
+                if query_lower == "start":
+                    msg = rag_engine.start_ollama_server()
+                    console.print(msg if no_color else f"[green]{msg}[/green]")
+                    continue
+
+                if query_lower == "stop":
+                    msg = rag_engine.stop_ollama_server()
+                    console.print(msg if no_color else f"[green]{msg}[/green]")
+                    continue
+
+                if query_stripped:
+                    parts = query_stripped.split(None, 1)
+                    model_name = parts[0] if parts else ""
+                    actual_query = parts[1] if len(parts) > 1 else ""
+                    msg = rag_engine.set_backend("ollama")
+                    if "Switched" in msg:
+                        rag_engine.config.OLLAMA_MODEL = model_name
+                        msg = f"Switched to ollama with model {model_name}."
+                        console.print(msg if no_color else f"[green]{msg}[/green]")
+                        if actual_query:
+                            query = actual_query
+                        else:
+                            continue
+                    else:
+                        console.print(msg if no_color else f"[red]{msg}[/red]")
+                        continue
+
             if query.lower() == "backend":
                 options = rag_engine.available_backends()
                 picked = _pick_from_list(console, "Backends", options, no_color)

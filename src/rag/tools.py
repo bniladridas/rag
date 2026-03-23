@@ -3,6 +3,7 @@ Tool definitions for the RAG agent
 """
 
 import ast
+import subprocess
 from typing import Callable
 import math
 import os
@@ -39,7 +40,8 @@ class ToolExecutor:
         tools = """Available tools:
 CALC: Calculate a mathematical expression (e.g., CALC: 2 + 3 * 4)
 WIKI: Search Wikipedia for information (e.g., WIKI: Machine Learning)
-TIME: Get current date and time"""
+TIME: Get current date and time
+SHELL: Execute a shell command and return output (e.g., SHELL: git status)"""
         if self.config.ENABLE_WEB:
             tools += "\nSEARCH: Search the web (e.g., SEARCH: latest LLM news)"
             tools += "\nWEB: Fetch a URL and extract readable text (e.g., WEB: https://example.com)"
@@ -58,6 +60,8 @@ TIME: Get current date and time"""
             return self._execute_search(tool_call)
         elif tool_call_upper.startswith("WEB:"):
             return self._execute_web(tool_call)
+        elif tool_call_upper.startswith("SHELL:"):
+            return self._execute_shell(tool_call)
         else:
             return "Unknown tool"
 
@@ -222,6 +226,30 @@ TIME: Get current date and time"""
             return text
         except Exception as e:
             return f"Error fetching URL: {e}"
+
+    def _execute_shell(self, tool_call: str) -> str:
+        """Execute a shell command safely."""
+        command = tool_call[6:].strip()
+        if not command:
+            return "SHELL tool requires a command, e.g. `SHELL: git status`."
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            output = result.stdout.strip() if result.stdout else ""
+            if not output:
+                output = result.stderr.strip() if result.stderr else ""
+            if not output:
+                output = "(command completed with no output)"
+            return output
+        except subprocess.TimeoutExpired:
+            return "Command timed out after 30 seconds."
+        except Exception as e:
+            return f"Error executing command: {e}"
 
 
 _ALLOWED_FUNCS: dict[str, Callable[[float], float]] = {

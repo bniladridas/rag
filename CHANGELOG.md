@@ -1,8 +1,8 @@
 ## v1.8.12 (2026-03-23)
 
-### Documentation
-* docs: include v1.8.11 in changelog
+No significant changes.
 
+## v1.8.11 (2026-03-23)
 
 No significant changes.
 

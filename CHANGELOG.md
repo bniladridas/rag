@@ -3,6 +3,11 @@
 ### Fix
 * fix: missing fi statement
 
+## v1.8.5 (2026-03-23)
+
+### Fix
+
+* fix: resolve changelog consistency
 
 ## v1.8.4 (2026-03-23)
 

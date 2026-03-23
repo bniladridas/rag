@@ -1,3 +1,7 @@
+## v1.8.11 (2026-03-23)
+
+No significant changes.
+
 ## v1.8.10 (2026-03-23)
 
 No significant changes.

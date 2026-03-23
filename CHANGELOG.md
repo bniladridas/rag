@@ -21,6 +21,10 @@
 
 
 ### Fix
+* fix: changelog for v1.8.5
+
+
+### Fix
 * fix: missing fi statement
 
 ## v1.8.5 (2026-03-23)

@@ -11,6 +11,18 @@
 * docs: include demo image
 * docs: include discussions guide
 
+
+### Fix
+* fix: changelog and script pattern
+
+### Documentation
+* docs: update caption
+* docs: image alt text
+* docs: issue link
+* docs: pinned issue note
+* docs: include demo image
+* docs: include discussions guide
+
 ## v1.8.7 (2026-03-23)
 
 ### Fix

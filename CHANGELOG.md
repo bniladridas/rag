@@ -1,4 +1,8 @@
-## v1.8.6 (2026-03-23)
+## v1.8.7 (2026-03-23)
+
+### Fix
+* fix: changelog for v1.8.5
+
 
 ### Fix
 * fix: missing fi statement

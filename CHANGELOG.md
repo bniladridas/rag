@@ -11,6 +11,7 @@
 * docs: include demo image
 * docs: include discussions guide
 
+## v1.8.7 (2026-03-23)
 
 ### Fix
 * fix: changelog for v1.8.5

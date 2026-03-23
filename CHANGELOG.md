@@ -1,16 +1,9 @@
-## v1.8.8 (2026-03-23)
+## v1.8.9 (2026-03-23)
 
 ### Fix
-* fix: changelog and script pattern
+* fix: changelog workflow order
 
-### Documentation
-* docs: update caption
-* docs: image alt text
-* docs: issue link
-* docs: pinned issue note
-* docs: include demo image
-* docs: include discussions guide
-
+## v1.8.8 (2026-03-23)
 
 ### Fix
 * fix: changelog and script pattern

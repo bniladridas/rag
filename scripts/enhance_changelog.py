@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Enhance CHANGELOG.md with additional details.
+Adds issue links only for standalone #123 patterns.
 """
 
 import re
@@ -14,26 +15,26 @@ def enhance_changelog():
         return
 
     content = changelog_path.read_text()
+    original = content
 
-    # Example enhancement: Add issue links if #123 is mentioned
-    def add_issue_links(match):
-        version_header = match.group(1)
-        # Find issue numbers in the section
-        section = match.group(2)
-        # Replace #123 with [#123](https://github.com/bniladridas/rag/issues/123)
-        enhanced_section = re.sub(
-            r"#(\d+)", r"[#\1](https://github.com/bniladridas/rag/issues/\1)", section
+    # Pattern: word-boundary or start of line, then #number, then word-boundary or end
+    # Only matches standalone patterns like " fix: handle #123" or "#123)"
+    # Does NOT match: "[#123]", "(#123)", already linked "[#123](url)"
+    def add_issue_link(match):
+        issue_num = match.group(1)
+        return (
+            f"[`#{issue_num}`](https://github.com/bniladridas/rag/issues/{issue_num})"
         )
-        return version_header + enhanced_section
 
-    # Apply to each version section
-    pattern = r"(## v[\d\.]+\s.*?\n)(.*?)(?=\n## v|\n*$)"
-    enhanced_content = re.sub(pattern, add_issue_links, content, flags=re.DOTALL)
+    # Match # followed by digits, but only when not preceded by [ or ( and not followed by ) or ]
+    pattern = r"(?<![[])(?<!\()#(\d+)(?!\))(?!\])"
+    enhanced_content = re.sub(pattern, add_issue_link, content)
 
-    # Add a summary at the top or something
-    # For now, just write back
-    changelog_path.write_text(enhanced_content)
-    print("Enhanced CHANGELOG.md")
+    if enhanced_content != original:
+        changelog_path.write_text(enhanced_content)
+        print("Enhanced CHANGELOG.md with issue links")
+    else:
+        print("No changes needed")
 
 
 if __name__ == "__main__":

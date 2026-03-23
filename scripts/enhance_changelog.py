@@ -26,8 +26,8 @@ def enhance_changelog():
             f"[`#{issue_num}`](https://github.com/bniladridas/rag/issues/{issue_num})"
         )
 
-    # Match # followed by digits, but only when not preceded by [ or ( and not followed by ) or ]
-    pattern = r"(?<![[])(?<!\()#(\d+)(?!\))(?!\])"
+    # Match standalone #number - after whitespace or start, not in brackets
+    pattern = r"(^|\s)#(\d+)(?!\))"
     enhanced_content = re.sub(pattern, add_issue_link, content)
 
     if enhanced_content != original:

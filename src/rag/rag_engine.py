@@ -275,7 +275,9 @@ class RAGEngine:
             self._remember_turn(query, response)
             return response
 
-        if query.upper().startswith(("CALC:", "WIKI:", "TIME:", "SEARCH:", "WEB:")):
+        if query.upper().startswith(
+            ("CALC:", "WIKI:", "TIME:", "SEARCH:", "WEB:", "SHELL:")
+        ):
             response = self.tool_executor.execute_tool(query)
             self._remember_turn(query, response)
             return response
@@ -293,6 +295,10 @@ class RAGEngine:
                 return response
 
         context_docs = self.retrieve_context(query)
+        logger.info(
+            f"Retrieved {len(context_docs)} context docs for query: {query[:30]}"
+        )
+
         memory_facts = self.memory.search_facts(query)
         memory_msgs = self.memory.recent_messages(limit=8)
         memory_context = format_memory_context(memory_facts, memory_msgs)
@@ -312,36 +318,57 @@ class RAGEngine:
                 else "No response available in CI environment."
             )
 
-        for _ in range(self.config.MAX_ITERATIONS):
-            input_text = (
-                f"Context information: {context}\n\n"
-                f"{self.tool_executor.get_available_tools()}\n\n"
-                f"Question: {query}\n\n"
-                f"Answer the question using the context. If you need external\n"
-                f"information, use a tool by responding with the tool\n"
-                f"command. Otherwise, provide a direct answer."
+        available_tools = self.tool_executor.get_available_tools()
+        input_text = (
+            f"{available_tools}\n\n"
+            f"Context information: {context}\n\n"
+            f"Question: {query}\n\n"
+            f"When a shell command is needed, respond with EXACTLY one line: SHELL: <full command>\n"
+            f'For example: SHELL: git add . or SHELL: git commit -m "fix bug"\n'
+            f"Do not add explanation - just output the tool call line."
+        )
+
+        response = self._generate_text(input_text)
+        logger.info(f"Iteration response: {response[:100]!r}")
+
+        tool_match = re.search(
+            r"^\s*(CALC:|WIKI:|TIME:|SHELL:|SEARCH:|WEB:)",
+            response,
+            re.MULTILINE | re.IGNORECASE,
+        )
+        if tool_match:
+            tool_line_match = re.search(
+                r"^\s*(CALC:|WIKI:|TIME:|SHELL:|SEARCH:|WEB:).+$",
+                response,
+                re.MULTILINE | re.IGNORECASE,
             )
+            if tool_line_match:
+                tool_call = tool_line_match.group(0).strip()
+            else:
+                tool_call = response.strip()
+            tool_result = self.tool_executor.execute_tool(tool_call)
+            logger.info(f"Tool executed, result: {tool_result[:50]}...")
 
-            response = self._generate_text(input_text)
+            context += f"\n\nTool result:\n{tool_result}\n\nProvide the final answer."
 
-            if response.upper().startswith(("CALC:", "WIKI:", "TIME:")):
-                tool_result = self.tool_executor.execute_tool(response)
-                context += f"\nTool result: {tool_result}"
-                continue
-            if response.upper().startswith(("SEARCH:", "WEB:")):
-                tool_result = self.tool_executor.execute_tool(response)
-                context += f"\nTool result: {tool_result}"
-                continue
-
-            if not response or len(response.split()) < 3:
-                response = (
-                    "I didn't get enough signal to answer that. "
-                    "Try a question about machine learning, sci-fi, or the cosmos."
-                )
+            response = self._generate_text(
+                context
+                + f"\n\nUser asked: {query}\n\nGive the final answer based on the tool result above."
+            )
+            response = response.strip()
+            if not response or len(response.split()) < 2:
+                response = tool_result
             self._remember_turn(query, response)
             return response
 
-        return "I used tools but couldn't finalize a response. Try a different query."
+        response = response.strip()
+        if not response or len(response.split()) < 2:
+            response = (
+                "I didn't get enough signal to answer that. "
+                "Try a question about machine learning, sci-fi, or the cosmos."
+            )
+        self._remember_turn(query, response)
+        return response
 
     def _remember_turn(self, user: str, assistant: str) -> None:
         self.memory.add_message("user", user)
@@ -350,6 +377,7 @@ class RAGEngine:
     def _generate_text(self, prompt: str) -> str:
         """Generate text with the configured backend."""
         backend = (self.llm_backend or "local").lower()
+        logger.info(f"Generating text with backend: {backend}")
 
         if backend == "openai":
             if self.openai_client is None:
@@ -506,6 +534,65 @@ class RAGEngine:
             return "Install models with `ollama pull <name>`; the picker lists installed tags."
         return ""
 
+    def is_ollama_running(self) -> bool:
+        """Check if the Ollama server is reachable."""
+        try:
+            url = f"{self.config.OLLAMA_BASE_URL}/api/tags"
+            resp = self._http_session.get(url, timeout=2)
+            return resp.status_code == 200
+        except Exception:
+            return False
+
+    def start_ollama_server(self) -> str:
+        """Attempt to start the Ollama server in the background."""
+        import shutil
+
+        if self.is_ollama_running():
+            return "Ollama server is already running."
+
+        ollama_bin = shutil.which("ollama")
+        if not ollama_bin:
+            return "Error: 'ollama' executable not found in PATH."
+
+        try:
+            import subprocess
+            import sys as _sys
+
+            if _sys.platform == "win32":
+                subprocess.Popen(
+                    ["start", "ollama", "serve"],
+                    shell=True,
+                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                )
+            else:
+                with open(os.devnull, "w") as devnull:
+                    subprocess.Popen(
+                        [ollama_bin, "serve"],
+                        stdout=devnull,
+                        stderr=devnull,
+                        start_new_session=True,
+                    )
+            return "Starting Ollama server in the background... please wait a few seconds for it to initialize."
+        except Exception as e:
+            return f"Failed to start Ollama: {e}"
+
+    def stop_ollama_server(self) -> str:
+        """Stop the Ollama server."""
+        import subprocess
+        import sys as _sys
+
+        if not self.is_ollama_running():
+            return "Ollama server is not running."
+
+        try:
+            if _sys.platform == "darwin":
+                subprocess.run(["pkill", "-f", "ollama"], capture_output=True)
+            else:
+                subprocess.run(["pkill", "ollama"], capture_output=True)
+            return "Ollama server stopped."
+        except Exception as e:
+            return f"Failed to stop Ollama: {e}"
+
     def _ensure_local_generator_loaded(self) -> Optional[str]:
         """Load local tokenizer/generator on demand."""
         try:
@@ -566,9 +653,13 @@ class RAGEngine:
             return f"Cerebras request failed: {e}"
 
     def _generate_text_ollama(self, prompt: str) -> str:
+        """Generate text using Ollama API with debug info."""
         url = f"{self.config.OLLAMA_BASE_URL}/api/chat"
+        model_name = self.config.OLLAMA_MODEL or "llama3"
+        logger.info(f"Ollama request using model: {model_name}")
+
         payload = {
-            "model": self.config.OLLAMA_MODEL or "llama3",
+            "model": model_name,
             "messages": [
                 {"role": "system", "content": self.system_instructions},
                 {"role": "user", "content": prompt},
@@ -579,12 +670,21 @@ class RAGEngine:
         try:
             resp = self._http_session.post(url, json=payload, timeout=60)
             if resp.status_code != 200:
-                return f"Ollama request failed with status {resp.status_code}: {resp.text[:200]}"
+                err_msg = f"[Ollama Error {resp.status_code}] {resp.text[:200]}"
+                logger.error(err_msg)
+                return err_msg
             data = resp.json()
             msg = data.get("message", {}) or {}
-            return (msg.get("content", "") or "").strip() or "Empty Ollama response."
+            content = (msg.get("content") or "").strip()
+            if not content:
+                logger.warning("Ollama returned empty response")
+                return "Ollama returned empty response."
+            logger.info(f"Ollama response received: {content[:50]}...")
+            return content
         except Exception as e:
-            return f"Ollama request failed: {e}"
+            err_msg = f"[Ollama Error] {e}"
+            logger.error(err_msg)
+            return err_msg
 
     def _ollama_list_models(self) -> list[str]:
         try:
@@ -621,5 +721,5 @@ class RAGEngine:
         return (
             "You are the Agentic RAG Transformer assistant. "
             "Prefer concise, correct answers. "
-            "When using tools, respond with exactly one tool command like `CALC: 2+2`."
+            "When using tools, respond with exactly one tool command like `CALC: 2+2` or `SHELL: git status`."
         )

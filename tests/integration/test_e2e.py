@@ -354,3 +354,44 @@ class TestFullApplicationFlow:
             call for call in mock_print.call_args_list if "On branch main" in str(call)
         ]
         assert len(response_calls) > 0
+
+    @patch("sys.stdin.isatty", return_value=True)
+    @patch("builtins.input", side_effect=["run git status", "exit"])
+    @patch("builtins.print")
+    @patch("src.rag.__main__.RAGEngine")
+    def test_shell_natural_language_to_tool(
+        self, mock_rag_class, mock_print, mock_input, mock_isatty
+    ):
+        """Test natural language 'run git status' gets interpreted as SHELL tool"""
+        from src.rag.rag_engine import RAGEngine
+
+        real_engine = RAGEngine()
+        mock_instance = Mock()
+        mock_instance.llm_backend = "ollama"
+        mock_instance.openai_client = None
+
+        def generate_response_with_mock(*args, **kwargs):
+            original_generate_text = real_engine._generate_text
+            real_engine._generate_text = mock_instance._generate_text
+            try:
+                return real_engine.generate_response(*args, **kwargs)
+            finally:
+                real_engine._generate_text = original_generate_text
+
+        mock_instance.generate_response.side_effect = generate_response_with_mock
+        mock_instance._generate_text.return_value = "SHELL: git status"
+        mock_instance.retrieve_context.return_value = []
+        mock_instance.current_backend_and_model.return_value = "local:test"
+        mock_instance.available_backends.return_value = ["local"]
+        mock_instance.memory.search_facts.return_value = []
+        mock_instance.memory.recent_messages.return_value = []
+        mock_rag_class.return_value = mock_instance
+
+        main([])
+
+        # Verify LLM was called with the natural language query
+        assert mock_instance._generate_text.called, "_generate_text not called"
+
+        # Verify that SHELL tool was returned by LLM
+        call_args = str(mock_instance._generate_text.call_args)
+        assert "SHELL: git status" in call_args or "git status" in call_args

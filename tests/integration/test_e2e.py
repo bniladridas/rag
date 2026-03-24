@@ -167,6 +167,21 @@ class TestTUIE2E:
         run_tui()
         mock_clear.assert_called_once()
 
+    @patch("sys.stdin.isatty", return_value=True)
+    @patch("rich.console.Console.input", side_effect=["SHELL: git status", "exit"])
+    @patch("rich.console.Console.print")
+    @patch("src.rag.ui.tui.RAGEngine")
+    def test_tui_shell_command(self, mock_rag, mock_print, mock_input, mock_isatty):
+        """Test TUI SHELL command execution"""
+        mock_engine = Mock()
+        mock_engine.current_backend_and_model.return_value = "local:test"
+        mock_engine.available_backends.return_value = ["local"]
+        mock_rag.return_value = mock_engine
+
+        run_tui()
+        # Verify generate_response was called with the shell command
+        mock_engine.generate_response.assert_called_with("SHELL: git status")
+
 
 class TestDataCollectorE2E:
     """End-to-end tests for data collection functionality"""
@@ -316,3 +331,26 @@ class TestFullApplicationFlow:
         assert len(calc_calls) > 0
         assert len(wiki_calls) > 0
         assert len(time_calls) > 0
+
+    @patch("sys.stdin.isatty", return_value=True)
+    @patch("builtins.input", side_effect=["SHELL: git status", "exit"])
+    @patch("builtins.print")
+    @patch("src.rag.__main__.RAGEngine")
+    def test_shell_tool_via_generate_response(
+        self, mock_rag, mock_print, mock_input, mock_isatty
+    ):
+        """Test SHELL tool execution via generate_response"""
+        mock_engine = Mock()
+        mock_engine.generate_response.return_value = "On branch main"
+        mock_rag.return_value = mock_engine
+
+        main([])
+
+        # Verify shell command was passed to generate_response
+        mock_engine.generate_response.assert_called_with("SHELL: git status")
+
+        # Verify response was printed
+        response_calls = [
+            call for call in mock_print.call_args_list if "On branch main" in str(call)
+        ]
+        assert len(response_calls) > 0

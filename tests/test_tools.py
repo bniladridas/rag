@@ -72,3 +72,23 @@ def test_web_tools_disabled_by_default(tool_executor):
     assert tool_executor.execute_tool("WEB: https://example.com").startswith(
         "Web tools are disabled"
     )
+
+
+def test_execute_shell_echo(tool_executor):
+    result = tool_executor._execute_shell("SHELL: echo hello")
+    assert "hello" in result
+
+
+def test_execute_shell_arithmetic(tool_executor):
+    result = tool_executor._execute_shell("SHELL: echo $((1+2))")
+    assert "3" in result
+
+
+def test_execute_shell_git_status(tool_executor):
+    result = tool_executor._execute_shell("SHELL: git status")
+    assert "On branch" in result or "main" in result
+
+
+def test_execute_shell_invalid_command(tool_executor):
+    result = tool_executor._execute_shell("SHELL: nonexistent_command_xyz")
+    assert "Error" in result or "not found" in result.lower()

@@ -18,7 +18,10 @@ jobs:
 
       - name: Fix commit messages
         run: |
-          git filter-branch -f --msg-filter 'commit_msg=$(cat); commit_msg=$(echo "$commit_msg" | sed "s/ add / /g"); commit_msg=$(echo "$commit_msg" | sed "s/^add //"); echo "$commit_msg"' HEAD || true
+          git filter-branch -f --msg-filter 'commit_msg=$(cat);
+            commit_msg=$(echo "$commit_msg" | sed "s/ add / /g");
+            commit_msg=$(echo "$commit_msg" | sed "s/^add //");
+            echo "$commit_msg"' HEAD || true
 
       - name: Force push if changed
         run: |

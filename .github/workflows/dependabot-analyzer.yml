@@ -258,6 +258,10 @@ jobs:
             const existingComment = comments.find(c =>
               c.user.login === 'github-actions[bot]' &&
               c.body.includes(marker)
+            ) || comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('I analyzed the Dependabot PR #') &&
+              c.body.includes('*Analyzed by GitHub Actions*')
             );
 
             if (existingComment) {

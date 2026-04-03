@@ -195,13 +195,16 @@ jobs:
 
       - name: Build package
         if: steps.semantic.outputs.version != ''
-        run: python -m build
+        run: |
+          python -m build
+          git archive --format=zip --output dist/python.zip HEAD
 
       - name: Upload release assets
         if: steps.semantic.outputs.version != ''
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            dist/python.zip
             dist/*.whl
             dist/*.tar.gz
           draft: false

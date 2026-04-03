@@ -86,7 +86,7 @@ def test_execute_shell_arithmetic(tool_executor):
 
 def test_execute_shell_git_status(tool_executor):
     result = tool_executor._execute_shell("SHELL: git status")
-    assert "On branch" in result or "main" in result
+    assert "On branch" in result or "main" in result or "HEAD detached" in result
 
 
 def test_execute_shell_invalid_command(tool_executor):

@@ -21,10 +21,9 @@ def enhance_changelog():
     # Only matches standalone patterns like " fix: handle #123" or "#123)"
     # Does NOT match: "[#123]", "(#123)", already linked "[#123](url)"
     def add_issue_link(match):
-        issue_num = match.group(1)
-        return (
-            f"[`#{issue_num}`](https://github.com/bniladridas/rag/issues/{issue_num})"
-        )
+        prefix = match.group(1)
+        issue_num = match.group(2)
+        return f"{prefix}[`#{issue_num}`](https://github.com/bniladridas/rag/issues/{issue_num})"
 
     # Match standalone #number - after whitespace or start, not in brackets
     pattern = r"(^|\s)#(\d+)(?!\))"

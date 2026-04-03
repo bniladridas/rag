@@ -19,6 +19,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{ github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -43,14 +44,47 @@ jobs:
           git rebase origin/main || true
           git stash pop || true
 
+      - name: Validate release history
+        run: |
+          LATEST_TAG=$(git tag --sort=-version:refname | head -n 1)
+          REACHABLE_TAG=$(git tag --merged HEAD --sort=-version:refname | head -n 1)
+          LAST_RELEASE_COMMIT=$(git log --grep='^chore(release): ' -n 1 --format='%H %s' || true)
+
+          echo "Latest repository tag: ${LATEST_TAG:-<none>}"
+          echo "Latest tag reachable from main: ${REACHABLE_TAG:-<none>}"
+          echo "Latest release commit on main: ${LAST_RELEASE_COMMIT:-<none>}"
+
+          if [ -n "$LATEST_TAG" ] && [ -z "$REACHABLE_TAG" ]; then
+            echo "::error::No release tag is reachable from the current main branch."
+            echo "::error::semantic-release would use an initial-version path"
+            echo "::error::and report a misleading 1.0.0 result."
+            echo "::error::Retag the latest reachable release commit on main"
+            echo "::error::or repair branch history so release tags are ancestors of main."
+            exit 1
+          fi
+
+          if [ -n "$LATEST_TAG" ] && [ -n "$REACHABLE_TAG" ] && [ "$LATEST_TAG" != "$REACHABLE_TAG" ]; then
+            echo "::warning::Latest repository tag ($LATEST_TAG) differs from"
+            echo "::warning::the latest tag reachable from main ($REACHABLE_TAG)."
+            echo "::warning::semantic-release will only consider tags in main history."
+          fi
+
       - name: Run semantic release
         id: semantic
         run: |
+          set +e
           OUTPUT=$(semantic-release version --push --tag --vcs-release 2>&1)
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::semantic-release failed with exit code $STATUS"
+            exit "$STATUS"
+          fi
           if echo "$OUTPUT" | grep -q "No release will be made"; then
             echo "version=" >> $GITHUB_OUTPUT
           else
-            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
+            VERSION=$(git tag --merged HEAD --sort=-version:refname | head -n 1)
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
         env:

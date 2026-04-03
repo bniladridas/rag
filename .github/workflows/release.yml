@@ -81,11 +81,11 @@ jobs:
             echo "::error::semantic-release failed with exit code $STATUS"
             exit "$STATUS"
           fi
-          VERSION=$(echo "$OUTPUT" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -n 1)
-          if [ -n "$VERSION" ]; then
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-          else
+          if echo "$OUTPUT" | grep -q "No release will be made"; then
             echo "version=" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(echo "$OUTPUT" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -n 1)
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}

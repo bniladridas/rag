@@ -47,11 +47,10 @@ jobs:
         id: semantic
         run: |
           OUTPUT=$(semantic-release version --push --tag --vcs-release 2>&1)
-          echo "output=$OUTPUT" >> $GITHUB_OUTPUT
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
-          if [[ "$OUTPUT" == *"No release will be made"* ]]; then
+          if echo "$OUTPUT" | grep -q "No release will be made"; then
             echo "version=" >> $GITHUB_OUTPUT
           else
+            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
         env:

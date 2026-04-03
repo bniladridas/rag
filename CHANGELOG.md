@@ -1,3 +1,19 @@
+## v1.8.17 (2026-04-03)
+
+### Fix
+* fix: harden release workflow
+* fix: sync version to v1.8.16
+* fix: sync version to match latest tag
+* fix: use grep for no-release check
+* fix: no-release case and wheel/sdist
+
+### Feature
+* feat: include wheel and sdist in release
+
+### Documentation
+* docs: update changelog
+* docs: update webpage version
+
 ## v1.8.16 (2026-03-23)
 
 No significant changes.

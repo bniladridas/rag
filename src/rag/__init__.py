@@ -14,6 +14,9 @@ from .__main__ import main as _main  # noqa: E402,F401
 # Re-export main as part of the public API
 main = _main
 
+# For testing release workflow
+TEST_VERSION = "1.8.18"
+
 # Added for release test
 
 

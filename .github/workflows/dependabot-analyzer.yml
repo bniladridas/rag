@@ -238,9 +238,11 @@ jobs:
             }
 
             const emoji = impact === 'high' ? '🚨' : impact === 'medium' ? '⚠️' : '✅';
+            const marker = '<!-- dependabot-pr-analyzer -->';
 
             const repoName = context.repo.repo;
-            const commentBody = 'Hi @' + triggerUser + ',\n\n' +
+            const commentBody = marker + '\n' +
+              'Hi @' + triggerUser + ',\n\n' +
               'I analyzed the Dependabot PR #' + prNumber + ' for you.\n\n' +
               '## Analysis Result ' + emoji + '\n\n' +
               status + '\n\n' +
@@ -254,8 +256,8 @@ jobs:
             });
 
             const existingComment = comments.find(c =>
-              c.user.type === 'Bot' &&
-              c.body.includes('Dependabot PR Analyzer')
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes(marker)
             );
 
             if (existingComment) {

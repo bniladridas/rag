@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -43,14 +44,24 @@ jobs:
           git stash pop || true
 
       - name: Run semantic release
-        run: semantic-release version --push --tag --vcs-release
+        id: semantic
+        run: |
+          OUTPUT=$(semantic-release version --push --tag --vcs-release 2>&1)
+          echo "output=$OUTPUT" >> $GITHUB_OUTPUT
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
+          if [[ "$OUTPUT" == *"No release will be made"* ]]; then
+            echo "version=" >> $GITHUB_OUTPUT
+          else
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
 
       - name: Add changelog entry
+        if: steps.semantic.outputs.version != ''
         run: |
-          TAG=$(git describe --tags --abbrev=0)
+          TAG="${{ steps.semantic.outputs.version }}"
           if grep -q "^## $TAG " CHANGELOG.md; then
             echo "Tag $TAG already in changelog"
           else
@@ -113,6 +124,7 @@ jobs:
           fi
 
       - name: Enhance changelog
+        if: steps.semantic.outputs.version != ''
         run: |
           python scripts/enhance_changelog.py
           if git diff --quiet CHANGELOG.md; then
@@ -127,6 +139,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Update webpage version
+        if: steps.semantic.outputs.version != ''
         run: |
           python scripts/update_webpage_version.py
           if git diff --quiet release-webpage/index.html; then
@@ -141,15 +154,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Trigger pages deployment
+        if: steps.semantic.outputs.version != ''
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ github.token }}
           event-type: deploy
 
       - name: Build package
+        if: steps.semantic.outputs.version != ''
         run: python -m build
 
       - name: Upload release assets
+        if: steps.semantic.outputs.version != ''
         uses: softprops/action-gh-release@v2
         with:
           files: |

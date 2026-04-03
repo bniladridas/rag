@@ -2,5 +2,5 @@
 RAG Transformer - Agentic AI Assistant
 """
 
-__version__ = "1.8.16"
+__version__ = "1.8.9"
 __author__ = "bniladridas"

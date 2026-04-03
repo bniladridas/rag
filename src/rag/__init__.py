@@ -14,6 +14,8 @@ from .__main__ import main as _main  # noqa: E402,F401
 # Re-export main as part of the public API
 main = _main
 
+# Added for release test
+
 
 def get_version_from_git() -> Optional[str]:
     """Get version from git tag or return None if not available.

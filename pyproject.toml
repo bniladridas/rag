@@ -7,6 +7,7 @@ version_variables = ["setup.py:version", "src/rag/__version__.py:__version__"]
 commit_message = "chore(release): {version}"
 branch = "main"
 changelog_file = "CHANGELOG.md"
+version_source = "github"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -63,15 +63,23 @@ def get_version_from_git() -> Optional[str]:
 __version__ = os.environ.get("RAG_VERSION")
 
 if not __version__:
-    # First try to get version from git tag (for development and releases)
-    __version__ = get_version_from_git()
+    # First try to get version from __version__.py (most reliable for dev)
+    try:
+        from .__version__ import __version__ as local_version
 
-    # If not in a git repo or no tags, fall back to package metadata
+        __version__ = local_version
+    except ImportError:
+        pass
+
+    # Fall back to git tag
+    if not __version__:
+        __version__ = get_version_from_git()
+
+    # Final fallback to package metadata
     if not __version__:
         try:
             __version__ = version("rag")
         except PackageNotFoundError:
-            # Fallback for development installs without package metadata
             __version__ = "0.0.0-dev"
             logger.debug("Using development version (0.0.0-dev)")
 

@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+"""rag-agent: Minimal app-style TUI for RAG"""
+
+from rag.ui.minimal_tui import run_minimal_tui
+
+if __name__ == "__main__":
+    run_minimal_tui()

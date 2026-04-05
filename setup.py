@@ -25,6 +25,7 @@ setup(
             "rag=rag:main",
             "rag-tui=rag.ui.tui:main",
             "rag-collect=rag.data_fetcher:main",
+            "rag-agent=rag.ui.minimal_tui:run_minimal_tui",
         ],
     },
     author="RAG Transformer Team",

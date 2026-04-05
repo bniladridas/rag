@@ -9,7 +9,9 @@ import pytest
 
 from src.rag.__main__ import main
 from src.rag.data_fetcher import main as collector_main
-from src.rag.ui.tui import run_tui
+from src.rag.rag_engine import RAGEngine
+from src.rag.ui.minimal_tui import MinimalTUI
+from src.rag.ui.tui import create_tui_parser, main as tui_main, run_tui
 
 pytestmark = pytest.mark.integration
 
@@ -105,6 +107,91 @@ class TestCLIE2E:
 class TestTUIE2E:
     """End-to-end tests for TUI functionality"""
 
+    def test_tui_parser_accepts_positional_initial_query(self):
+        """Test TUI parser accepts positional startup query text"""
+        parser = create_tui_parser()
+        args = parser.parse_args(["CONTRIBUTING.asc"])
+        assert args.initial_query == ["CONTRIBUTING.asc"]
+
+    def test_rag_engine_shortcuts_toggle(self):
+        """Test engine shortcut replies can be turned on and off"""
+        engine = object.__new__(RAGEngine)
+        engine.shortcut_responses_enabled = True
+
+        msg = engine.set_shortcut_responses_enabled(False)
+        assert msg == "Shortcut responses disabled."
+        assert engine.shortcut_responses_enabled is False
+
+        msg = engine.set_shortcut_responses_enabled(True)
+        assert msg == "Shortcut responses enabled."
+        assert engine.shortcut_responses_enabled is True
+
+    def test_minimal_tui_ollama_start_switches_backend(self):
+        """Test minimal TUI switches backend to ollama after starting it"""
+        mock_engine = Mock()
+        mock_engine.set_backend.return_value = "Switched backend to ollama."
+        mock_engine.current_backend_and_model.return_value = "ollama:llama3"
+
+        tui = MinimalTUI(theme="minimal")
+        tui.rag_engine = mock_engine
+
+        with patch("requests.get") as mock_get:
+            mock_get.return_value.status_code = 200
+            with patch.object(tui.console, "print"):
+                tui.start_ollama()
+
+        mock_engine.set_backend.assert_called_with("ollama")
+
+    def test_minimal_tui_suppresses_engine_noise(self):
+        """Test minimal TUI hides engine stdout/stderr noise during responses"""
+        mock_engine = Mock()
+
+        def noisy_response(query):
+            print("INFO: noisy stdout")
+            import sys
+
+            print("INFO: noisy stderr", file=sys.stderr)
+            return "quiet result"
+
+        mock_engine.generate_response.side_effect = noisy_response
+
+        tui = MinimalTUI(theme="minimal")
+        tui.rag_engine = mock_engine
+
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            with patch("sys.stderr", new_callable=StringIO) as mock_stderr:
+                response = tui._generate_response_quietly("hello")
+
+        assert response == "quiet result"
+        assert "INFO: noisy stdout" not in mock_stdout.getvalue()
+        assert "INFO: noisy stderr" not in mock_stderr.getvalue()
+
+    def test_minimal_tui_shortcuts_command(self):
+        """Test minimal TUI handles shortcuts toggle command"""
+        mock_engine = Mock()
+        mock_engine.set_shortcut_responses_enabled.return_value = (
+            "Shortcut responses disabled."
+        )
+
+        tui = MinimalTUI(theme="minimal")
+        tui.rag_engine = mock_engine
+        with patch.object(tui, "_print_message") as mock_print:
+            tui.set_shortcuts("off")
+
+        mock_engine.set_shortcut_responses_enabled.assert_called_with(False)
+        mock_print.assert_called()
+
+    def test_minimal_tui_command_typo_suggests_instead_of_querying(self):
+        """Test minimal TUI suggests a close command for mistyped input"""
+        mock_engine = Mock()
+
+        tui = MinimalTUI(theme="minimal")
+        tui.rag_engine = mock_engine
+
+        handled = tui._maybe_handle_command_typo("shortscuts off")
+
+        assert handled is True
+
     @patch("sys.stdin.isatty", return_value=True)
     @patch("rich.console.Console.input", side_effect=["hello", "exit"])
     @patch("rich.console.Console.print")
@@ -120,6 +207,27 @@ class TestTUIE2E:
         run_tui()
         assert mock_print.called
         mock_engine.generate_response.assert_called_with("hello")
+
+    @patch("sys.stdin.isatty", return_value=True)
+    @patch("rich.console.Console.input", side_effect=["exit"])
+    @patch("rich.console.Console.print")
+    @patch("src.rag.ui.tui.RAGEngine")
+    def test_tui_initial_query_argument(
+        self, mock_rag, mock_print, mock_input, mock_isatty
+    ):
+        """Test TUI processes an initial positional query before the loop"""
+        mock_engine = Mock()
+        mock_engine.generate_response.return_value = "File response"
+        mock_engine.current_backend_and_model.return_value = "local:test"
+        mock_engine.available_backends.return_value = ["local"]
+        mock_engine.get_status.return_value = {
+            "embedding_model_loaded": True,
+            "generator_model_loaded": True,
+        }
+        mock_rag.return_value = mock_engine
+
+        tui_main(["CONTRIBUTING.asc"])
+        mock_engine.generate_response.assert_any_call("CONTRIBUTING.asc")
 
     @patch("sys.stdin.isatty", return_value=True)
     @patch("rich.console.Console.input", side_effect=["help", "exit"])

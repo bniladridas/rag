@@ -91,6 +91,34 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
 
+      - name: Ensure release commit is on main
+        if: steps.semantic.outputs.version != ''
+        run: |
+          git fetch origin main --tags
+          RELEASE_TAG="v${{ steps.semantic.outputs.version }}"
+          RELEASE_COMMIT=$(git rev-list -n 1 "$RELEASE_TAG")
+          MAIN_COMMIT=$(git rev-parse origin/main)
+
+          echo "Release tag: $RELEASE_TAG"
+          echo "Release commit: $RELEASE_COMMIT"
+          echo "origin/main: $MAIN_COMMIT"
+
+          if [ "$RELEASE_COMMIT" != "$MAIN_COMMIT" ]; then
+            echo "Release commit is not on origin/main. Pushing HEAD to main..."
+            git push origin HEAD:main
+            git fetch origin main --tags
+            MAIN_COMMIT=$(git rev-parse origin/main)
+          fi
+
+          if [ "$RELEASE_COMMIT" != "$MAIN_COMMIT" ]; then
+            echo "::error::Release tag $RELEASE_TAG points to $RELEASE_COMMIT but origin/main is $MAIN_COMMIT"
+            echo "::error::The release commit was tagged but not published on main."
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+
       - name: Add changelog entry
         if: steps.semantic.outputs.version != ''
         run: |
@@ -175,10 +203,10 @@ jobs:
         if: steps.semantic.outputs.version != ''
         run: |
           python scripts/update_webpage_version.py
-          if git diff --quiet release-webpage/index.html; then
+          if git diff --quiet release-webpage/index.html release-webpage/index-new.html; then
             echo "No version change needed"
           else
-            git add release-webpage/index.html
+            git add release-webpage/index.html release-webpage/index-new.html
             git commit -m "docs: update webpage version"
             git push
           fi

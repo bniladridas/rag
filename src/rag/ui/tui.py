@@ -9,9 +9,13 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from rich.align import Align
+from rich.box import ROUNDED
+from rich.columns import Columns
 from rich.console import Console
-from rich.panel import Panel
 from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.text import Text
 
 from ..__version__ import __version__
 from ..rag_engine import RAGEngine
@@ -57,44 +61,142 @@ Examples:
         help="Force TUI mode even in non-interactive environments",
     )
 
+    parser.add_argument(
+        "--theme",
+        choices=["default", "minimal"],
+        default="default",
+        help="Theme: default (colored) or minimal (app-style)",
+    )
+
+    parser.add_argument(
+        "initial_query",
+        nargs="*",
+        help="Optional initial query to run when the TUI starts",
+    )
+
     return parser
 
 
-def _display_welcome(console: Console, no_color: bool) -> None:
+def _display_welcome(console: Console, no_color: bool, theme: str = "default") -> None:
     """Display welcome message and instructions."""
-    if no_color:
-        console.print(
-            Panel.fit(
-                "Agentic RAG Transformer\n"
-                "ML, Sci-Fi, and Cosmos Assistant\n"
-                f"Version {__version__}"
-            )
-        )
-    else:
-        console.print(
-            Panel.fit(
-                "[bold blue]🤖 Agentic RAG Transformer[/]\n"
-                "[green]ML, Sci-Fi, and Cosmos Assistant[/]\n"
-                f"[dim]Version {__version__}[/]"
-            )
-        )
-    console.print(
-        "Commands: exit/quit, help, clear, models, model, model:<name>, backends, backend, backend:<name>, "
-        "refresh, cache:clear, memory:clear, hf:clear, update\n"
+    content_width = 92
+    border_style = "white" if no_color or theme == "minimal" else "bright_black"
+    heading = (
+        Text("Run the interactive TUI:", style="bold")
+        if not no_color and theme != "minimal"
+        else Text("Run the interactive TUI:")
     )
+    dots = Text("o o o", style="bright_black" if border_style != "white" else "")
+    command = Text()
+    command.append("$ ", style="bold white" if border_style != "white" else "")
+    command.append("rag-tui", style="bold")
+    command_hint = Text(
+        "Commands: help, info, clear, backends, backend, backend:<name>, "
+        "models, model, model:<name>, shortcuts [on|off], refresh, cache:clear, "
+        "memory:clear, hf:clear, update",
+        style="" if border_style == "white" else "dim",
+    )
+
+    console.print()
+    console.print(Align.left(heading, width=content_width))
+    console.print()
+    console.print(
+        Align.center(
+            Panel(
+                Align.left(Text.assemble(dots, "\n\n", command)),
+                box=ROUNDED,
+                border_style=border_style,
+                padding=(0, 1),
+                width=content_width,
+            ),
+            width=content_width,
+        )
+    )
+    console.print()
+    console.print(Align.left(command_hint, width=content_width))
+    console.print("")
 
 
 def _display_model_status(
-    console: Console, rag_engine: RAGEngine, no_color: bool
+    console: Console, rag_engine: RAGEngine, no_color: bool, theme: str = "default"
 ) -> None:
     """Display warnings for missing models."""
     status = rag_engine.get_status()
     if not status.get("embedding_model_loaded"):
         msg = "Warning: embedding model not loaded. Retrieval will be limited."
-        console.print(msg if no_color else f"[yellow]{msg}[/yellow]")
+        console.print(
+            msg if (no_color or theme == "minimal") else f"[yellow]{msg}[/yellow]"
+        )
     if not status.get("generator_model_loaded"):
         msg = "Warning: generator model not loaded. Responses will be limited."
-        console.print(msg if no_color else f"[yellow]{msg}[/yellow]")
+        console.print(
+            msg if (no_color or theme == "minimal") else f"[yellow]{msg}[/yellow]"
+        )
+
+
+def _display_info(console: Console, theme: str = "default") -> None:
+    """Display info panel like the web installation section."""
+    content_width = 92
+    card_width = 44
+    monochrome = theme == "minimal"
+    border_style = "white" if monochrome else "bright_black"
+    intro = Text(
+        "rag works out of the box with minimal configuration. "
+        "Choose quick setup or manual installation.",
+        style="" if monochrome else "dim",
+    )
+    quick_install = Panel(
+        "bash SETUP.sh",
+        title="Quick Install",
+        title_align="left",
+        width=card_width,
+        box=ROUNDED,
+        border_style=border_style,
+        padding=(1, 1),
+    )
+    manual_install = Panel(
+        "\n".join(
+            [
+                "python3 -m venv venv",
+                "source venv/bin/activate",
+                "pip install -r requirements.txt",
+                "pip install -e .",
+            ]
+        ),
+        title="Manual",
+        title_align="left",
+        width=card_width,
+        box=ROUNDED,
+        border_style=border_style,
+        padding=(1, 1),
+    )
+    runtime = Panel(
+        "\n".join(
+            [
+                f"Version: {__version__}",
+                "Backends: local, openai, cerebras, ollama",
+                "Tools: CALC:, TIME:, WIKI:, SHELL:, SEARCH:, WEB:",
+            ]
+        ),
+        title="Runtime",
+        title_align="left",
+        width=content_width,
+        box=ROUNDED,
+        border_style=border_style,
+        padding=(1, 1),
+    )
+
+    console.print()
+    console.print(Align.left(intro, width=content_width))
+    console.print()
+    console.print(
+        Align.center(
+            Columns([quick_install, manual_install], expand=False, equal=True),
+            width=content_width,
+        )
+    )
+    console.print()
+    console.print(Align.center(runtime, width=content_width))
 
 
 def _display_help(console: Console, no_color: bool) -> None:
@@ -149,6 +251,9 @@ def _display_help(console: Console, no_color: bool) -> None:
             "BACKEND: <name> Switch backend (local|openai|cerebras|ollama)\n"
             "BACKENDS        Show available backends\n"
             "BACKEND         Pick backend from a list\n"
+            "SHORTCUTS       Show deterministic shortcut reply status\n"
+            "SHORTCUTS ON    Enable deterministic shortcut replies\n"
+            "SHORTCUTS OFF   Disable deterministic shortcut replies\n"
             "REFRESH         Reload engine/session\n"
             "CACHE:CLEAR     Delete project .cache\n"
             "MEMORY:CLEAR    Clear conversation memory\n"
@@ -161,10 +266,14 @@ def _display_help(console: Console, no_color: bool) -> None:
 
 
 def _process_query(
-    rag_engine: RAGEngine, query: str, console: Console, no_color: bool
+    rag_engine: RAGEngine,
+    query: str,
+    console: Console,
+    no_color: bool,
+    theme: str = "default",
 ) -> None:
     """Process a single query and display the response."""
-    if no_color:
+    if no_color or theme == "minimal":
         with console.status("Processing your query..."):
             response = rag_engine.generate_response(query)
         console.print(Panel(response, title="Response"))
@@ -250,12 +359,19 @@ def _resolve_hf_cache_dir() -> Path:
     return Path("~/.cache/huggingface").expanduser()
 
 
-def run_tui(no_color: bool = False, force: bool = False) -> None:  # noqa: C901
+def run_tui(  # noqa: C901
+    no_color: bool = False,
+    force: bool = False,
+    theme: str = "default",
+    initial_query: Optional[str] = None,
+) -> None:
     """Run the Text User Interface with CLI policy compliance.
 
     Args:
         no_color: If True, disable colored output
         force: If True, force TUI mode even in non-interactive environments
+        theme: Theme to use - 'default' (colored) or 'minimal' (monochrome)
+        initial_query: Optional query to process before entering the input loop
     """
     # Skip TUI in non-interactive environments unless forced
     if not sys.stdin.isatty() and not force and not os.getenv("FORCE_TUI"):
@@ -267,21 +383,28 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:  # noqa: C901
     _load_env_file()
     console = Console(force_terminal=force, no_color=no_color)
 
+    # Theme flag for internal use
+    if theme == "minimal":
+        no_color = True
+
     try:
         rag_engine = RAGEngine()
     except Exception as e:
         console.print(f"[red]Failed to initialize RAG engine: {e}[/red]")
         sys.exit(1)
 
-    _display_welcome(console, no_color)
-    _display_model_status(console, rag_engine, no_color)
+    _display_welcome(console, no_color, theme)
+    _display_model_status(console, rag_engine, no_color, theme)
+
+    if initial_query:
+        _process_query(rag_engine, initial_query, console, no_color, theme)
 
     while True:
         try:
             prompt = (
-                f"[cyan]❯[/] [dim]{rag_engine.current_backend_and_model()}[/] "
-                if not no_color
-                else f"> {rag_engine.current_backend_and_model()} "
+                f"> {rag_engine.current_backend_and_model()} "
+                if theme == "minimal"
+                else f"[cyan]❯[/] [dim]{rag_engine.current_backend_and_model()}[/] "
             )
             query = console.input(prompt).strip()
 
@@ -296,6 +419,16 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:  # noqa: C901
 
             if query.lower() == "clear":
                 console.clear()
+                continue
+
+            if query.lower() == "theme":
+                theme = "minimal" if theme == "default" else "default"
+                console.print(f"Theme switched to: {theme}")
+                no_color = theme == "minimal"
+                continue
+
+            if query.lower() == "info":
+                _display_info(console, theme)
                 continue
 
             if query.lower() == "update":
@@ -328,6 +461,18 @@ def run_tui(no_color: bool = False, force: bool = False) -> None:  # noqa: C901
                         if no_color
                         else f"[red]Refresh failed: {e}[/red]"
                     )
+                continue
+
+            if query.lower() == "shortcuts":
+                enabled = getattr(rag_engine, "shortcut_responses_enabled", True)
+                msg = f"Shortcut responses: {'on' if enabled else 'off'}"
+                console.print(msg if no_color else f"[dim]{msg}[/]")
+                continue
+
+            if query.lower() in {"shortcuts on", "shortcuts off"}:
+                enabled = query.lower().endswith("on")
+                msg = rag_engine.set_shortcut_responses_enabled(enabled)
+                console.print(msg if no_color else f"[green]{msg}[/green]")
                 continue
 
             if query.lower() == "memory:clear":
@@ -561,7 +706,17 @@ def main(args: Optional[list] = None) -> None:
     parser = create_tui_parser()
     parsed_args = parser.parse_args(args)
 
-    run_tui(no_color=parsed_args.no_color, force=parsed_args.force)
+    if parsed_args.theme == "minimal":
+        from .minimal_tui import run_minimal_tui
+
+        run_minimal_tui(initial_query=" ".join(parsed_args.initial_query).strip())
+    else:
+        run_tui(
+            no_color=parsed_args.no_color,
+            force=parsed_args.force,
+            theme=parsed_args.theme,
+            initial_query=" ".join(parsed_args.initial_query).strip(),
+        )
 
 
 if __name__ == "__main__":

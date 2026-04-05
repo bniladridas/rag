@@ -46,4 +46,4 @@ git clone <repo-url> && cd rag && python3 -m venv venv && source venv/bin/activa
 
 - The setup script creates wrapper scripts in `/usr/local/bin` so `rag` works from anywhere
 - Virtual environment is located at `./venv` in the repo directory
-- All three commands (`rag`, `rag-tui`, `rag-collect`) will be available
+- All three commands (`rag`, `rag-tui --theme minimal`, `rag-collect`) will be available

@@ -60,7 +60,7 @@ Once installed, you can use these commands from any terminal:
 
 - `rag` - Main CLI interface (interactive mode)
 - `rag --query "your question"` - Ask a single question
-- `rag-tui` - Text-based user interface (TUI)
+- `rag-tui --theme minimal` - Text-based user interface (TUI)
 - `rag-collect` - Data collection tool
 
 ## Troubleshooting

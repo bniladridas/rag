@@ -15,7 +15,7 @@ from .__main__ import main as _main  # noqa: E402,F401
 main = _main
 
 # For testing release workflow
-TEST_VERSION = "1.8.18"
+TEST_VERSION = "1.9.0"
 
 # Added for release test
 

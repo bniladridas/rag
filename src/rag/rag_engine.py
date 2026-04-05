@@ -47,6 +47,7 @@ class RAGEngine:
             "embedding_model_loaded": False,
             "generator_model_loaded": False,
         }
+        self.shortcut_responses_enabled = True
         os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
         if sys.platform == "darwin":
             os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
@@ -209,64 +210,65 @@ class RAGEngine:
 
         lowered = query.lower()
 
-        # Very small session memory: remember the user's name if they share it.
-        # This helps in TUI mode, where the same engine instance is reused.
-        name_match = re.search(
-            r"\b(?:my name is|i am|i'm|im)\s+([A-Za-z][A-Za-z0-9_\-']{0,31})\b",
-            query,
-            flags=re.IGNORECASE,
-        )
-        if name_match:
-            shared_name = name_match.group(1).strip().strip(".,!?:;")
-            if shared_name:
-                self.user_name = shared_name
-                self.memory.set_fact("user_name", shared_name)
+        if self.shortcut_responses_enabled:
+            # Very small session memory: remember the user's name if they share it.
+            # This helps in TUI mode, where the same engine instance is reused.
+            name_match = re.search(
+                r"\b(?:my name is|i am|i'm|im)\s+([A-Za-z][A-Za-z0-9_\-']{0,31})\b",
+                query,
+                flags=re.IGNORECASE,
+            )
+            if name_match:
+                shared_name = name_match.group(1).strip().strip(".,!?:;")
+                if shared_name:
+                    self.user_name = shared_name
+                    self.memory.set_fact("user_name", shared_name)
+                    response = (
+                        f"Nice to meet you, {shared_name}. "
+                        "Want to ask about machine learning, sci-fi, or the cosmos?"
+                    )
+                    self._remember_turn(query, response)
+                    return response
+
+            # Handle "what's my name?" style queries deterministically (avoid model drift).
+            if ("my name" in lowered or lowered in {"who am i", "who am i?"}) and any(
+                token in lowered for token in ("what", "tell", "who", "?")
+            ):
+                fact = self.memory.get_fact("user_name")
+                remembered = getattr(self, "user_name", None) or (
+                    fact.value if fact else None
+                )
+                if remembered:
+                    response = f"You told me your name is {remembered}."
+                    self._remember_turn(query, response)
+                    return response
+                response = "I don't know yet—tell me with “I am <name>”."
+                self._remember_turn(query, response)
+                return response
+
+            greetings = ["hi", "hello", "hey", "greetings"]
+            if lowered.split()[0] in greetings:
                 response = (
-                    f"Nice to meet you, {shared_name}. "
-                    "Want to ask about machine learning, sci-fi, or the cosmos?"
+                    "Hello! I'm an agentic AI assistant with knowledge about "
+                    "machine learning, sci-fi movies, and cosmos. I can use tools "
+                    "like calculations. How can I help you today?"
                 )
                 self._remember_turn(query, response)
                 return response
 
-        # Handle "what's my name?" style queries deterministically (avoid model drift).
-        if ("my name" in lowered or lowered in {"who am i", "who am i?"}) and any(
-            token in lowered for token in ("what", "tell", "who", "?")
-        ):
-            fact = self.memory.get_fact("user_name")
-            remembered = getattr(self, "user_name", None) or (
-                fact.value if fact else None
-            )
-            if remembered:
-                response = f"You told me your name is {remembered}."
+            # Basic small-talk handling for non-domain queries
+            if lowered in {"am", "uh", "um"}:
+                response = "Could you share a bit more detail so I can help?"
                 self._remember_turn(query, response)
                 return response
-            response = "I don't know yet—tell me with “I am <name>”."
-            self._remember_turn(query, response)
-            return response
-
-        greetings = ["hi", "hello", "hey", "greetings"]
-        if lowered.split()[0] in greetings:
-            response = (
-                "Hello! I'm an agentic AI assistant with knowledge about "
-                "machine learning, sci-fi movies, and cosmos. I can use tools "
-                "like calculations. How can I help you today?"
-            )
-            self._remember_turn(query, response)
-            return response
-
-        # Basic small-talk handling for non-domain queries
-        if lowered in {"am", "uh", "um"}:
-            response = "Could you share a bit more detail so I can help?"
-            self._remember_turn(query, response)
-            return response
-        if lowered in {"how are you", "how are you?", "how r u", "how r u?"}:
-            response = "Doing well—thanks. What would you like to explore?"
-            self._remember_turn(query, response)
-            return response
-        if "math" in lowered:
-            response = "Sure—ask a math question or use CALC:, e.g. `CALC: 2^10`."
-            self._remember_turn(query, response)
-            return response
+            if lowered in {"how are you", "how are you?", "how r u", "how r u?"}:
+                response = "Doing well—thanks. What would you like to explore?"
+                self._remember_turn(query, response)
+                return response
+            if "math" in lowered:
+                response = "Sure—ask a math question or use CALC:, e.g. `CALC: 2^10`."
+                self._remember_turn(query, response)
+                return response
 
         if re.search(
             r"\b(what\s+is\s+)?(the\s+)?(current\s+)?(date|time)\b", lowered
@@ -369,6 +371,13 @@ class RAGEngine:
             )
         self._remember_turn(query, response)
         return response
+
+    def set_shortcut_responses_enabled(self, enabled: bool) -> str:
+        """Enable or disable deterministic shortcut replies."""
+        self.shortcut_responses_enabled = enabled
+        return (
+            "Shortcut responses enabled." if enabled else "Shortcut responses disabled."
+        )
 
     def _remember_turn(self, user: str, assistant: str) -> None:
         self.memory.add_message("user", user)

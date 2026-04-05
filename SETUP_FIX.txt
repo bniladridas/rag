@@ -86,7 +86,7 @@ rag --query "Your question"
 Or for interactive TUI mode:
 ```bash
 source .venv313/bin/activate
-rag-tui
+rag-tui --theme minimal
 ```
 
 ## References

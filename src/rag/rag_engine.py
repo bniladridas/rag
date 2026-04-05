@@ -210,7 +210,7 @@ class RAGEngine:
 
         lowered = query.lower()
 
-        if self.shortcut_responses_enabled:
+        if getattr(self, "shortcut_responses_enabled", True):
             # Very small session memory: remember the user's name if they share it.
             # This helps in TUI mode, where the same engine instance is reused.
             name_match = re.search(

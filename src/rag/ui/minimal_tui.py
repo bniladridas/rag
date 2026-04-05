@@ -27,7 +27,7 @@ class MinimalTUI:
         self.initial_query = initial_query
         self.console = self._make_console()
         self.running = True
-        self.history = []
+        self.history: list[str] = []
         self.rag_engine: Optional["RAGEngine"] = None
 
     def _make_console(self) -> Console:
@@ -39,7 +39,7 @@ class MinimalTUI:
     def _content_width(self) -> int:
         return max(60, min(self._width() - 6, 92))
 
-    def _refresh_console(self):
+    def _refresh_console(self) -> None:
         self.console = self._make_console()
 
     def _style(self, semantic: str) -> str:
@@ -74,7 +74,7 @@ class MinimalTUI:
             status = status[:25] + "..."
         return f"[{status}] > "
 
-    def _print_message(self, label: str, message: str, semantic: str = "info"):
+    def _print_message(self, label: str, message: str, semantic: str = "info") -> None:
         style = self._style(semantic)
         prefix = f"{label}:"
         text = f"{prefix} {message}"
@@ -127,8 +127,9 @@ class MinimalTUI:
             root_logger.setLevel(logging.ERROR)
             rag_logger.setLevel(logging.ERROR)
             rag_engine_logger.setLevel(logging.ERROR)
-            with contextlib.redirect_stdout(capture), contextlib.redirect_stderr(
-                capture
+            with (
+                contextlib.redirect_stdout(capture),
+                contextlib.redirect_stderr(capture),
             ):
                 return self.rag_engine.generate_response(query)
         finally:
@@ -159,19 +160,20 @@ class MinimalTUI:
             width=self._content_width(),
         )
 
-    def _render_home(self):
+    def _render_home(self) -> None:
         self.draw_header()
         self.draw_content()
         self.draw_footer()
 
-    def init_engine(self):
+    def init_engine(self) -> None:
         """Initialize the RAG engine."""
         try:
             root_logger = logging.getLogger()
             previous_level = root_logger.level
             capture = io.StringIO()
-            with contextlib.redirect_stdout(capture), contextlib.redirect_stderr(
-                capture
+            with (
+                contextlib.redirect_stdout(capture),
+                contextlib.redirect_stderr(capture),
             ):
                 root_logger.setLevel(logging.ERROR)
                 try:
@@ -184,16 +186,16 @@ class MinimalTUI:
             self.console.print(f"Failed to initialize RAG engine: {e}")
             sys.exit(1)
 
-    def clear_screen(self):
+    def clear_screen(self) -> None:
         self.console.clear()
 
-    def draw_header(self):
+    def draw_header(self) -> None:
         return
 
-    def draw_content(self):
+    def draw_content(self) -> None:
         return
 
-    def draw_footer(self):
+    def draw_footer(self) -> None:
         self.console.print(
             Align.left(
                 Text(
@@ -206,7 +208,7 @@ class MinimalTUI:
             )
         )
 
-    def run_loop(self):  # noqa: C901
+    def run_loop(self) -> None:  # noqa: C901
         while self.running:
             try:
                 query = self.console.input(self._prompt_text()).strip()
@@ -303,7 +305,7 @@ class MinimalTUI:
                 self._print_message("Session", "Goodbye!", "success")
                 break
 
-    def show_help(self):
+    def show_help(self) -> None:
         help_text = "\n".join(
             [
                 "Ask anything about ML, science fiction, or the cosmos.",
@@ -320,7 +322,7 @@ class MinimalTUI:
         )
         self.console.print(self._card("Help", help_text, width=self._content_width()))
 
-    def show_info(self):
+    def show_info(self) -> None:
         body = "\n".join(
             [
                 f"Version: {__version__}",
@@ -332,7 +334,7 @@ class MinimalTUI:
         self.console.print()
         self.console.print(self._card("Info", body, width=self._content_width()))
 
-    def show_backends(self):
+    def show_backends(self) -> None:
         if self.rag_engine:
             backends = self.rag_engine.available_backends()
             current = self.rag_engine.current_backend_and_model()
@@ -348,7 +350,7 @@ class MinimalTUI:
         else:
             self._print_message("Error", "RAG engine not initialized", "error")
 
-    def show_models(self):
+    def show_models(self) -> None:
         if self.rag_engine:
             models = self.rag_engine.available_models()
             current = self.rag_engine.current_backend_and_model()
@@ -362,7 +364,7 @@ class MinimalTUI:
         else:
             self._print_message("Error", "RAG engine not initialized", "error")
 
-    def show_shortcuts_status(self):
+    def show_shortcuts_status(self) -> None:
         if self.rag_engine:
             enabled = getattr(self.rag_engine, "shortcut_responses_enabled", True)
             state = "on" if enabled else "off"
@@ -376,7 +378,7 @@ class MinimalTUI:
         else:
             self._print_message("Error", "RAG engine not initialized", "error")
 
-    def set_shortcuts(self, mode: str):
+    def set_shortcuts(self, mode: str) -> None:
         if mode not in {"on", "off"}:
             self._print_message(
                 "Error",
@@ -390,7 +392,7 @@ class MinimalTUI:
         else:
             self._print_message("Error", "RAG engine not initialized", "error")
 
-    def switch_backend(self, backend: str):
+    def switch_backend(self, backend: str) -> None:
         if self.rag_engine:
             msg = self.rag_engine.set_backend(backend)
             current = self.rag_engine.current_backend_and_model()
@@ -404,7 +406,7 @@ class MinimalTUI:
         else:
             self._print_message("Error", "RAG engine not initialized", "error")
 
-    def switch_model(self, model: str):
+    def switch_model(self, model: str) -> None:
         if self.rag_engine:
             msg = self.rag_engine.set_active_model(model)
             current = self.rag_engine.current_backend_and_model()
@@ -418,7 +420,7 @@ class MinimalTUI:
         else:
             self._print_message("Error", "RAG engine not initialized", "error")
 
-    def start_ollama(self):
+    def start_ollama(self) -> None:
         import subprocess
         import time
 
@@ -465,7 +467,7 @@ class MinimalTUI:
         except Exception as e:
             self._print_message("Error", f"Failed to start Ollama: {e}", "error")
 
-    def stop_ollama(self):
+    def stop_ollama(self) -> None:
         import subprocess
 
         self._print_message("Ollama", "Stopping Ollama server...", "info")
@@ -486,7 +488,7 @@ class MinimalTUI:
         except Exception as e:
             self._print_message("Error", f"Failed to stop Ollama: {e}", "error")
 
-    def run(self):
+    def run(self) -> None:
         self.init_engine()
         self.clear_screen()
         self._render_home()
@@ -510,7 +512,7 @@ class MinimalTUI:
         self.run_loop()
 
 
-def run_minimal_tui(initial_query: str = ""):
+def run_minimal_tui(initial_query: str = "") -> None:
     tui = MinimalTUI(theme="minimal", initial_query=initial_query)
     tui.run()
 

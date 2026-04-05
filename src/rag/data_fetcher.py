@@ -16,6 +16,13 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 from .config import Config
 
 logger = logging.getLogger(__name__)
@@ -34,14 +41,26 @@ class DataFetcher:
         self.config = Config()
         os.makedirs(self.config.DATASET_DIR, exist_ok=True)
 
+        # Configure SSL context that works with Python 3.14
+        import ssl
+
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
+        # Create session with custom SSL
         self.session = requests.Session()
+        self.session.verify = False  # Disable SSL verification
         self.session.headers.update({"User-Agent": "RAG-Transformer/1.0"})
+
+        # Configure retry strategy
         retry = Retry(
-            total=3,
-            backoff_factor=0.5,
+            total=5,
+            backoff_factor=1,
             status_forcelist=(429, 500, 502, 503, 504),
             allowed_methods=("GET",),
         )
+
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
@@ -151,7 +170,7 @@ class DataFetcher:
                 params = {
                     "api_key": self.config.NASA_API_KEY,
                     "date": time.strftime(
-                        "%Y-%m-%d", time.localtime(time.time() - days_ago * 86400)
+                        "%Y-%m-%d", time.localtime(time.time() - (days_ago + 1) * 86400)
                     ),
                 }
                 response = self.session.get(base_url, params=params, timeout=10)
@@ -249,7 +268,7 @@ class DataFetcher:
                 params = {
                     "api_key": self.config.NASA_API_KEY,
                     "date": time.strftime(
-                        "%Y-%m-%d", time.localtime(time.time() - days_ago * 86400)
+                        "%Y-%m-%d", time.localtime(time.time() - (days_ago + 1) * 86400)
                     ),
                 }
                 response = self.session.get(base_url, params=params, timeout=10)
@@ -286,7 +305,7 @@ class DataFetcher:
                 for days_ago in range(self.config.COSMOS_DAYS)
             )
 
-            for future in concurrent.futures.as_completed(futures, timeout=30):
+            for future in concurrent.futures.as_completed(futures, timeout=120):
                 result = future.result()
                 if isinstance(result, list):
                     all_documents.extend(result)

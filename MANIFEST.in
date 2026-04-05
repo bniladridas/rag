@@ -4,6 +4,7 @@ include README.asc
 include CHANGELOG.md
 include SECURITY.asc
 include requirements.txt
+include RAG_EXPLAINED.asc
 
 # Include type stubs
 recursive-include src/rag *.pyi

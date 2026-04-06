@@ -51,4 +51,21 @@ setup(
         "Source": "https://github.com/bniladridas/rag",
         "Bug Reports": "https://github.com/bniladridas/rag/issues",
     },
+    options={
+        "py2app": {
+            "argv_emulation": True,
+            "packages": ["rag"],
+            "includes": [],
+            "excludes": ["tkinter", "matplotlib.tests", "numpy.testing"],
+            "iconfile": None,  # Can add an icon later
+            "plist": {
+                "CFBundleName": "RAG Transformer",
+                "CFBundleDisplayName": "RAG Transformer",
+                "CFBundleVersion": "1.9.5",
+                "CFBundleShortVersionString": "1.9.5",
+                "NSHumanReadableCopyright": "Copyright 2024 RAG Transformer Team",
+            },
+        }
+    },
+    app=["src/rag/__main__.py"],
 )

@@ -49,6 +49,14 @@ dist/
 build/
 *.egg-info/
 
+# Build artifacts
+*.dmg
+*.app
+*.spec
+dmg_settings.py
+minimal_tui_entry.py
+run_minimal_tui.scpt
+
 # Miscellaneous
 .tmp/
 temp/

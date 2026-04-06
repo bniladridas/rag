@@ -6,7 +6,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     permissions:
       contents: write
       packages: write
@@ -30,7 +30,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install wheel build
+          pip install wheel build pyinstaller dmgbuild
 
       - name: Configure git
         run: |
@@ -227,6 +227,17 @@ jobs:
           python -m build
           git archive --format=zip --output dist/python.zip HEAD
 
+      - name: Build macOS apps
+        if: steps.semantic.outputs.version != ''
+        run: |
+          # Build minimal TUI app
+          osacompile -o "RAG Minimal TUI.app" run_minimal_tui.scpt
+          dmgbuild -s dmg_settings.py "RAG Minimal TUI" RAG_Minimal_TUI.dmg
+
+          # Build full CLI app
+          pyinstaller --onedir --name "RAG Transformer" --windowed src/rag/__main__.py
+          dmgbuild -s dmg_settings.py "RAG Transformer" RAG_Transformer.dmg
+
       - name: Upload release assets
         if: steps.semantic.outputs.version != ''
         uses: softprops/action-gh-release@v2
@@ -236,6 +247,8 @@ jobs:
             dist/python.zip
             dist/*.whl
             dist/*.tar.gz
+            RAG_Minimal_TUI.dmg
+            RAG_Transformer.dmg
           draft: false
           prerelease: false
         env:

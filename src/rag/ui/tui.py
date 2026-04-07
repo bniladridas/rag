@@ -15,6 +15,7 @@ from rich.columns import Columns
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
+from rich.syntax import Syntax
 from rich.text import Text
 
 from ..__version__ import __version__
@@ -361,10 +362,22 @@ def _render_review_panel(report: ReviewReport, no_color: bool) -> Panel:
     gutter_width = max(
         (len(str(line_no)) for line_no, _ in report.source_lines), default=2
     )
+    code_lines = []
     for line_no, content in report.source_lines:
-        lines.append(f"{line_no:>{gutter_width}} | {content}")
+        code_lines.append(f"{line_no:>{gutter_width}} | {content}")
         for message in findings_by_line.get(line_no, []):
-            lines.append(f"{' ' * gutter_width} | {message}")
+            code_lines.append(f"{' ' * gutter_width} | {message}")
+
+    if code_lines:
+        syntax = Syntax(
+            "\n".join(code_lines), "python", theme="monokai", line_numbers=True
+        )
+        title = "Review" if no_color else "[blue]Review[/]"
+        return Panel(
+            syntax,
+            title=title,
+            border_style="white" if no_color else "blue",
+        )
 
     title = "Review" if no_color else "[blue]Review[/]"
     return Panel(

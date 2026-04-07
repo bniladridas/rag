@@ -16,6 +16,7 @@ from rich.align import Align
 from rich.box import ROUNDED
 from rich.console import Console, Group
 from rich.panel import Panel
+from rich.syntax import Syntax
 from rich.text import Text
 
 from .. import __version__
@@ -330,37 +331,24 @@ class MinimalTUI:
         )
 
     def _review_excerpt_text(self, report: ReviewReport) -> Text:
-        text = Text()
-        findings_by_line: dict[int, list[str]] = {}
-        for finding in report.findings:
-            findings_by_line.setdefault(finding.line, []).append(
-                f"[{finding.severity}] {finding.link or f'{finding.path}:{finding.line}'} {finding.message}"
-            )
+        if not report.source_lines:
+            return Text()
 
         gutter_width = max(
             (len(str(line_no)) for line_no, _ in report.source_lines), default=2
         )
-        for index, (line_no, content) in enumerate(report.source_lines):
-            text.append(
-                f"{line_no:>{gutter_width}} | ",
-                style="dim" if self.theme != "minimal" else "",
-            )
-            text.append(content or " ", style="")
-            if index < len(report.source_lines) - 1 or findings_by_line.get(line_no):
-                text.append("\n")
-            messages = findings_by_line.get(line_no, [])
-            for msg_index, message in enumerate(messages):
-                text.append(
-                    " " * gutter_width + " | ",
-                    style="dim" if self.theme != "minimal" else "",
-                )
-                text.append(message, style="yellow" if self.theme != "minimal" else "")
-                if (
-                    msg_index < len(messages) - 1
-                    or index < len(report.source_lines) - 1
-                ):
-                    text.append("\n")
-        return text
+
+        code_lines = []
+        for line_no, content in report.source_lines:
+            code_lines.append(f"{line_no:>{gutter_width}} | {content}")
+
+        syntax = Syntax(
+            "\n".join(code_lines),
+            "python",
+            theme="monokai",
+            line_numbers=True,
+        )
+        return Text.from_markup(str(syntax))
 
     def _render_home(self) -> None:
         self.draw_header()

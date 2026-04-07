@@ -2,6 +2,8 @@
 Minimal TUI - Application-style terminal interface
 """
 
+from __future__ import annotations
+
 import contextlib
 import difflib
 import io

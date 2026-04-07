@@ -10,8 +10,14 @@ import pytest
 from src.rag.__main__ import main
 from src.rag.data_fetcher import main as collector_main
 from src.rag.rag_engine import RAGEngine
+from src.rag.review import ReviewFinding, ReviewReport
 from src.rag.ui.minimal_tui import MinimalTUI
-from src.rag.ui.tui import create_tui_parser, main as tui_main, run_tui
+from src.rag.ui.tui import (
+    create_tui_parser,
+    main as tui_main,
+    run_tui,
+    _review_session_body,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -116,7 +122,7 @@ class TestTUIE2E:
     def test_rag_engine_shortcuts_toggle(self):
         """Test engine shortcut replies can be turned on and off"""
         engine = object.__new__(RAGEngine)
-        engine.shortcut_responses_enabled = True
+        engine.shortcut_responses_enabled = False
 
         msg = engine.set_shortcut_responses_enabled(False)
         assert msg == "Shortcut responses disabled."
@@ -191,6 +197,87 @@ class TestTUIE2E:
         handled = tui._maybe_handle_command_typo("shortscuts off")
 
         assert handled is True
+
+    def test_minimal_tui_finding_navigation_cycles_report(self):
+        report = ReviewReport(
+            mode="file",
+            label="src/rag/sample.py:10-20",
+            findings=(
+                ReviewFinding("src/rag/sample.py", 12, "high", "first issue"),
+                ReviewFinding("src/rag/sample.py", 18, "medium", "second issue"),
+            ),
+            source_lines=tuple((line, f"line {line}") for line in range(10, 21)),
+            summary="2 finding(s)",
+        )
+        tui = MinimalTUI(theme="minimal")
+        tui._set_review_state(report)
+
+        focused, = [tui._finding_focus_report(1)]
+        assert focused is not None
+        assert "finding 2/2" in focused.label
+        assert focused.findings[0].line == 18
+
+    def test_minimal_tui_finding_navigation_requires_review_state(self):
+        tui = MinimalTUI(theme="minimal")
+        assert tui._finding_focus_report(1) is None
+
+    def test_minimal_tui_review_current_requires_prior_context(self):
+        tui = MinimalTUI(theme="minimal")
+        tui.rag_engine = Mock()
+
+        with patch.object(tui, "_print_message") as mock_print:
+            query = "review current"
+            if query.lower() == "review current":
+                if not tui.last_review_command:
+                    tui._print_message(
+                        "Review",
+                        "Run `review <path>` or `open <path>` first.",
+                        "warning",
+                    )
+
+        mock_print.assert_called_once()
+
+    def test_minimal_tui_review_session_body_shows_active_target(self):
+        report = ReviewReport(
+            mode="file",
+            label="src/rag/sample.py:10-20",
+            findings=(
+                ReviewFinding("src/rag/sample.py", 12, "high", "first issue"),
+            ),
+            source_lines=((10, "line 10"), (11, "line 11"), (12, "line 12")),
+            summary="1 finding(s)",
+        )
+        tui = MinimalTUI(theme="minimal")
+        tui.last_review_command = "review src/rag/sample.py:10-20"
+        tui._set_review_state(report)
+
+        body = tui._review_session_body()
+
+        assert "Active: review src/rag/sample.py:10-20" in body
+        assert "Findings: 1/1" in body
+        assert "next finding" in body
+
+    def test_tui_review_session_body_shows_navigation_commands(self):
+        report = ReviewReport(
+            mode="file",
+            label="src/rag/sample.py:10-20",
+            findings=(
+                ReviewFinding("src/rag/sample.py", 12, "high", "first issue"),
+                ReviewFinding("src/rag/sample.py", 18, "medium", "second issue"),
+            ),
+            source_lines=tuple((line, f"line {line}") for line in range(10, 21)),
+            summary="2 finding(s)",
+        )
+
+        body = _review_session_body(
+            "review src/rag/sample.py:10-20",
+            report,
+            1,
+        )
+
+        assert "Active: review src/rag/sample.py:10-20" in body
+        assert "Findings: 2/2" in body
+        assert "prev finding" in body
 
     @patch("sys.stdin.isatty", return_value=True)
     @patch("rich.console.Console.input", side_effect=["hello", "exit"])

@@ -10,6 +10,7 @@ Design goals:
 from __future__ import annotations
 
 import sqlite3
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,15 +31,20 @@ class MemoryStore:
         self.enabled = enabled
         self._conn: Optional[sqlite3.Connection] = None
         self._db_path = str(db_path)
+        self._lock = threading.RLock()
         if self.enabled:
-            self._conn = sqlite3.connect(self._db_path)
-            self._conn.execute("PRAGMA journal_mode=WAL")
-            self._conn.execute("PRAGMA synchronous=NORMAL")
-            self._ensure_schema()
+            self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
+            with self._lock:
+                self._conn.execute("PRAGMA journal_mode=WAL")
+                self._conn.execute("PRAGMA synchronous=NORMAL")
+                self._ensure_schema()
 
     def close(self) -> None:
-        if self._conn is not None:
-            self._conn.close()
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return
+            conn.close()
             self._conn = None
 
     def _ensure_schema(self) -> None:
@@ -65,47 +71,65 @@ class MemoryStore:
         self._conn.commit()
 
     def add_message(self, role: str, content: str) -> None:
-        if not self.enabled or self._conn is None:
+        if not self.enabled:
             return
-        self._conn.execute(
-            "INSERT INTO messages (ts, role, content) VALUES (?, ?, ?)",
-            (time.time(), role, content),
-        )
-        self._conn.commit()
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return
+            conn.execute(
+                "INSERT INTO messages (ts, role, content) VALUES (?, ?, ?)",
+                (time.time(), role, content),
+            )
+            conn.commit()
 
     def set_fact(self, key: str, value: str) -> None:
-        if not self.enabled or self._conn is None:
+        if not self.enabled:
             return
         now = time.time()
-        self._conn.execute(
-            "INSERT INTO facts (key, value, ts) VALUES (?, ?, ?) "
-            "ON CONFLICT(key) DO UPDATE SET value=excluded.value, ts=excluded.ts",
-            (key, value, now),
-        )
-        self._conn.commit()
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return
+            conn.execute(
+                "INSERT INTO facts (key, value, ts) VALUES (?, ?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value, ts=excluded.ts",
+                (key, value, now),
+            )
+            conn.commit()
 
     def get_fact(self, key: str) -> Optional[MemoryFact]:
-        if not self.enabled or self._conn is None:
+        if not self.enabled:
             return None
-        cur = self._conn.execute("SELECT key, value, ts FROM facts WHERE key=?", (key,))
-        row = cur.fetchone()
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return None
+            cur = conn.execute(
+                "SELECT key, value, ts FROM facts WHERE key=?", (key,)
+            )
+            row = cur.fetchone()
         if not row:
             return None
         return MemoryFact(key=row[0], value=row[1], updated_at=float(row[2]))
 
     def recent_messages(self, limit: int = 10) -> list[tuple[str, str]]:
-        if not self.enabled or self._conn is None:
+        if not self.enabled:
             return []
-        cur = self._conn.execute(
-            "SELECT role, content FROM messages ORDER BY id DESC LIMIT ?",
-            (int(limit),),
-        )
-        rows = cur.fetchall()
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return []
+            cur = conn.execute(
+                "SELECT role, content FROM messages ORDER BY id DESC LIMIT ?",
+                (int(limit),),
+            )
+            rows = cur.fetchall()
         rows.reverse()
         return [(str(r), str(c)) for (r, c) in rows]
 
     def search_facts(self, query: str, limit: int = 8) -> list[MemoryFact]:
-        if not self.enabled or self._conn is None:
+        if not self.enabled:
             return []
         tokens = [t.strip().lower() for t in query.split() if t.strip()]
         if not tokens:
@@ -125,18 +149,27 @@ class MemoryStore:
             + " ORDER BY ts DESC LIMIT ?"
         )
         params.append(str(limit))
-        cur = self._conn.execute(sql, tuple(params))
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return []
+            cur = conn.execute(sql, tuple(params))
+            rows = cur.fetchall()
         return [
             MemoryFact(key=str(k), value=str(v), updated_at=float(ts))
-            for (k, v, ts) in cur.fetchall()
+            for (k, v, ts) in rows
         ]
 
     def clear(self) -> None:
-        if not self.enabled or self._conn is None:
+        if not self.enabled:
             return
-        self._conn.execute("DELETE FROM messages")
-        self._conn.execute("DELETE FROM facts")
-        self._conn.commit()
+        with self._lock:
+            conn = self._conn
+            if conn is None:
+                return
+            conn.execute("DELETE FROM messages")
+            conn.execute("DELETE FROM facts")
+            conn.commit()
 
     @staticmethod
     def build_for_mode(mode: str, cache_dir: Path, db_name: str) -> "MemoryStore":

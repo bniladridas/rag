@@ -11,11 +11,12 @@ from typing import TYPE_CHECKING, Optional
 
 from rich.align import Align
 from rich.box import ROUNDED
-from rich.console import Console
+from rich.console import Console, Group
 from rich.panel import Panel
 from rich.text import Text
 
 from .. import __version__
+from ..review import ReviewReport, build_open_report, build_review_report
 
 if TYPE_CHECKING:
     from ..rag_engine import RAGEngine
@@ -29,6 +30,10 @@ class MinimalTUI:
         self.running = True
         self.history: list[str] = []
         self.rag_engine: Optional["RAGEngine"] = None
+        self.show_footer_hint = True
+        self.last_review_report: ReviewReport | None = None
+        self.last_review_index: int = 0
+        self.last_review_command: str | None = None
 
     def _make_console(self) -> Console:
         return Console(force_terminal=True, no_color=(self.theme == "minimal"))
@@ -82,6 +87,8 @@ class MinimalTUI:
 
     def _known_commands(self) -> list[str]:
         return [
+            "?",
+            "commands",
             "help",
             "info",
             "clear",
@@ -92,6 +99,12 @@ class MinimalTUI:
             "shortcuts",
             "shortcuts on",
             "shortcuts off",
+            "review diff",
+            "review staged",
+            "review current",
+            "open",
+            "next finding",
+            "prev finding",
             "ollama start",
             "ollama stop",
         ]
@@ -147,18 +160,106 @@ class MinimalTUI:
             padding=(1, 1),
         )
 
-    def _terminal_card(self, command: str) -> Panel:
-        dots = Text("o o o", style="bright_black" if self.theme != "minimal" else "")
-        body = Text()
-        body.append("$ ", style="bold white" if self.theme != "minimal" else "")
-        body.append(command, style="bold")
+    def _assistant_card(self, body: str) -> Panel:
+        subtitle = Text(
+            self._status_line(),
+            style="" if self.theme == "minimal" else "dim",
+        )
+        content = Group(subtitle, Text(""), Text(body))
         return Panel(
-            Align.left(Text.assemble(dots, "\n\n", body)),
+            content,
+            width=self._content_width(),
             box=ROUNDED,
             border_style=self._panel_style(),
             padding=(0, 1),
-            width=self._content_width(),
         )
+
+    def _review_card(self, report: ReviewReport) -> Panel:
+        subtitle = Text(
+            f"{report.label}  |  {report.summary}",
+            style="" if self.theme == "minimal" else "dim",
+        )
+        excerpt = self._review_excerpt_text(report)
+        content = Group(subtitle, Text(""), excerpt)
+        return Panel(
+            content,
+            width=self._content_width(),
+            box=ROUNDED,
+            border_style=self._panel_style(),
+            padding=(0, 1),
+        )
+
+    def _review_session_body(self) -> str:
+        if not self.last_review_command:
+            return ""
+        lines = [f"Active: {self.last_review_command}"]
+        if self.last_review_report and self.last_review_report.findings:
+            current = self.last_review_index + 1
+            total = len(self.last_review_report.findings)
+            lines.append(f"Findings: {current}/{total}")
+            lines.append("Commands: review current, next finding, prev finding")
+        else:
+            lines.append("Commands: review current, open <path[:line]>")
+        return "\n".join(lines)
+
+    def _review_session_card(self) -> Panel | None:
+        body = self._review_session_body()
+        if not body:
+            return None
+        return self._card("Review Session", body, width=self._content_width())
+
+    def _set_review_state(self, report: ReviewReport) -> None:
+        self.last_review_report = report
+        self.last_review_index = 0
+
+    def _remember_review_command(self, command: str) -> None:
+        self.last_review_command = command
+
+    def _finding_focus_report(self, step: int) -> ReviewReport | None:
+        report = self.last_review_report
+        if report is None or not report.findings:
+            return None
+        self.last_review_index = (self.last_review_index + step) % len(report.findings)
+        finding = report.findings[self.last_review_index]
+        focused_lines = tuple(
+            (line_no, content)
+            for line_no, content in report.source_lines
+            if finding.line - 2 <= line_no <= finding.line + 2
+        )
+        if not focused_lines:
+            focused_lines = report.source_lines
+        return ReviewReport(
+            mode=report.mode,
+            label=f"{report.label}  |  finding {self.last_review_index + 1}/{len(report.findings)}",
+            findings=(finding,),
+            source_lines=focused_lines,
+            summary=f"{finding.severity} finding at line {finding.line}",
+        )
+
+    def _review_excerpt_text(self, report: ReviewReport) -> Text:
+        text = Text()
+        findings_by_line: dict[int, list[str]] = {}
+        for finding in report.findings:
+            findings_by_line.setdefault(finding.line, []).append(
+                f"[{finding.severity}] {finding.message}"
+            )
+
+        gutter_width = max((len(str(line_no)) for line_no, _ in report.source_lines), default=2)
+        for index, (line_no, content) in enumerate(report.source_lines):
+            text.append(f"{line_no:>{gutter_width}} | ", style="dim" if self.theme != "minimal" else "")
+            text.append(content or " ", style="")
+            if index < len(report.source_lines) - 1 or findings_by_line.get(line_no):
+                text.append("\n")
+            messages = findings_by_line.get(line_no, [])
+            for msg_index, message in enumerate(messages):
+                text.append(" " * gutter_width + " | ", style="dim" if self.theme != "minimal" else "")
+                text.append(message, style="yellow" if self.theme != "minimal" else "")
+                if (
+                    msg_index < len(messages) - 1
+                    or index < len(report.source_lines) - 1
+                ):
+                    text.append("\n")
+        return text
 
     def _render_home(self) -> None:
         self.draw_header()
@@ -189,24 +290,29 @@ class MinimalTUI:
     def clear_screen(self) -> None:
         self.console.clear()
 
+    def _erase_last_input_line(self) -> None:
+        # Move to the submitted prompt line, clear it, and return to column 0.
+        self.console.file.write("\x1b[1A\x1b[2K\r")
+        self.console.file.flush()
+
     def draw_header(self) -> None:
         return
 
     def draw_content(self) -> None:
-        return
+        card = self._review_session_card()
+        if card is not None:
+            self.console.print(card)
 
     def draw_footer(self) -> None:
+        if not self.show_footer_hint:
+            return
         self.console.print(
             Align.left(
-                Text(
-                    "Commands: help, info, clear, backends, models, "
-                    "backend:<name>, model:<name>, shortcuts [on|off], "
-                    "ollama start, ollama stop, theme",
-                    style="dim",
-                ),
+                Text("? / help / commands", style="dim"),
                 width=self._content_width(),
             )
         )
+        self.show_footer_hint = False
 
     def run_loop(self) -> None:  # noqa: C901
         while self.running:
@@ -214,6 +320,7 @@ class MinimalTUI:
                 query = self.console.input(self._prompt_text()).strip()
                 if not query:
                     continue
+                self._erase_last_input_line()
 
                 self.history.append(query)
 
@@ -224,15 +331,47 @@ class MinimalTUI:
 
                 if query.lower() == "clear":
                     self.clear_screen()
+                    self.show_footer_hint = True
                     self._render_home()
+                    continue
+
+                if query.lower() in {"?", "commands"}:
+                    self.show_commands()
                     continue
 
                 if query.lower() == "help":
                     self.show_help()
                     continue
 
+                if query.lower() == "review current":
+                    if not self.last_review_command:
+                        self._print_message(
+                            "Review",
+                            "Run `review <path>` or `open <path>` first.",
+                            "warning",
+                        )
+                        continue
+                    query = self.last_review_command
+
                 if query.lower() == "info":
                     self.show_info()
+                    continue
+
+                if query.lower() in {"next finding", "prev finding"}:
+                    step = 1 if query.lower() == "next finding" else -1
+                    report = self._finding_focus_report(step)
+                    if report is None:
+                        self._print_message(
+                            "Review",
+                            "Run `review <path>` first to navigate findings.",
+                            "warning",
+                        )
+                    else:
+                        self.console.print()
+                        self.console.print(self._review_card(report))
+                        session_card = self._review_session_card()
+                        if session_card is not None:
+                            self.console.print(session_card)
                     continue
 
                 if query.lower() == "backends":
@@ -243,6 +382,7 @@ class MinimalTUI:
                     self.theme = "minimal" if self.theme == "default" else "default"
                     self._refresh_console()
                     self.clear_screen()
+                    self.show_footer_hint = True
                     self._render_home()
                     self._print_message("Theme", f"Switched to {self.theme}", "success")
                     continue
@@ -278,23 +418,53 @@ class MinimalTUI:
                     self.switch_model(model)
                     continue
 
+                if query.lower().startswith("open "):
+                    if self.rag_engine:
+                        report = build_open_report(
+                            query, self.rag_engine.config.PROJECT_ROOT
+                        )
+                        if report is None:
+                            self._print_message(
+                                "Open",
+                                "Use `open <path[:line]>` for a Python file inside the repo.",
+                                "error",
+                            )
+                        else:
+                            self._remember_review_command(query)
+                            self.last_review_report = report
+                            self.last_review_index = 0
+                            self.console.print()
+                            self.console.print(self._review_card(report))
+                            session_card = self._review_session_card()
+                            if session_card is not None:
+                                self.console.print(session_card)
+                    else:
+                        self._print_message("Error", "RAG engine not initialized", "error")
+                    continue
+
                 if self._maybe_handle_command_typo(query):
                     continue
 
                 # Process actual query through RAG engine
                 if self.rag_engine:
-                    self._print_message("You", query, "muted")
                     try:
-                        self._print_message("Assistant", "Thinking...", "info")
-                        with self.console.status("Thinking..."):
-                            response = self._generate_response_quietly(query)
+                        if query.lower().startswith("review "):
+                            report = build_review_report(
+                                query, self.rag_engine.config.PROJECT_ROOT
+                            )
+                            if report is not None:
+                                self._remember_review_command(query)
+                                self._set_review_state(report)
+                                self.console.print()
+                                self.console.print(self._review_card(report))
+                                session_card = self._review_session_card()
+                                if session_card is not None:
+                                    self.console.print(session_card)
+                                continue
+                        response = self._generate_response_quietly(query)
                         response_text = str(response).strip() or "(empty response)"
                         self.console.print()
-                        self.console.print(
-                            self._card(
-                                "Assistant", response_text, width=self._content_width()
-                            )
-                        )
+                        self.console.print(self._assistant_card(response_text))
                     except Exception as e:
                         self._print_message("Error", str(e), "error")
                 else:
@@ -314,13 +484,33 @@ class MinimalTUI:
                 "backends, backend:<name>: inspect or switch backend",
                 "models, model:<name>: inspect or switch model",
                 "shortcuts, shortcuts on, shortcuts off: control hardcoded replies",
+                "review diff, review staged, review path[:line[-line]]: deterministic code review",
+                "review current: rerun the last file/range review or open target",
+                "open path[:line], next finding, prev finding: review navigation",
                 "ollama start, ollama stop: manage local Ollama server",
                 "theme: toggle monochrome and accent styles",
                 "",
-                "Examples: WIKI: transformers | CALC: 2^10 | SHELL: git status",
+                "Examples: review staged | review src/rag/memory.py:1-80 | open README.asc:10",
             ]
         )
         self.console.print(self._card("Help", help_text, width=self._content_width()))
+
+    def show_commands(self) -> None:
+        body = "\n".join(
+            [
+                "help, info, clear, exit",
+                "backends, backend:<name>",
+                "models, model:<name>",
+                "shortcuts, shortcuts on, shortcuts off",
+                "review diff, review staged, review current, review path[:line[-line]]",
+                "open path[:line], next finding, prev finding",
+                "ollama start, ollama stop",
+                "theme",
+            ]
+        )
+        self.console.print(
+            self._card("Commands", body, width=self._content_width())
+        )
 
     def show_info(self) -> None:
         body = "\n".join(
@@ -328,6 +518,8 @@ class MinimalTUI:
                 f"Version: {__version__}",
                 "Backends: local, openai, cerebras, ollama",
                 "Tools: CALC:, TIME:, WIKI:, SHELL:, SEARCH:, WEB:",
+                "Review: `review diff`, `review staged`, or `review path[:line[-line]]`",
+                "Navigation: `open path[:line]`, `next finding`, `prev finding`",
                 "Use `shortcuts on|off` to control deterministic shortcut replies.",
             ]
         )
@@ -366,7 +558,7 @@ class MinimalTUI:
 
     def show_shortcuts_status(self) -> None:
         if self.rag_engine:
-            enabled = getattr(self.rag_engine, "shortcut_responses_enabled", True)
+            enabled = getattr(self.rag_engine, "shortcut_responses_enabled", False)
             state = "on" if enabled else "off"
             self.console.print(
                 self._card(
@@ -494,19 +686,12 @@ class MinimalTUI:
         self._render_home()
         if self.initial_query:
             self.history.append(self.initial_query)
-            self._print_message("You", self.initial_query, "muted")
             try:
                 if self.rag_engine:
-                    self._print_message("Assistant", "Thinking...", "info")
-                    with self.console.status("Thinking..."):
-                        response = self._generate_response_quietly(self.initial_query)
+                    response = self._generate_response_quietly(self.initial_query)
                     response_text = str(response).strip() or "(empty response)"
                     self.console.print()
-                    self.console.print(
-                        self._card(
-                            "Assistant", response_text, width=self._content_width()
-                        )
-                    )
+                    self.console.print(self._assistant_card(response_text))
             except Exception as e:
                 self._print_message("Error", str(e), "error")
         self.run_loop()

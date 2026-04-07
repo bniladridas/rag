@@ -20,6 +20,7 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from .config import Config
 from .memory import MemoryStore, format_memory_context
+from .review import review_command
 from .tools import ToolExecutor
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class RAGEngine:
             "embedding_model_loaded": False,
             "generator_model_loaded": False,
         }
-        self.shortcut_responses_enabled = True
+        self.shortcut_responses_enabled = False
         os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
         if sys.platform == "darwin":
             os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
@@ -210,7 +211,12 @@ class RAGEngine:
 
         lowered = query.lower()
 
-        if getattr(self, "shortcut_responses_enabled", True):
+        if lowered.startswith("review "):
+            response = review_command(query, self.config.PROJECT_ROOT)
+            self._remember_turn(query, response)
+            return response
+
+        if getattr(self, "shortcut_responses_enabled", False):
             # Very small session memory: remember the user's name if they share it.
             # This helps in TUI mode, where the same engine instance is reused.
             name_match = re.search(

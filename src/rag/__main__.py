@@ -212,6 +212,10 @@ def interactive_mode(  # noqa: C901
                 print("  - CALC: <expression>  (e.g., 'CALC: 2^10')")
                 print("  - WIKI: <topic>       (e.g., 'WIKI: Quantum Computing')")
                 print("  - TIME:               (current date and time)")
+                print("• Review commands:")
+                print("  - review diff")
+                print("  - review staged")
+                print("  - review src/path.py:120-160")
                 print(
                     "• Commands: 'exit'/'quit'/'q' to quit, 'help'/'h' for this message"
                 )

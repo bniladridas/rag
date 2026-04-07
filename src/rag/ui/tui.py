@@ -19,6 +19,7 @@ from rich.text import Text
 
 from ..__version__ import __version__
 from ..rag_engine import RAGEngine
+from ..review import ReviewReport, build_open_report, build_review_report
 
 
 def _load_env_file() -> None:
@@ -92,8 +93,9 @@ def _display_welcome(console: Console, no_color: bool, theme: str = "default") -
     command.append("rag-tui", style="bold")
     command_hint = Text(
         "Commands: help, info, clear, backends, backend, backend:<name>, "
-        "models, model, model:<name>, shortcuts [on|off], refresh, cache:clear, "
-        "memory:clear, hf:clear, update",
+        "models, model, model:<name>, shortcuts [on|off], review diff, "
+        "review staged, review current, review path[:line[-line]], open path[:line], "
+        "next finding, prev finding, refresh, cache:clear, memory:clear, hf:clear, update",
         style="" if border_style == "white" else "dim",
     )
 
@@ -176,6 +178,8 @@ def _display_info(console: Console, theme: str = "default") -> None:
                 f"Version: {__version__}",
                 "Backends: local, openai, cerebras, ollama",
                 "Tools: CALC:, TIME:, WIKI:, SHELL:, SEARCH:, WEB:",
+                "Review: review diff | review staged | review path[:line[-line]]",
+                "Navigation: open path[:line] | next finding | prev finding",
             ]
         ),
         title="Runtime",
@@ -211,6 +215,15 @@ def _display_help(console: Console, no_color: bool) -> None:
             "• CALC: <expression>  (e.g., 'CALC: 2^10')\n"
             "• WIKI: <topic>       (e.g., 'WIKI: Quantum Computing')\n"
             "• TIME:               (current date and time)\n\n"
+            "Review Commands:\n"
+            "• review diff\n"
+            "• review staged\n"
+            "• review current\n"
+            "• review src/rag/file.py:120-160\n\n"
+            "Review Navigation:\n"
+            "• open README.asc:10\n"
+            "• next finding\n"
+            "• prev finding\n\n"
             "Optional Web Tools (enable with RAG_ENABLE_WEB=1):\n"
             "• SEARCH: <query>     (e.g., 'SEARCH: latest LLM news')\n"
             "• WEB: <url>          (e.g., 'WEB: https://example.com')\n\n"
@@ -232,6 +245,15 @@ def _display_help(console: Console, no_color: bool) -> None:
             "• [cyan]CALC:[/] <expression>  (e.g., 'CALC: 2^10')\n"
             "• [cyan]WIKI:[/] <topic>       (e.g., 'WIKI: Quantum Computing')\n"
             "• [cyan]TIME:[/]               (current date and time)\n\n"
+            "[bold]Review Commands:[/]\n"
+            "• [cyan]review diff[/]\n"
+            "• [cyan]review staged[/]\n"
+            "• [cyan]review current[/]\n"
+            "• [cyan]review src/rag/file.py:120-160[/]\n\n"
+            "[bold]Review Navigation:[/]\n"
+            "• [cyan]open README.asc:10[/]\n"
+            "• [cyan]next finding[/]\n"
+            "• [cyan]prev finding[/]\n\n"
             "[bold]Optional Web Tools[/] (enable with `RAG_ENABLE_WEB=1`):\n"
             "• [cyan]SEARCH:[/] <query>     (e.g., 'SEARCH: latest LLM news')\n"
             "• [cyan]WEB:[/] <url>          (e.g., 'WEB: https://example.com')\n\n"
@@ -254,6 +276,13 @@ def _display_help(console: Console, no_color: bool) -> None:
             "SHORTCUTS       Show deterministic shortcut reply status\n"
             "SHORTCUTS ON    Enable deterministic shortcut replies\n"
             "SHORTCUTS OFF   Disable deterministic shortcut replies\n"
+            "REVIEW DIFF     Review changed Python lines in git diff\n"
+            "REVIEW STAGED   Review changed Python lines in staged diff\n"
+            "REVIEW CURRENT  Rerun the last file/range review or open target\n"
+            "REVIEW <path[:line[-line]]>  Review a Python file or line range\n"
+            "OPEN <path[:line]>  Show a source excerpt for a readable text file\n"
+            "NEXT FINDING    Jump to the next finding from the last file review\n"
+            "PREV FINDING    Jump to the previous finding from the last file review\n"
             "REFRESH         Reload engine/session\n"
             "CACHE:CLEAR     Delete project .cache\n"
             "MEMORY:CLEAR    Clear conversation memory\n"
@@ -273,6 +302,11 @@ def _process_query(
     theme: str = "default",
 ) -> None:
     """Process a single query and display the response."""
+    if query.lower().startswith("review "):
+        report = build_review_report(query, rag_engine.config.PROJECT_ROOT)
+        if report is not None:
+            console.print(_render_review_panel(report, no_color))
+            return
     if no_color or theme == "minimal":
         with console.status("Processing your query..."):
             response = rag_engine.generate_response(query)
@@ -285,6 +319,90 @@ def _process_query(
                 Markdown(response), title="[bold]💡 Response[/]", border_style="green"
             )
         )
+
+
+def _render_review_panel(report: ReviewReport, no_color: bool) -> Panel:
+    lines = [report.label, report.summary, ""]
+    findings_by_line: dict[int, list[str]] = {}
+    for finding in report.findings:
+        findings_by_line.setdefault(finding.line, []).append(
+            f"[{finding.severity}] {finding.message}"
+        )
+
+    gutter_width = max((len(str(line_no)) for line_no, _ in report.source_lines), default=2)
+    for line_no, content in report.source_lines:
+        lines.append(f"{line_no:>{gutter_width}} | {content}")
+        for message in findings_by_line.get(line_no, []):
+            lines.append(f"{' ' * gutter_width} | {message}")
+
+    title = "Review" if no_color else "[blue]Review[/]"
+    return Panel(
+        "\n".join(lines),
+        title=title,
+        border_style="white" if no_color else "blue",
+    )
+
+
+def _review_session_body(
+    last_review_command: str | None,
+    last_review_report: ReviewReport | None,
+    last_review_index: int,
+) -> str:
+    if not last_review_command:
+        return ""
+    lines = [f"Active: {last_review_command}"]
+    if last_review_report and last_review_report.findings:
+        lines.append(
+            f"Findings: {last_review_index + 1}/{len(last_review_report.findings)}"
+        )
+        lines.append("Commands: review current, next finding, prev finding")
+    else:
+        lines.append("Commands: review current, open <path[:line]>")
+    return "\n".join(lines)
+
+
+def _render_review_session_panel(
+    last_review_command: str | None,
+    last_review_report: ReviewReport | None,
+    last_review_index: int,
+    no_color: bool,
+) -> Panel | None:
+    body = _review_session_body(
+        last_review_command, last_review_report, last_review_index
+    )
+    if not body:
+        return None
+    return Panel(
+        body,
+        title="Review Session" if no_color else "[blue]Review Session[/]",
+        border_style="white" if no_color else "blue",
+    )
+
+
+def _focused_review_report(
+    report: ReviewReport | None, current_index: int, step: int
+) -> tuple[ReviewReport | None, int]:
+    if report is None or not report.findings:
+        return None, current_index
+    next_index = (current_index + step) % len(report.findings)
+    finding = report.findings[next_index]
+    focused_lines = tuple(
+        (line_no, content)
+        for line_no, content in report.source_lines
+        if finding.line - 2 <= line_no <= finding.line + 2
+    )
+    if not focused_lines:
+        focused_lines = report.source_lines
+    return (
+        ReviewReport(
+            mode=report.mode,
+            label=f"{report.label}  |  finding {next_index + 1}/{len(report.findings)}",
+            findings=(finding,),
+            source_lines=focused_lines,
+            summary=f"{finding.severity} finding at line {finding.line}",
+        ),
+        next_index,
+    )
 
 
 def _handle_exit(console: Console, no_color: bool) -> None:
@@ -398,6 +516,9 @@ def run_tui(  # noqa: C901
 
     if initial_query:
         _process_query(rag_engine, initial_query, console, no_color, theme)
+    last_review_report: ReviewReport | None = None
+    last_review_index = 0
+    last_review_command: str | None = None
 
     while True:
         try:
@@ -417,8 +538,47 @@ def run_tui(  # noqa: C901
                 _display_help(console, no_color)
                 continue
 
+            if query.lower() == "review current":
+                if not last_review_command:
+                    console.print(
+                        "Run `review <path>` or `open <path>` first."
+                        if no_color
+                        else "[yellow]Run `review <path>` or `open <path>` first.[/yellow]"
+                    )
+                    continue
+                query = last_review_command
+
+            if query.lower() in {"next finding", "prev finding"}:
+                panel_report, last_review_index = _focused_review_report(
+                    last_review_report,
+                    last_review_index,
+                    1 if query.lower() == "next finding" else -1,
+                )
+                if panel_report is None:
+                    console.print(
+                        "Run `review <path>` first to navigate findings."
+                        if no_color
+                        else "[yellow]Run `review <path>` first to navigate findings.[/yellow]"
+                    )
+                else:
+                    console.print(_render_review_panel(panel_report, no_color))
+                    session_panel = _render_review_session_panel(
+                        last_review_command,
+                        last_review_report,
+                        last_review_index,
+                        no_color,
+                    )
+                    if session_panel is not None:
+                        console.print(session_panel)
+                continue
+
             if query.lower() == "clear":
                 console.clear()
+                session_panel = _render_review_session_panel(
+                    last_review_command, last_review_report, last_review_index, no_color
+                )
+                if session_panel is not None:
+                    console.print(session_panel)
                 continue
 
             if query.lower() == "theme":
@@ -443,6 +603,29 @@ def run_tui(  # noqa: C901
                 )
                 continue
 
+            if query.lower().startswith("open "):
+                report = build_open_report(query, rag_engine.config.PROJECT_ROOT)
+                if report is None:
+                    console.print(
+                        "Use `open <path[:line]>` for a readable text file inside the repo."
+                        if no_color
+                        else "[red]Use `open <path[:line]>` for a readable text file inside the repo.[/red]"
+                    )
+                else:
+                    last_review_command = query
+                    last_review_report = report
+                    last_review_index = 0
+                    console.print(_render_review_panel(report, no_color))
+                    session_panel = _render_review_session_panel(
+                        last_review_command,
+                        last_review_report,
+                        last_review_index,
+                        no_color,
+                    )
+                    if session_panel is not None:
+                        console.print(session_panel)
+                continue
+
             if query.lower() == "refresh":
                 console.print(
                     "Refreshing session (reloading engine/models/index)..."
@@ -464,7 +647,7 @@ def run_tui(  # noqa: C901
                 continue
 
             if query.lower() == "shortcuts":
-                enabled = getattr(rag_engine, "shortcut_responses_enabled", True)
+                enabled = getattr(rag_engine, "shortcut_responses_enabled", False)
                 msg = f"Shortcut responses: {'on' if enabled else 'off'}"
                 console.print(msg if no_color else f"[dim]{msg}[/]")
                 continue
@@ -682,7 +865,23 @@ def run_tui(  # noqa: C901
                 )
                 continue
 
+            if query.lower().startswith("review "):
+                last_review_report = build_review_report(
+                    query, rag_engine.config.PROJECT_ROOT
+                )
+                last_review_command = query
+                last_review_index = 0
+
             _process_query(rag_engine, query, console, no_color)
+            if query.lower().startswith("review ") and last_review_report is not None:
+                session_panel = _render_review_session_panel(
+                    last_review_command,
+                    last_review_report,
+                    last_review_index,
+                    no_color,
+                )
+                if session_panel is not None:
+                    console.print(session_panel)
 
         except (KeyboardInterrupt, EOFError):
             _handle_exit(console, no_color)

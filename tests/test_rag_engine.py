@@ -84,6 +84,7 @@ def test_generate_response_greeting(mock_tool, mock_config_class):
         engine.system_instructions = ""
         engine.tool_executor = Mock()
         engine.retrieve_context = Mock(return_value=[])
+        engine.shortcut_responses_enabled = True
         result = engine.generate_response("hello")
         assert "Hello! I'm an agentic AI assistant" in result
 
@@ -151,6 +152,7 @@ def test_generate_response_remembers_name_and_recalls_it(mock_tool, mock_config_
         engine.generator = None
         engine.config = mock_config
         engine.user_name = None
+        engine.shortcut_responses_enabled = True
 
         intro = engine.generate_response("hello i am Niladri")
         assert "Nice to meet you, Niladri" in intro

@@ -330,7 +330,7 @@ class MinimalTUI:
             summary=f"{finding.severity} finding at line {finding.line}",
         )
 
-    def _review_excerpt_text(self, report: ReviewReport) -> Text:
+    def _review_excerpt_text(self, report: ReviewReport) -> Syntax | Text:
         if not report.source_lines:
             return Text()
 
@@ -342,13 +342,12 @@ class MinimalTUI:
         for line_no, content in report.source_lines:
             code_lines.append(f"{line_no:>{gutter_width}} | {content}")
 
-        syntax = Syntax(
+        return Syntax(
             "\n".join(code_lines),
             "python",
             theme="monokai",
             line_numbers=True,
         )
-        return Text.from_markup(str(syntax))
 
     def _render_home(self) -> None:
         self.draw_header()

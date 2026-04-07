@@ -337,6 +337,9 @@ class RAGEngine:
             f"Question: {query}\n\n"
             f"When a shell command is needed, respond with EXACTLY one line: SHELL: <full command>\n"
             f'For example: SHELL: git add . or SHELL: git commit -m "fix bug"\n'
+            f"When code review is needed, respond with EXACTLY one line: REVIEW: <review command>\n"
+            f"For example: REVIEW: review diff or REVIEW: review src/file.py:10-20\n"
+            f"When a tool result is returned, show the raw output. Never repeat the command."
             f"Do not add explanation - just output the tool call line."
         )
 
@@ -344,13 +347,13 @@ class RAGEngine:
         logger.info(f"Iteration response: {response[:100]!r}")
 
         tool_match = re.search(
-            r"^\s*(CALC:|WIKI:|TIME:|SHELL:|SEARCH:|WEB:)",
+            r"^\s*(CALC:|WIKI:|TIME:|SHELL:|SEARCH:|WEB:|REVIEW:)",
             response,
             re.MULTILINE | re.IGNORECASE,
         )
         if tool_match:
             tool_line_match = re.search(
-                r"^\s*(CALC:|WIKI:|TIME:|SHELL:|SEARCH:|WEB:).+$",
+                r"^\s*(CALC:|WIKI:|TIME:|SHELL:|SEARCH:|WEB:|REVIEW:).+$",
                 response,
                 re.MULTILINE | re.IGNORECASE,
             )

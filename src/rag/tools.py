@@ -16,6 +16,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .config import Config
+from .review import review_command, handle_thread_command
 
 
 class ToolExecutor:
@@ -41,7 +42,8 @@ class ToolExecutor:
 CALC: Calculate a mathematical expression (e.g., CALC: 2 + 3 * 4)
 WIKI: Search Wikipedia for information (e.g., WIKI: Machine Learning)
 TIME: Get current date and time
-SHELL: Execute a shell command and return output (e.g., SHELL: git status)"""
+SHELL: Execute a shell command and return output (e.g., SHELL: git status)
+REVIEW: Run code review commands (e.g., REVIEW: review diff, REVIEW: review src/file.py:10-20)"""
         if self.config.ENABLE_WEB:
             tools += "\nSEARCH: Search the web (e.g., SEARCH: latest LLM news)"
             tools += "\nWEB: Fetch a URL and extract readable text (e.g., WEB: https://example.com)"
@@ -62,6 +64,8 @@ SHELL: Execute a shell command and return output (e.g., SHELL: git status)"""
             return self._execute_web(tool_call)
         elif tool_call_upper.startswith("SHELL:"):
             return self._execute_shell(tool_call)
+        elif tool_call_upper.startswith("REVIEW:"):
+            return self._execute_review(tool_call)
         else:
             return "Unknown tool"
 
@@ -232,6 +236,23 @@ SHELL: Execute a shell command and return output (e.g., SHELL: git status)"""
         command = tool_call[6:].strip()
         if not command:
             return "SHELL tool requires a command, e.g. `SHELL: git status`."
+        lower = command.lower()
+        if "diff" in lower and not lower.startswith("git"):
+            command = "git diff"
+        if lower in ("git status", "status", "files"):
+            command = "git status"
+        if lower in ("git diff staged", "staged"):
+            command = "git diff --staged"
+        if command.lower().startswith("review "):
+            review_cmd = command[7:].strip()
+            if review_cmd.lower().startswith("thread "):
+                return handle_thread_command(review_cmd, self.config.PROJECT_ROOT)
+            result = review_command(review_cmd, self.config.PROJECT_ROOT)
+            if result.startswith("File not found:") or result.startswith("Use `review"):
+                return self._execute_shell(
+                    f"SHELL: git {review_cmd.replace('review ', '')}"
+                )
+            return result
         try:
             result = subprocess.run(
                 command,
@@ -250,6 +271,68 @@ SHELL: Execute a shell command and return output (e.g., SHELL: git status)"""
             return "Command timed out after 30 seconds."
         except Exception as e:
             return f"Error executing command: {e}"
+
+    def _execute_review(self, tool_call: str) -> str:
+        command = tool_call[7:].strip()
+        project_root = self.config.PROJECT_ROOT
+        if command.lower().startswith("thread "):
+            return handle_thread_command(command, project_root)
+        if command.lower() in ("log", "log -3", "log -5", "commits", "recent commits"):
+            return subprocess.run(
+                ["git", "log", "--oneline", "-5"],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+            ).stdout
+
+        if command.lower() in ("show", "show HEAD", "last commit", "latest commit"):
+            return subprocess.run(
+                ["git", "show", "--stat", "HEAD"],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+            ).stdout
+
+        if command.lower() in ("git diff", "diff", "changes", "changed"):
+            return subprocess.run(
+                ["git", "diff", "--stat"],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+            ).stdout
+
+        if command.lower() in ("git diff --staged", "staged", "staged changes"):
+            return subprocess.run(
+                ["git", "diff", "--staged", "--stat"],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+            ).stdout
+
+        result = review_command(command, project_root)
+        if "File not found" in result or "Use `review" in result:
+            if command.startswith(("log", "diff")):
+                parts = command.split()
+                if parts[0] == "log":
+                    return subprocess.run(
+                        [
+                            "git",
+                            "log",
+                            "--oneline",
+                            parts[1] if len(parts) > 1 else "-5",
+                        ],
+                        cwd=project_root,
+                        capture_output=True,
+                        text=True,
+                    ).stdout
+                else:
+                    return subprocess.run(
+                        ["git", "diff"] + parts[1:],
+                        cwd=project_root,
+                        capture_output=True,
+                        text=True,
+                    ).stdout
+        return result
 
 
 _ALLOWED_FUNCS: dict[str, Callable[[float], float]] = {

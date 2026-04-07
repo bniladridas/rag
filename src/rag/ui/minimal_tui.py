@@ -98,7 +98,6 @@ class MinimalTUI:
         return [
             "?",
             "commands",
-            "help",
             "info",
             "clear",
             "exit",
@@ -108,9 +107,10 @@ class MinimalTUI:
             "shortcuts",
             "shortcuts on",
             "shortcuts off",
-            "review diff",
             "review staged",
             "review current",
+            "review diff",
+            "review staged",
             "open",
             "live review on",
             "live review off",
@@ -125,8 +125,11 @@ class MinimalTUI:
         ]
 
     def _maybe_handle_command_typo(self, query: str) -> bool:
+        query_lower = query.lower()
+        if query_lower in self._known_commands():
+            return False
         match = difflib.get_close_matches(
-            query.lower(), self._known_commands(), n=1, cutoff=0.8
+            query_lower, self._known_commands(), n=1, cutoff=0.6
         )
         if not match:
             return False
@@ -393,7 +396,7 @@ class MinimalTUI:
             return
         self.console.print(
             Align.left(
-                Text("? / help / commands", style="dim"),
+                Text("? / commands", style="dim"),
                 width=self._content_width(),
             )
         )
@@ -421,12 +424,21 @@ class MinimalTUI:
                     self._render_home()
                     continue
 
-                if query.lower() in {"?", "commands"}:
+                if query.lower() == "?":
+                    self.show_help()
+                    continue
+
+                if query.lower() == "commands":
                     self.show_commands()
                     continue
 
-                if query.lower() == "help":
-                    self.show_help()
+                if query.lower() in {"review diff", "review staged", "review current"}:
+                    from ..review import review_command
+
+                    cmd = query.lower()
+                    result = review_command(cmd, self.rag_engine.config.PROJECT_ROOT)
+                    self.console.print()
+                    self.console.print(self._assistant_card(result))
                     continue
 
                 if query.lower() == "review current":
@@ -582,41 +594,28 @@ class MinimalTUI:
                 break
 
     def show_help(self) -> None:
-        help_text = "\n".join(
-            [
-                "Ask anything about ML, science fiction, or the cosmos.",
-                "",
-                "help, info, clear, exit: interface controls",
-                "backends, backend:<name>: inspect or switch backend",
-                "models, model:<name>: inspect or switch model",
-                "shortcuts, shortcuts on, shortcuts off: control hardcoded replies",
-                "review diff, review staged, review path[:line[-line]]: deterministic code review",
-                "review current: rerun the last file/range review or open target",
-                "open path[:line], next finding, prev finding: review navigation",
-                "live review on|off: rerun the active review when the file changes",
-                "threads, thread add/reply/resolve: persistent review comments",
-                "ollama start, ollama stop: manage local Ollama server",
-                "theme: toggle monochrome and accent styles",
-                "",
-                "Examples: review staged | open README.asc:10 | thread add src/rag/review.py:42 inspect this branch",
-            ]
+        help_text = (
+            "Ask anything about ML, sci-fi, or the cosmos.\n\n"
+            "Try:\n"
+            "  review staged\n"
+            "  open file:10\n"
+            "  thread add file:42 comment\n"
+            "  CALC: 2+2 | WIKI: ML | SHELL: git status"
         )
         self.console.print(self._card("Help", help_text, width=self._content_width()))
 
     def show_commands(self) -> None:
-        body = "\n".join(
-            [
-                "help, info, clear, exit",
-                "backends, backend:<name>",
-                "models, model:<name>",
-                "shortcuts, shortcuts on, shortcuts off",
-                "review diff, review staged, review current, review path[:line[-line]]",
-                "open path[:line], next finding, prev finding",
-                "live review on, live review off",
-                "threads, thread add, thread reply, thread resolve",
-                "ollama start, ollama stop",
-                "theme",
-            ]
+        body = (
+            "info, clear, exit\n"
+            "backends, backend:name\n"
+            "models, model:name\n"
+            "shortcuts, shortcuts on/off\n"
+            "review diff, review staged, review file:10\n"
+            "open file:10, next finding, prev finding\n"
+            "live review on, live review off\n"
+            "threads, thread add/reply/resolve\n"
+            "ollama start, ollama stop\n"
+            "theme"
         )
         self.console.print(self._card("Commands", body, width=self._content_width()))
 

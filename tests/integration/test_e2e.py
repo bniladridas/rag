@@ -212,7 +212,7 @@ class TestTUIE2E:
         tui = MinimalTUI(theme="minimal")
         tui._set_review_state(report)
 
-        focused, = [tui._finding_focus_report(1)]
+        (focused,) = [tui._finding_focus_report(1)]
         assert focused is not None
         assert "finding 2/2" in focused.label
         assert focused.findings[0].line == 18
@@ -241,9 +241,7 @@ class TestTUIE2E:
         report = ReviewReport(
             mode="file",
             label="src/rag/sample.py:10-20",
-            findings=(
-                ReviewFinding("src/rag/sample.py", 12, "high", "first issue"),
-            ),
+            findings=(ReviewFinding("src/rag/sample.py", 12, "high", "first issue"),),
             source_lines=((10, "line 10"), (11, "line 11"), (12, "line 12")),
             summary="1 finding(s)",
         )

@@ -105,9 +105,7 @@ class MemoryStore:
             conn = self._conn
             if conn is None:
                 return None
-            cur = conn.execute(
-                "SELECT key, value, ts FROM facts WHERE key=?", (key,)
-            )
+            cur = conn.execute("SELECT key, value, ts FROM facts WHERE key=?", (key,))
             row = cur.fetchone()
         if not row:
             return None

@@ -12,6 +12,8 @@ from src.rag.rag_engine import RAGEngine
 from src.rag.review import (
     build_open_report,
     build_review_report,
+    handle_thread_command,
+    load_threads,
     parse_open_target,
     parse_review_target,
     review_command,
@@ -104,7 +106,10 @@ def test_build_review_report_returns_source_excerpt(tmp_path):
     assert report is not None
     assert report.label == "sample.py:4-5"
     assert report.summary == "1 finding(s)"
-    assert report.source_lines == ((4, "def risky(expr):"), (5, "    return eval(expr)"))
+    assert report.source_lines == (
+        (4, "def risky(expr):"),
+        (5, "    return eval(expr)"),
+    )
     assert report.findings[0].line == 5
 
 
@@ -203,6 +208,55 @@ def test_review_staged_uses_staged_diff(mock_run, tmp_path):
     assert "Review findings for changed lines" in result
     assert "sample.py:2 [high]" in result
     assert "--staged" in " ".join(mock_run.call_args.args[0])
+
+
+def test_handle_thread_command_persists_threads(tmp_path):
+    result = handle_thread_command(
+        "thread add src/rag/review.py:42 inspect this branch", tmp_path
+    )
+
+    assert "Saved thread" in result
+    threads = load_threads(tmp_path)
+    assert len(threads) == 1
+    assert threads[0].path == "src/rag/review.py"
+    assert threads[0].line == 42
+
+
+def test_handle_thread_command_rejects_paths_outside_repo(tmp_path):
+    result = handle_thread_command("thread add ../foo.py:1 note", tmp_path)
+    assert result == "Thread path must stay inside the repo: ../foo.py"
+
+
+def test_review_command_supports_non_python_text_files(tmp_path):
+    sample = tmp_path / "sample.js"
+    sample.write_text("element.innerHTML = userInput;\n", encoding="utf-8")
+
+    result = review_command("review sample.js", tmp_path)
+
+    assert "sample.js:1 [high]" in result
+    assert "innerHTML" in result
+
+
+@patch("src.rag.review.tomllib", None)
+@patch("src.rag.review.tomli", None)
+def test_review_command_uses_pip_tomli_fallback(tmp_path):
+    sample = tmp_path / "pyproject.toml"
+    sample.write_text("[tool.ruff\nline-length = 88\n", encoding="utf-8")
+
+    result = review_command("review pyproject.toml", tmp_path)
+
+    assert "pyproject.toml" in result
+    assert "Invalid TOML:" in result
+
+
+def test_review_command_detects_security_todo_in_text_file(tmp_path):
+    sample = tmp_path / "sample.txt"
+    sample.write_text("TODO security: validate auth flow\n", encoding="utf-8")
+
+    result = review_command("review sample.txt", tmp_path)
+
+    assert "sample.txt:1 [medium]" in result
+    assert "Security-sensitive TODO" in result
 
 
 @patch("src.rag.rag_engine.review_command")

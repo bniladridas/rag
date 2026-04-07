@@ -20,7 +20,7 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from .config import Config
 from .memory import MemoryStore, format_memory_context
-from .review import review_command
+from .review import handle_thread_command, review_command
 from .tools import ToolExecutor
 
 logger = logging.getLogger(__name__)
@@ -213,6 +213,10 @@ class RAGEngine:
 
         if lowered.startswith("review "):
             response = review_command(query, self.config.PROJECT_ROOT)
+            self._remember_turn(query, response)
+            return response
+        if lowered == "threads" or lowered.startswith("thread "):
+            response = handle_thread_command(query, self.config.PROJECT_ROOT)
             self._remember_turn(query, response)
             return response
 

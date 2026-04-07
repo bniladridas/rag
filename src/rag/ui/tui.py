@@ -19,7 +19,12 @@ from rich.text import Text
 
 from ..__version__ import __version__
 from ..rag_engine import RAGEngine
-from ..review import ReviewReport, build_open_report, build_review_report
+from ..review import (
+    ReviewReport,
+    build_open_report,
+    build_review_report,
+    handle_thread_command,
+)
 
 
 def _load_env_file() -> None:
@@ -95,7 +100,8 @@ def _display_welcome(console: Console, no_color: bool, theme: str = "default") -
         "Commands: help, info, clear, backends, backend, backend:<name>, "
         "models, model, model:<name>, shortcuts [on|off], review diff, "
         "review staged, review current, review path[:line[-line]], open path[:line], "
-        "next finding, prev finding, refresh, cache:clear, memory:clear, hf:clear, update",
+        "live review [on|off], threads, thread add/reply/resolve, next finding, prev finding, "
+        "refresh, cache:clear, memory:clear, hf:clear, update",
         style="" if border_style == "white" else "dim",
     )
 
@@ -180,6 +186,7 @@ def _display_info(console: Console, theme: str = "default") -> None:
                 "Tools: CALC:, TIME:, WIKI:, SHELL:, SEARCH:, WEB:",
                 "Review: review diff | review staged | review path[:line[-line]]",
                 "Navigation: open path[:line] | next finding | prev finding",
+                "Live: live review on|off | Threads: threads, thread add/reply/resolve",
             ]
         ),
         title="Runtime",
@@ -224,6 +231,14 @@ def _display_help(console: Console, no_color: bool) -> None:
             "• open README.asc:10\n"
             "• next finding\n"
             "• prev finding\n\n"
+            "Live Review:\n"
+            "• live review on\n"
+            "• live review off\n\n"
+            "Threads:\n"
+            "• threads\n"
+            "• thread add src/rag/review.py:42 inspect this branch\n"
+            "• thread reply <id> acknowledged\n"
+            "• thread resolve <id>\n\n"
             "Optional Web Tools (enable with RAG_ENABLE_WEB=1):\n"
             "• SEARCH: <query>     (e.g., 'SEARCH: latest LLM news')\n"
             "• WEB: <url>          (e.g., 'WEB: https://example.com')\n\n"
@@ -254,6 +269,14 @@ def _display_help(console: Console, no_color: bool) -> None:
             "• [cyan]open README.asc:10[/]\n"
             "• [cyan]next finding[/]\n"
             "• [cyan]prev finding[/]\n\n"
+            "[bold]Live Review:[/]\n"
+            "• [cyan]live review on[/]\n"
+            "• [cyan]live review off[/]\n\n"
+            "[bold]Threads:[/]\n"
+            "• [cyan]threads[/]\n"
+            "• [cyan]thread add src/rag/review.py:42 inspect this branch[/]\n"
+            "• [cyan]thread reply <id> acknowledged[/]\n"
+            "• [cyan]thread resolve <id>[/]\n\n"
             "[bold]Optional Web Tools[/] (enable with `RAG_ENABLE_WEB=1`):\n"
             "• [cyan]SEARCH:[/] <query>     (e.g., 'SEARCH: latest LLM news')\n"
             "• [cyan]WEB:[/] <url>          (e.g., 'WEB: https://example.com')\n\n"
@@ -281,6 +304,12 @@ def _display_help(console: Console, no_color: bool) -> None:
             "REVIEW CURRENT  Rerun the last file/range review or open target\n"
             "REVIEW <path[:line[-line]]>  Review a Python file or line range\n"
             "OPEN <path[:line]>  Show a source excerpt for a readable text file\n"
+            "LIVE REVIEW ON  Refresh the active review when the file changes\n"
+            "LIVE REVIEW OFF Disable file-change review refresh\n"
+            "THREADS         Show saved review threads\n"
+            "THREAD ADD <path:line> <comment>   Save a review comment thread\n"
+            "THREAD REPLY <id> <comment>        Append a comment to a thread\n"
+            "THREAD RESOLVE <id>                Mark a thread resolved\n"
             "NEXT FINDING    Jump to the next finding from the last file review\n"
             "PREV FINDING    Jump to the previous finding from the last file review\n"
             "REFRESH         Reload engine/session\n"
@@ -326,10 +355,12 @@ def _render_review_panel(report: ReviewReport, no_color: bool) -> Panel:
     findings_by_line: dict[int, list[str]] = {}
     for finding in report.findings:
         findings_by_line.setdefault(finding.line, []).append(
-            f"[{finding.severity}] {finding.message}"
+            f"[{finding.severity}] {finding.link or f'{finding.path}:{finding.line}'} {finding.message}"
         )
 
-    gutter_width = max((len(str(line_no)) for line_no, _ in report.source_lines), default=2)
+    gutter_width = max(
+        (len(str(line_no)) for line_no, _ in report.source_lines), default=2
+    )
     for line_no, content in report.source_lines:
         lines.append(f"{line_no:>{gutter_width}} | {content}")
         for message in findings_by_line.get(line_no, []):
@@ -355,9 +386,9 @@ def _review_session_body(
         lines.append(
             f"Findings: {last_review_index + 1}/{len(last_review_report.findings)}"
         )
-        lines.append("Commands: review current, next finding, prev finding")
+        lines.append("Commands: review current, next finding, prev finding, threads")
     else:
-        lines.append("Commands: review current, open <path[:line]>")
+        lines.append("Commands: review current, open <path[:line]>, threads")
     return "\n".join(lines)
 
 
@@ -519,9 +550,48 @@ def run_tui(  # noqa: C901
     last_review_report: ReviewReport | None = None
     last_review_index = 0
     last_review_command: str | None = None
+    live_review_enabled = False
+    last_review_path: Path | None = None
+    last_review_mtime: float | None = None
 
     while True:
         try:
+            if live_review_enabled and last_review_command and last_review_path:
+                try:
+                    current_mtime = last_review_path.stat().st_mtime
+                except Exception:
+                    current_mtime = None
+                if (
+                    current_mtime is not None
+                    and last_review_mtime is not None
+                    and current_mtime > last_review_mtime
+                ):
+                    last_review_mtime = current_mtime
+                    report = None
+                    if last_review_command.startswith("review "):
+                        report = build_review_report(
+                            last_review_command, rag_engine.config.PROJECT_ROOT
+                        )
+                        if report is not None:
+                            last_review_report = report
+                            last_review_index = 0
+                    elif last_review_command.startswith("open "):
+                        report = build_open_report(
+                            last_review_command, rag_engine.config.PROJECT_ROOT
+                        )
+                        if report is not None:
+                            last_review_report = report
+                            last_review_index = 0
+                    if report is not None:
+                        console.print(_render_review_panel(report, no_color))
+                        session_panel = _render_review_session_panel(
+                            last_review_command,
+                            last_review_report,
+                            last_review_index,
+                            no_color,
+                        )
+                        if session_panel is not None:
+                            console.print(session_panel)
             prompt = (
                 f"> {rag_engine.current_backend_and_model()} "
                 if theme == "minimal"
@@ -547,6 +617,30 @@ def run_tui(  # noqa: C901
                     )
                     continue
                 query = last_review_command
+
+            if query.lower() in {"live review on", "live review off"}:
+                live_review_enabled = query.lower().endswith("on")
+                console.print(
+                    (
+                        "Live review enabled."
+                        if live_review_enabled
+                        else "Live review disabled."
+                    )
+                    if no_color
+                    else (
+                        "[green]Live review enabled.[/green]"
+                        if live_review_enabled
+                        else "[green]Live review disabled.[/green]"
+                    )
+                )
+                continue
+
+            if query.lower() == "threads" or query.lower().startswith("thread "):
+                response = handle_thread_command(query, rag_engine.config.PROJECT_ROOT)
+                console.print(
+                    Panel(response, title="Threads" if no_color else "[blue]Threads[/]")
+                )
+                continue
 
             if query.lower() in {"next finding", "prev finding"}:
                 panel_report, last_review_index = _focused_review_report(
@@ -615,6 +709,14 @@ def run_tui(  # noqa: C901
                     last_review_command = query
                     last_review_report = report
                     last_review_index = 0
+                    last_review_path = (
+                        rag_engine.config.PROJECT_ROOT
+                        / report.label.split("  | ", 1)[0].split(":", 1)[0]
+                    ).resolve()
+                    try:
+                        last_review_mtime = last_review_path.stat().st_mtime
+                    except Exception:
+                        last_review_mtime = None
                     console.print(_render_review_panel(report, no_color))
                     session_panel = _render_review_session_panel(
                         last_review_command,
@@ -871,6 +973,15 @@ def run_tui(  # noqa: C901
                 )
                 last_review_command = query
                 last_review_index = 0
+                if last_review_report is not None:
+                    last_review_path = (
+                        rag_engine.config.PROJECT_ROOT
+                        / last_review_report.label.split("  | ", 1)[0].split(":", 1)[0]
+                    ).resolve()
+                    try:
+                        last_review_mtime = last_review_path.stat().st_mtime
+                    except Exception:
+                        last_review_mtime = None
 
             _process_query(rag_engine, query, console, no_color)
             if query.lower().startswith("review ") and last_review_report is not None:

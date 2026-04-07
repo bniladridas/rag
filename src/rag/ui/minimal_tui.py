@@ -7,6 +7,7 @@ import difflib
 import io
 import logging
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from rich.align import Align
@@ -16,7 +17,12 @@ from rich.panel import Panel
 from rich.text import Text
 
 from .. import __version__
-from ..review import ReviewReport, build_open_report, build_review_report
+from ..review import (
+    ReviewReport,
+    build_open_report,
+    build_review_report,
+    handle_thread_command,
+)
 
 if TYPE_CHECKING:
     from ..rag_engine import RAGEngine
@@ -34,6 +40,9 @@ class MinimalTUI:
         self.last_review_report: ReviewReport | None = None
         self.last_review_index: int = 0
         self.last_review_command: str | None = None
+        self.live_review_enabled = False
+        self.last_review_path: Path | None = None
+        self.last_review_mtime: float | None = None
 
     def _make_console(self) -> Console:
         return Console(force_terminal=True, no_color=(self.theme == "minimal"))
@@ -103,6 +112,12 @@ class MinimalTUI:
             "review staged",
             "review current",
             "open",
+            "live review on",
+            "live review off",
+            "threads",
+            "thread add",
+            "thread reply",
+            "thread resolve",
             "next finding",
             "prev finding",
             "ollama start",
@@ -193,13 +208,16 @@ class MinimalTUI:
         if not self.last_review_command:
             return ""
         lines = [f"Active: {self.last_review_command}"]
+        lines.append(f"Live review: {'on' if self.live_review_enabled else 'off'}")
         if self.last_review_report and self.last_review_report.findings:
             current = self.last_review_index + 1
             total = len(self.last_review_report.findings)
             lines.append(f"Findings: {current}/{total}")
-            lines.append("Commands: review current, next finding, prev finding")
+            lines.append(
+                "Commands: review current, next finding, prev finding, threads"
+            )
         else:
-            lines.append("Commands: review current, open <path[:line]>")
+            lines.append("Commands: review current, open <path[:line]>, threads")
         return "\n".join(lines)
 
     def _review_session_card(self) -> Panel | None:
@@ -211,9 +229,68 @@ class MinimalTUI:
     def _set_review_state(self, report: ReviewReport) -> None:
         self.last_review_report = report
         self.last_review_index = 0
+        self._update_review_file_watch(report)
 
     def _remember_review_command(self, command: str) -> None:
         self.last_review_command = command
+
+    def _update_review_file_watch(self, report: ReviewReport) -> None:
+        if not self.rag_engine:
+            return
+        target = report.label.split("  | ", 1)[0].split(":", 1)[0]
+        self.last_review_path = (self.rag_engine.config.PROJECT_ROOT / target).resolve()
+        try:
+            self.last_review_mtime = self.last_review_path.stat().st_mtime
+        except Exception:
+            self.last_review_mtime = None
+
+    def _toggle_live_review(self, enabled: bool) -> None:
+        self.live_review_enabled = enabled
+        self._print_message(
+            "Live Review",
+            "enabled." if enabled else "disabled.",
+            "success",
+        )
+
+    def _maybe_refresh_live_review(self) -> None:
+        if (
+            not self.live_review_enabled
+            or not self.last_review_command
+            or not self.last_review_path
+            or not self.rag_engine
+        ):
+            return
+        try:
+            current_mtime = self.last_review_path.stat().st_mtime
+        except Exception:
+            return
+        if (
+            self.last_review_mtime is not None
+            and current_mtime <= self.last_review_mtime
+        ):
+            return
+        self.last_review_mtime = current_mtime
+        report = None
+        if self.last_review_command.startswith("review "):
+            report = build_review_report(
+                self.last_review_command, self.rag_engine.config.PROJECT_ROOT
+            )
+            if report is not None:
+                self._set_review_state(report)
+        elif self.last_review_command.startswith("open "):
+            report = build_open_report(
+                self.last_review_command, self.rag_engine.config.PROJECT_ROOT
+            )
+            if report is not None:
+                self.last_review_report = report
+                self.last_review_index = 0
+                self._update_review_file_watch(report)
+        if report is not None:
+            self.console.print()
+            self.console.print(self._review_card(report))
+            session_card = self._review_session_card()
+            if session_card is not None:
+                self.console.print(session_card)
 
     def _finding_focus_report(self, step: int) -> ReviewReport | None:
         report = self.last_review_report
@@ -241,18 +318,26 @@ class MinimalTUI:
         findings_by_line: dict[int, list[str]] = {}
         for finding in report.findings:
             findings_by_line.setdefault(finding.line, []).append(
-                f"[{finding.severity}] {finding.message}"
+                f"[{finding.severity}] {finding.link or f'{finding.path}:{finding.line}'} {finding.message}"
             )
 
-        gutter_width = max((len(str(line_no)) for line_no, _ in report.source_lines), default=2)
+        gutter_width = max(
+            (len(str(line_no)) for line_no, _ in report.source_lines), default=2
+        )
         for index, (line_no, content) in enumerate(report.source_lines):
-            text.append(f"{line_no:>{gutter_width}} | ", style="dim" if self.theme != "minimal" else "")
+            text.append(
+                f"{line_no:>{gutter_width}} | ",
+                style="dim" if self.theme != "minimal" else "",
+            )
             text.append(content or " ", style="")
             if index < len(report.source_lines) - 1 or findings_by_line.get(line_no):
                 text.append("\n")
             messages = findings_by_line.get(line_no, [])
             for msg_index, message in enumerate(messages):
-                text.append(" " * gutter_width + " | ", style="dim" if self.theme != "minimal" else "")
+                text.append(
+                    " " * gutter_width + " | ",
+                    style="dim" if self.theme != "minimal" else "",
+                )
                 text.append(message, style="yellow" if self.theme != "minimal" else "")
                 if (
                     msg_index < len(messages) - 1
@@ -317,6 +402,7 @@ class MinimalTUI:
     def run_loop(self) -> None:  # noqa: C901
         while self.running:
             try:
+                self._maybe_refresh_live_review()
                 query = self.console.input(self._prompt_text()).strip()
                 if not query:
                     continue
@@ -352,6 +438,10 @@ class MinimalTUI:
                         )
                         continue
                     query = self.last_review_command
+
+                if query.lower() in {"live review on", "live review off"}:
+                    self._toggle_live_review(query.lower().endswith("on"))
+                    continue
 
                 if query.lower() == "info":
                     self.show_info()
@@ -408,6 +498,19 @@ class MinimalTUI:
                     self.stop_ollama()
                     continue
 
+                if query.lower() == "threads" or query.lower().startswith("thread "):
+                    if not self.rag_engine:
+                        self._print_message(
+                            "Error", "RAG engine not initialized", "error"
+                        )
+                        continue
+                    response = handle_thread_command(
+                        query, self.rag_engine.config.PROJECT_ROOT
+                    )
+                    self.console.print()
+                    self.console.print(self._assistant_card(response))
+                    continue
+
                 if query.lower().startswith("backend:"):
                     backend = query.split(":", 1)[-1].strip()
                     self.switch_backend(backend)
@@ -426,20 +529,23 @@ class MinimalTUI:
                         if report is None:
                             self._print_message(
                                 "Open",
-                                "Use `open <path[:line]>` for a Python file inside the repo.",
+                                "Use `open <path[:line]>` for a readable text file inside the repo.",
                                 "error",
                             )
                         else:
                             self._remember_review_command(query)
                             self.last_review_report = report
                             self.last_review_index = 0
+                            self._update_review_file_watch(report)
                             self.console.print()
                             self.console.print(self._review_card(report))
                             session_card = self._review_session_card()
                             if session_card is not None:
                                 self.console.print(session_card)
                     else:
-                        self._print_message("Error", "RAG engine not initialized", "error")
+                        self._print_message(
+                            "Error", "RAG engine not initialized", "error"
+                        )
                     continue
 
                 if self._maybe_handle_command_typo(query):
@@ -487,10 +593,12 @@ class MinimalTUI:
                 "review diff, review staged, review path[:line[-line]]: deterministic code review",
                 "review current: rerun the last file/range review or open target",
                 "open path[:line], next finding, prev finding: review navigation",
+                "live review on|off: rerun the active review when the file changes",
+                "threads, thread add/reply/resolve: persistent review comments",
                 "ollama start, ollama stop: manage local Ollama server",
                 "theme: toggle monochrome and accent styles",
                 "",
-                "Examples: review staged | review src/rag/memory.py:1-80 | open README.asc:10",
+                "Examples: review staged | open README.asc:10 | thread add src/rag/review.py:42 inspect this branch",
             ]
         )
         self.console.print(self._card("Help", help_text, width=self._content_width()))
@@ -504,13 +612,13 @@ class MinimalTUI:
                 "shortcuts, shortcuts on, shortcuts off",
                 "review diff, review staged, review current, review path[:line[-line]]",
                 "open path[:line], next finding, prev finding",
+                "live review on, live review off",
+                "threads, thread add, thread reply, thread resolve",
                 "ollama start, ollama stop",
                 "theme",
             ]
         )
-        self.console.print(
-            self._card("Commands", body, width=self._content_width())
-        )
+        self.console.print(self._card("Commands", body, width=self._content_width()))
 
     def show_info(self) -> None:
         body = "\n".join(
@@ -520,6 +628,8 @@ class MinimalTUI:
                 "Tools: CALC:, TIME:, WIKI:, SHELL:, SEARCH:, WEB:",
                 "Review: `review diff`, `review staged`, or `review path[:line[-line]]`",
                 "Navigation: `open path[:line]`, `next finding`, `prev finding`",
+                "Live: `live review on|off`",
+                "Threads: `threads`, `thread add <path:line> <comment>`",
                 "Use `shortcuts on|off` to control deterministic shortcut replies.",
             ]
         )

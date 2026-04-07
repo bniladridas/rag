@@ -4,10 +4,9 @@ import threading
 from pathlib import Path
 
 import pytest
+from src.rag.memory import MemoryStore
 
 pytestmark = pytest.mark.unit
-
-from src.rag.memory import MemoryStore
 
 
 def test_memory_session_mode_stores_messages_and_facts(tmp_path: Path):

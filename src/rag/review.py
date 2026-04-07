@@ -814,7 +814,7 @@ def _extract_error_line(message: str) -> int:
     return int(match.group(1)) if match else 1
 
 
-def _toml_loads():
+def _toml_loads() -> "typing.Callable[[str], typing.Any] | None":
     if tomllib is not None:
         return tomllib.loads
     if tomli is not None:

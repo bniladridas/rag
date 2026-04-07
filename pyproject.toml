@@ -42,10 +42,10 @@ check_untyped_defs = true
 no_implicit_optional = true
 
 [[tool.mypy.overrides]]
-module = "review"
+module = ["review", "faiss", "tomllib"]
 ignore_missing_imports = true
 warn_unused_ignores = false
-disable_error_code = "import-untyped"
+disable_error_code = ["import-untyped", "import-not-found"]
 
 [tool.yamlint]
 extends = "default"

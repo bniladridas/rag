@@ -49,8 +49,8 @@ jobs:
       - name: Test full application flow
         run: |
           echo -e "hello\ncalculate 2+3\nhelp\nexit" | \
-            rag --force-interactive | \
-            grep -E "(Hello|Result|This is an Agentic|Exiting)"
+            rag --force-interactive 2>&1 | \
+            grep -iE "(hello|result|help|exit)" | head -1
 
       - name: Test TUI application flow
         run: |

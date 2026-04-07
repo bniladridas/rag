@@ -254,7 +254,7 @@ REVIEW: Run code review commands (e.g., REVIEW: review diff, REVIEW: review src/
                 )
             return result
         try:
-            result = subprocess.run(
+            result: subprocess.CompletedProcess[str] = subprocess.run(
                 command,
                 shell=True,
                 capture_output=True,

@@ -435,6 +435,8 @@ class MinimalTUI:
                 if query.lower() in {"review diff", "review staged", "review current"}:
                     from ..review import review_command
 
+                    if self.rag_engine is None:
+                        continue
                     cmd = query.lower()
                     result = review_command(cmd, self.rag_engine.config.PROJECT_ROOT)
                     self.console.print()

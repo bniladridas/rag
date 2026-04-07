@@ -31,6 +31,7 @@ src/datasets/*.json
 # Logs and databases
 *.log
 *.sqlite3
+xet/
 
 # Model and large binary files
 *.safetensors
@@ -58,5 +59,8 @@ minimal_tui_entry.py
 run_minimal_tui.scpt
 
 # Miscellaneous
+.cache/
+outputs/
+.harper/.harpertoken
 .tmp/
 temp/

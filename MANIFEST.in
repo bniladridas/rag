@@ -13,5 +13,5 @@ recursive-include src/rag *.pyi
 # Include package data
 recursive-include src/rag *.json *.yaml *.yml
 
-# Include harper config
-recursive-include .harper *
+# Include harper docs only
+include .harper/README.md

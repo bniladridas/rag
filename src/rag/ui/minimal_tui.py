@@ -629,11 +629,11 @@ class MinimalTUI:
                 f"Version: {__version__}",
                 "Backends: local, openai, cerebras, ollama",
                 "Tools: CALC:, TIME:, WIKI:, SHELL:, SEARCH:, WEB:",
-                "Review: `review diff`, `review staged`, or `review path[:line[-line]]`",
-                "Navigation: `open path[:line]`, `next finding`, `prev finding`",
-                "Live: `live review on|off`",
-                "Threads: `threads`, `thread add <path:line> <comment>`",
-                "Use `shortcuts on|off` to control deterministic shortcut replies.",
+                "Review: review diff, review staged, or review path[:line[-line]]",
+                "Navigation: open path[:line], next finding, prev finding",
+                "Live: live review on|off",
+                "Threads: threads, thread add <path:line> <comment>",
+                "Use shortcuts on|off to control deterministic shortcut replies.",
             ]
         )
         self.console.print()

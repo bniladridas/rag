@@ -117,6 +117,12 @@ For more information, visit: https://github.com/harpertoken/rag
         help="TUI theme: default (colored) or minimal (monochrome)",
     )
 
+    parser.add_argument(
+        "--cli",
+        action="store_true",
+        help="Use legacy CLI mode instead of TUI (for testing)",
+    )
+
     return parser
 
 
@@ -274,6 +280,16 @@ def main(args: Optional[list] = None) -> None:
             parsed_args.verbose,
             parsed_args.quiet,
             parsed_args.no_color,
+        )
+        return
+
+    # Use legacy CLI mode if requested
+    if parsed_args.cli:
+        interactive_mode(
+            verbose=parsed_args.verbose,
+            quiet=parsed_args.quiet,
+            no_color=parsed_args.no_color,
+            force_interactive=parsed_args.force_interactive,
         )
         return
 

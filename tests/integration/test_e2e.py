@@ -38,7 +38,7 @@ class TestCLIE2E:
         mock_engine.generate_response.return_value = "Hello response"
         mock_rag.return_value = mock_engine
 
-        main([])  # Pass empty args to avoid pytest interference
+        main(["--cli"])  # Use CLI mode for testing
 
         # Check welcome message
         welcome_calls = [
@@ -64,7 +64,7 @@ class TestCLIE2E:
         """Test main function interactive mode with help command"""
         mock_rag.return_value.generate_response.return_value = "Help response"
 
-        main([])  # Pass empty args to avoid pytest interference
+        main(["--cli"])  # Use CLI mode for testing
 
         # Check help content
         help_calls = [
@@ -476,7 +476,7 @@ class TestCLIPolicyCompliance:
         mock_engine = Mock()
         mock_rag.return_value = mock_engine
 
-        main([])  # Pass empty args to avoid pytest interference
+        main(["--cli"])  # Use CLI mode for testing
 
         # Should print goodbye message
         goodbye_calls = [
@@ -504,7 +504,7 @@ class TestFullApplicationFlow:
         ]
         mock_rag.return_value = mock_engine
 
-        main([])  # Pass empty args to avoid pytest interference
+        main(["--cli"])  # Use CLI mode for testing
 
         # Verify all queries were processed
         assert mock_engine.generate_response.call_count == 3
@@ -538,7 +538,7 @@ class TestFullApplicationFlow:
         mock_engine.generate_response.return_value = "On branch main"
         mock_rag.return_value = mock_engine
 
-        main([])
+        main(["--cli"])
 
         # Verify shell command was passed to generate_response
         mock_engine.generate_response.assert_called_with("SHELL: git status")
@@ -581,7 +581,7 @@ class TestFullApplicationFlow:
         mock_instance.memory.recent_messages.return_value = []
         mock_rag_class.return_value = mock_instance
 
-        main([])
+        main(["--cli"])
 
         # Verify LLM was called with the natural language query
         assert mock_instance._generate_text.called, "_generate_text not called"

@@ -817,10 +817,22 @@ class MinimalTUI:
         self.run_loop()
 
 
-def run_minimal_tui(initial_query: str = "") -> None:
-    tui = MinimalTUI(theme="minimal", initial_query=initial_query)
+def run_minimal_tui(initial_query: str = "", theme: str = "default") -> None:
+    tui = MinimalTUI(theme=theme, initial_query=initial_query)
     tui.run()
 
 
+def main(args: Optional[list] = None) -> None:
+    """Entry point for rag-agent with argument parsing"""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="rag-agent")
+    parser.add_argument("--theme", choices=["default", "minimal"], default="default")
+    parser.add_argument("initial_query", nargs="*", default=[""])
+    parsed = parser.parse_args(args or [])
+    query = " ".join(parsed.initial_query).strip()
+    run_minimal_tui(initial_query=query, theme=parsed.theme)
+
+
 if __name__ == "__main__":
-    run_minimal_tui()
+    main()

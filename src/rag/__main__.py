@@ -110,6 +110,13 @@ For more information, visit: https://github.com/harpertoken/rag
         help="Force interactive mode even in non-TTY environments (for testing)",
     )
 
+    parser.add_argument(
+        "--theme",
+        choices=["default", "minimal"],
+        default="default",
+        help="TUI theme: default (colored) or minimal (monochrome)",
+    )
+
     return parser
 
 
@@ -270,13 +277,10 @@ def main(args: Optional[list] = None) -> None:
         )
         return
 
-    # Handle interactive mode
-    interactive_mode(
-        parsed_args.verbose,
-        parsed_args.quiet,
-        parsed_args.no_color,
-        parsed_args.force_interactive,
-    )
+    # Use TUI for interactive mode (with default theme for colors)
+    from .ui.tui import main as tui_main
+
+    tui_main(args if args else [])
 
 
 if __name__ == "__main__":

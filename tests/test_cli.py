@@ -90,11 +90,11 @@ class TestCLIFunctionality:
             assert exc_info.value.code == 1
             assert "Error: Test error" in mock_stderr.getvalue()
 
-    @patch("src.rag.__main__.interactive_mode")
-    def test_main_interactive_mode(self, mock_interactive):
-        """Test main function calls interactive mode by default"""
+    @patch("src.rag.ui.tui.main")
+    def test_main_interactive_mode(self, mock_tui):
+        """Test main function calls TUI by default"""
         main([])
-        mock_interactive.assert_called_once()
+        mock_tui.assert_called_once()
 
     @patch("src.rag.__main__.handle_single_query")
     def test_main_single_query_mode(self, mock_single_query):

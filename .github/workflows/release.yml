@@ -230,13 +230,8 @@ jobs:
       - name: Build macOS apps
         if: steps.semantic.outputs.version != ''
         run: |
-          # Build minimal TUI app
-          osacompile -o "RAG Minimal TUI.app" run_minimal_tui.scpt
-          dmgbuild -s dmg_settings.py "RAG Minimal TUI" RAG_Minimal_TUI.dmg
-
-          # Build full CLI app
-          pyinstaller --onedir --name "RAG Transformer" --windowed src/rag/__main__.py
-          dmgbuild -s dmg_settings.py "RAG Transformer" RAG_Transformer.dmg
+          chmod +x scripts/build_macos_apps.sh
+          ./scripts/build_macos_apps.sh
 
       - name: Upload release assets
         if: steps.semantic.outputs.version != ''

@@ -57,6 +57,7 @@ build/
 dmg_settings.py
 minimal_tui_entry.py
 run_minimal_tui.scpt
+!scripts/dmg_settings.py
 
 # Miscellaneous
 .cache/

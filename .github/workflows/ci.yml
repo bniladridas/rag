@@ -66,6 +66,8 @@ jobs:
           marker: 'integration'
           cov-path: 'src'
           cov-append: 'true'
+        env:
+          RAG_LLM_BACKEND: local
 
       - name: Run additional checks
         run: |

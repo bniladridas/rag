@@ -254,16 +254,16 @@ REVIEW: Run code review commands (e.g., REVIEW: review diff, REVIEW: review src/
                 )
             return result
         try:
-            result: subprocess.CompletedProcess[str] = subprocess.run(
+            proc: subprocess.CompletedProcess[str] = subprocess.run(
                 command,
                 shell=True,
                 capture_output=True,
                 text=True,
                 timeout=30,
             )
-            output = result.stdout.strip() if result.stdout else ""
+            output = proc.stdout.strip() if proc.stdout else ""
             if not output:
-                output = result.stderr.strip() if result.stderr else ""
+                output = proc.stderr.strip() if proc.stderr else ""
             if not output:
                 output = "(command completed with no output)"
             return output

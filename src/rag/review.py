@@ -19,7 +19,7 @@ except Exception:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
 try:
-    import tomli
+    import tomli  # type: ignore[import]
 except Exception:  # pragma: no cover
     tomli = None  # type: ignore[assignment]
 
@@ -817,9 +817,9 @@ def _extract_error_line(message: str) -> int:
 
 def _toml_loads() -> "typing.Callable[[str], typing.Any] | None":
     if tomllib is not None:
-        return tomllib.loads
+        return tomllib.loads  # type: ignore[no-any-return]
     if tomli is not None:
-        return tomli.loads
+        return tomli.loads  # type: ignore[no-any-return]
     if pip_tomli is not None:
-        return pip_tomli.loads
+        return pip_tomli.loads  # type: ignore[no-any-return]
     return None

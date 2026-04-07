@@ -17,6 +17,7 @@ from src.rag.ui.tui import (
     main as tui_main,
     run_tui,
     _review_session_body,
+    _process_query,
 )
 
 pytestmark = pytest.mark.integration
@@ -588,3 +589,62 @@ class TestFullApplicationFlow:
         # Verify that SHELL tool was returned by LLM
         call_args = str(mock_instance._generate_text.call_args)
         assert "SHELL: git status" in call_args or "git status" in call_args
+
+
+class TestProcessQuery:
+    """Tests for _process_query function"""
+
+    @patch("src.rag.ui.tui.Console")
+    def test_process_query_with_review_command(self, mock_console_class):
+        """Test _process_query handles review commands"""
+        mock_console = Mock()
+        mock_console_class.return_value = mock_console
+
+        mock_engine = Mock()
+        mock_engine.config.PROJECT_ROOT = "/tmp/test"
+
+        with patch("src.rag.ui.tui.build_review_report") as mock_build:
+            mock_build.return_value = ReviewReport(
+                mode="test",
+                label="test",
+                summary="summary",
+                findings=(),
+            )
+            _process_query(mock_engine, "review test.py", mock_console, True)
+
+            mock_build.assert_called_once()
+            mock_console.print.assert_called()
+
+    @patch("src.rag.ui.tui.Console")
+    def test_process_query_with_regular_query(self, mock_console_class):
+        """Test _process_query handles regular queries"""
+        mock_console = Mock()
+        mock_console_class.return_value = mock_console
+        mock_console.status.return_value.__enter__ = Mock(return_value=None)
+        mock_console.status.return_value.__exit__ = Mock(return_value=None)
+
+        mock_engine = Mock()
+        mock_engine.generate_response.return_value = "Test response"
+
+        _process_query(mock_engine, "hello world", mock_console, True)
+
+        mock_engine.generate_response.assert_called_once_with("hello world")
+        mock_console.print.assert_called()
+
+    @patch("src.rag.ui.tui.Console")
+    def test_process_query_with_markdown(self, mock_console_class):
+        """Test _process_query renders markdown response"""
+        mock_console = Mock()
+        mock_console_class.return_value = mock_console
+        mock_console.status.return_value.__enter__ = Mock(return_value=None)
+        mock_console.status.return_value.__exit__ = Mock(return_value=None)
+
+        mock_engine = Mock()
+        mock_engine.generate_response.return_value = "# Hello"
+
+        _process_query(mock_engine, "hello", mock_console, False)
+
+        mock_engine.generate_response.assert_called_once()
+        # Verify Panel was called for markdown rendering
+        panel_calls = [c for c in mock_console.print.call_args_list]
+        assert len(panel_calls) > 0

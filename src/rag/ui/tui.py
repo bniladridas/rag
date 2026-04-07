@@ -375,8 +375,8 @@ def _render_review_panel(report: ReviewReport, no_color: bool) -> Panel:
 
 
 def _review_session_body(
-    last_review_command: str | None,
-    last_review_report: ReviewReport | None,
+    last_review_command: Optional[str],
+    last_review_report: Optional[ReviewReport],
     last_review_index: int,
 ) -> str:
     if not last_review_command:
@@ -393,11 +393,11 @@ def _review_session_body(
 
 
 def _render_review_session_panel(
-    last_review_command: str | None,
-    last_review_report: ReviewReport | None,
+    last_review_command: Optional[str],
+    last_review_report: Optional[ReviewReport],
     last_review_index: int,
     no_color: bool,
-) -> Panel | None:
+) -> Optional[Panel]:
     body = _review_session_body(
         last_review_command, last_review_report, last_review_index
     )
@@ -411,8 +411,8 @@ def _render_review_session_panel(
 
 
 def _focused_review_report(
-    report: ReviewReport | None, current_index: int, step: int
-) -> tuple[ReviewReport | None, int]:
+    report: Optional[ReviewReport], current_index: int, step: int
+) -> tuple[Optional[ReviewReport], int]:
     if report is None or not report.findings:
         return None, current_index
     next_index = (current_index + step) % len(report.findings)
@@ -547,12 +547,12 @@ def run_tui(  # noqa: C901
 
     if initial_query:
         _process_query(rag_engine, initial_query, console, no_color, theme)
-    last_review_report: ReviewReport | None = None
+    last_review_report: Optional[ReviewReport] = None
     last_review_index = 0
-    last_review_command: str | None = None
+    last_review_command: Optional[str] = None
     live_review_enabled = False
-    last_review_path: Path | None = None
-    last_review_mtime: float | None = None
+    last_review_path: Optional[Path] = None
+    last_review_mtime: Optional[float] = None
 
     while True:
         try:

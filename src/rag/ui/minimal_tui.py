@@ -39,12 +39,12 @@ class MinimalTUI:
         self.history: list[str] = []
         self.rag_engine: Optional["RAGEngine"] = None
         self.show_footer_hint = True
-        self.last_review_report: ReviewReport | None = None
+        self.last_review_report: Optional[ReviewReport] = None
         self.last_review_index: int = 0
-        self.last_review_command: str | None = None
+        self.last_review_command: Optional[str] = None
         self.live_review_enabled = False
-        self.last_review_path: Path | None = None
-        self.last_review_mtime: float | None = None
+        self.last_review_path: Optional[Path] = None
+        self.last_review_mtime: Optional[float] = None
 
     def _make_console(self) -> Console:
         return Console(force_terminal=True, no_color=(self.theme == "minimal"))
@@ -180,6 +180,17 @@ class MinimalTUI:
             padding=(1, 1),
         )
 
+    def _user_card(self, body: str) -> Panel:
+        return Panel(
+            body,
+            title="You",
+            title_align="left",
+            width=self._content_width(),
+            box=ROUNDED,
+            border_style="dim" if self.theme != "minimal" else "",
+            padding=(0, 1),
+        )
+
     def _assistant_card(self, body: str) -> Panel:
         subtitle = Text(
             self._status_line(),
@@ -225,7 +236,7 @@ class MinimalTUI:
             lines.append("Commands: review current, open <path[:line]>, threads")
         return "\n".join(lines)
 
-    def _review_session_card(self) -> Panel | None:
+    def _review_session_card(self) -> Optional[Panel]:
         body = self._review_session_body()
         if not body:
             return None
@@ -297,7 +308,7 @@ class MinimalTUI:
             if session_card is not None:
                 self.console.print(session_card)
 
-    def _finding_focus_report(self, step: int) -> ReviewReport | None:
+    def _finding_focus_report(self, step: int) -> Optional[ReviewReport]:
         report = self.last_review_report
         if report is None or not report.findings:
             return None
@@ -414,6 +425,10 @@ class MinimalTUI:
                 self._erase_last_input_line()
 
                 self.history.append(query)
+
+                # Display user query
+                self.console.print()
+                self.console.print(self._user_card(query))
 
                 if query.lower() in ["exit", "quit", "q"]:
                     self.running = False
@@ -583,6 +598,8 @@ class MinimalTUI:
                                 if session_card is not None:
                                     self.console.print(session_card)
                                 continue
+                        # Show loading message while generating response
+                        self.console.print("Generating response...")
                         response = self._generate_response_quietly(query)
                         response_text = str(response).strip() or "(empty response)"
                         self.console.print()
@@ -801,8 +818,11 @@ class MinimalTUI:
             self.history.append(self.initial_query)
             try:
                 if self.rag_engine:
+                    self.console.print("Generating response...")
                     response = self._generate_response_quietly(self.initial_query)
                     response_text = str(response).strip() or "(empty response)"
+                    self.console.print()
+                    self.console.print(self._user_card(self.initial_query))
                     self.console.print()
                     self.console.print(self._assistant_card(response_text))
             except Exception as e:

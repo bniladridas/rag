@@ -41,9 +41,9 @@ class ReviewFinding:
 @dataclass(frozen=True)
 class ReviewTarget:
     mode: str
-    path: Path | None = None
-    start_line: int | None = None
-    end_line: int | None = None
+    path: typing.Optional[Path] = None
+    start_line: typing.Optional[int] = None
+    end_line: typing.Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ class ReviewReport:
 @dataclass(frozen=True)
 class OpenTarget:
     path: Path
-    line: int | None = None
+    line: typing.Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -286,7 +286,9 @@ def parse_open_target(command: str) -> OpenTarget:
     )
 
 
-def build_review_report(command: str, project_root: Path) -> ReviewReport | None:
+def build_review_report(
+    command: str, project_root: Path
+) -> typing.Optional[ReviewReport]:
     try:
         target = parse_review_target(command)
     except ValueError:
@@ -346,7 +348,9 @@ def build_review_report(command: str, project_root: Path) -> ReviewReport | None
     )
 
 
-def build_open_report(command: str, project_root: Path) -> ReviewReport | None:
+def build_open_report(
+    command: str, project_root: Path
+) -> typing.Optional[ReviewReport]:
     try:
         target = parse_open_target(command)
         resolved = _resolve_project_path(project_root, target.path)
@@ -416,8 +420,8 @@ def _review_diff(project_root: Path, staged: bool = False) -> str:
 def _review_file_target(
     project_root: Path,
     raw_path: Path,
-    start_line: int | None,
-    end_line: int | None,
+    start_line: typing.Optional[int],
+    end_line: typing.Optional[int],
 ) -> str:
     resolved = _resolve_project_path(project_root, raw_path)
     if not resolved.exists():
@@ -475,7 +479,7 @@ def _changed_lines_from_git_diff(
         return {}
 
     changed: dict[str, set[int]] = {}
-    current_file: str | None = None
+    current_file: typing.Optional[str] = None
     for line in result.stdout.splitlines():
         if line.startswith("+++ b/"):
             current_file = line[6:]
@@ -815,7 +819,7 @@ def _extract_error_line(message: str) -> int:
     return int(match.group(1)) if match else 1
 
 
-def _toml_loads() -> "typing.Callable[[str], typing.Any] | None":
+def _toml_loads() -> typing.Optional["typing.Callable[[str], typing.Any]"]:
     if tomllib is not None:
         return tomllib.loads  # type: ignore[no-any-return]
     if tomli is not None:

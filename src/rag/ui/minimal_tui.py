@@ -197,7 +197,18 @@ class MinimalTUI:
             self._status_line(),
             style="" if self.theme == "minimal" else "dim",
         )
-        content = Group(subtitle, Text(""), Text(body))
+
+        if (
+            body.startswith("diff --git")
+            or body.startswith("@@ ")
+            or "+++ " in body
+            or "--- " in body
+        ):
+            syntax = Syntax(body, "diff", theme="monokai", line_numbers=False)
+            content = Group(subtitle, Text(""), syntax)
+        else:
+            content = Group(subtitle, Text(""), Text(body))
+
         return Panel(
             content,
             width=self._content_width(),
@@ -608,7 +619,9 @@ class MinimalTUI:
             "  review staged\n"
             "  open file:10\n"
             "  thread add file:42 comment\n"
-            "  CALC: 2+2 | WIKI: ML | SHELL: git status"
+            "  CALC: 2+2 | WIKI: ML | SHELL: git status\n\n"
+            f"Theme: {self.theme} (toggle: theme)\n"
+            f"Shortcuts: {'on' if getattr(self.rag_engine, 'shortcut_responses_enabled', False) else 'off'} (toggle: shortcuts on/off)"
         )
         self.console.print(self._card("Help", help_text, width=self._content_width()))
 
@@ -631,13 +644,14 @@ class MinimalTUI:
         body = "\n".join(
             [
                 f"Version: {__version__}",
+                f"Theme: {self.theme} (toggle: theme)",
                 "Backends: local, openai, cerebras, ollama",
                 "Tools: CALC:, TIME:, WIKI:, SHELL:, SEARCH:, WEB:",
                 "Review: review diff, review staged, or review path[:line[-line]]",
                 "Navigation: open path[:line], next finding, prev finding",
                 "Live: live review on|off",
                 "Threads: threads, thread add <path:line> <comment>",
-                "Use shortcuts on|off to control deterministic shortcut replies.",
+                "Shortcuts: shortcuts on|off",
             ]
         )
         self.console.print()

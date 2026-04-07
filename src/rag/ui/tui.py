@@ -340,15 +340,44 @@ def _process_query(
     if no_color or theme == "minimal":
         with console.status("Processing your query..."):
             response = rag_engine.generate_response(query)
-        console.print(Panel(response, title="Response"))
+        if (
+            response.startswith("diff --git")
+            or response.startswith("@@ ")
+            or "+++ " in response
+            or "--- " in response
+        ):
+            console.print(
+                Panel(
+                    Syntax(response, "diff", theme="monokai", line_numbers=False),
+                    title="Response",
+                )
+            )
+        else:
+            console.print(Panel(response, title="Response"))
     else:
         with console.status("[bold green]Processing your query...[/]"):
             response = rag_engine.generate_response(query)
-        console.print(
-            Panel(
-                Markdown(response), title="[bold]💡 Response[/]", border_style="green"
+        if (
+            response.startswith("diff --git")
+            or response.startswith("@@ ")
+            or "+++ " in response
+            or "--- " in response
+        ):
+            console.print(
+                Panel(
+                    Syntax(response, "diff", theme="monokai", line_numbers=False),
+                    title="[bold]💡 Response[/]",
+                    border_style="green",
+                )
             )
-        )
+        else:
+            console.print(
+                Panel(
+                    Markdown(response),
+                    title="[bold]💡 Response[/]",
+                    border_style="green",
+                )
+            )
 
 
 def _render_review_panel(report: ReviewReport, no_color: bool) -> Panel:

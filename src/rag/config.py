@@ -57,8 +57,8 @@ class Config:
         self.ENABLE_WEB = os.getenv("RAG_ENABLE_WEB", "0") in {"1", "true", "True"}
         self.SEARCH_PROVIDER = os.getenv("RAG_SEARCH_PROVIDER", "duckduckgo").lower()
 
-        # LLM backend selection (local transformers by default)
-        self.LLM_BACKEND = os.getenv("RAG_LLM_BACKEND", "local").lower()
+        # LLM backend selection (ollama by default)
+        self.LLM_BACKEND = os.getenv("RAG_LLM_BACKEND", "ollama").lower()
         openai_model = os.getenv("OPENAI_MODEL", "").strip()
         if openai_model in {"gpt5.3", "gpt-5.3"}:
             openai_model = "gpt-5.3-chat-latest"

@@ -368,6 +368,10 @@ class MinimalTUI:
     def init_engine(self) -> None:
         """Initialize the RAG engine."""
         try:
+            from dotenv import load_dotenv
+
+            load_dotenv()
+
             root_logger = logging.getLogger()
             previous_level = root_logger.level
             capture = io.StringIO()

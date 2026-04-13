@@ -1,18 +1,5 @@
 name: Dependabot PR Analyzer
 
-# This workflow analyzes Dependabot PRs to help determine if they're safe to merge
-# It can be reused across different codebases - just adjust the file patterns below
-#
-# Usage:
-# - Automatically runs on dependabot PRs
-# - Comment "/analyze" on any PR to trigger analysis
-# - Use workflow_dispatch to manually trigger with a PR number
-#
-# Customization:
-# - MODIFY: Update DEP_PATTERNS for your project's dependency files
-# - MODIFY: Add package-specific warnings for known problematic packages
-# - MODIFY: Adjust severity logic based on your needs
-
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -27,259 +14,31 @@ on:
 
 jobs:
   analyze-dependabot-pr:
-    runs-on: ubuntu-latest
+    uses: libnudget/gon/.github/workflows/gon.yml@main
     permissions:
       pull-requests: write
       contents: read
-    steps:
-      # ============================================================
-      # TRIGGER LOGIC - Usually no need to modify
-      # ============================================================
-      - name: Determine if should run
-        id: should-run
-        env:
-          COMMENT_BODY: ${{ github.event.comment.body }}
-        run: |
-          # Check if triggered by workflow_dispatch
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] &&
-            [ -n "${{ github.event.inputs.pr_number }}" ]; then
-            echo "RUN=true" >> $GITHUB_OUTPUT
-            echo "PR_NUMBER=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
-            echo "TRIGGER_USER=${{ github.actor }}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+      trigger_user: dependabot[bot]
+    if: github.actor == 'dependabot[bot]'
 
-          # Check if triggered by issue_comment with "/analyze"
-          if [ "${{ github.event_name }}" == "issue_comment" ]; then
-            if echo "$COMMENT_BODY" | grep -qiE "^\/(analyze|run analysis|check pr)"; then
-              echo "RUN=true" >> $GITHUB_OUTPUT
-              echo "PR_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
-              echo "TRIGGER_USER=${{ github.event.comment.user.login }}" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            echo "RUN=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+  analyze-on-comment:
+    uses: libnudget/gon/.github/workflows/gon.yml@main
+    permissions:
+      pull-requests: write
+      contents: read
+    with:
+      pr_number: ${{ github.event.issue.number }}
+      trigger_user: ${{ github.event.comment.user.login }}
+    if: github.event_name == 'issue_comment' && contains(github.event.comment.body, '/analyze')
 
-          # Check if triggered by dependabot
-          if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
-            echo "RUN=true" >> $GITHUB_OUTPUT
-            echo "PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-            echo "TRIGGER_USER=dependabot[bot]" >> $GITHUB_OUTPUT
-          else
-            echo "RUN=false" >> $GITHUB_OUTPUT
-          fi
-
-      # ============================================================
-      # GET CHANGED FILES - Uses GitHub API (works for all repos)
-      # ============================================================
-      - name: Get changed files from GitHub API
-        if: steps.should-run.outputs.RUN == 'true'
-        id: changed-files
-        run: |
-          PR_NUM="${{ steps.should-run.outputs.PR_NUMBER }}"
-          echo "Fetching changed files for PR #$PR_NUM..."
-
-          # Get PR details
-          PR_DATA=$(curl -s -H "Authorization: token ${{ github.token }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUM")
-
-          echo "PR_TITLE=$(echo '$PR_DATA' | jq -r '.title')" >> $GITHUB_OUTPUT
-          echo "PR_USER=$(echo '$PR_DATA' | jq -r '.user.login')" >> $GITHUB_OUTPUT
-
-          # Get list of changed files from GitHub API
-          FILES_JSON=$(curl -s -H "Authorization: token ${{ github.token }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUM/files?per_page=100")
-
-          # Extract filenames
-          FILES=$(echo "$FILES_JSON" | jq -r '.[].filename' 2>/dev/null || echo "")
-
-          echo "Changed files: $FILES" >> $GITHUB_STEP_SUMMARY
-
-          # ============================================================
-          # MODIFY: Update these patterns for your codebase
-          # Add or remove patterns based on your project's package managers
-          #
-          # Common patterns:
-          # - Python: requirements, setup.py, pyproject.toml, Pipfile
-          # - Node.js: package.json, yarn.lock, pnpm-lock.yaml
-          # - Ruby: Gemfile, gems.rb
-          # - Rust: Cargo.toml, Cargo.lock
-          # - Go: go.mod, go.sum
-          # - PHP: composer.json, composer.lock
-          # - Java/Maven: pom.xml
-          # - .NET: .csproj, packages.config
-          # ============================================================
-          DEP_PATTERNS="requirements|setup.py|pyproject.toml|Pipfile|package.json|yarn.lock|pnpm-lock.yaml|Cargo.toml|go.mod|go.sum|composer.json|pom.xml|\.csproj$|Gemfile"
-
-          # Filter dependency files
-          DEP_FILES=""
-          for file in $FILES; do
-            if echo "$file" | grep -qiE "$DEP_PATTERNS"; then
-              DEP_FILES="$DEP_FILES $file"
-            fi
-          done
-
-          echo "CHANGED_FILES=$DEP_FILES" >> $GITHUB_OUTPUT
-
-          # Get diff content for each dependency file
-          for file in $DEP_FILES; do
-            FILE_CONTENT=$(echo "$FILES_JSON" | \
-              jq -r ".[] | select(.filename == \"$file\") | .patch" 2>/dev/null || echo "")
-            if [ -n "$FILE_CONTENT" ]; then
-              SAFE_NAME=$(echo "$file" | tr '/' '_' | tr '.' '_' | tr '-' '_')
-              # Base64 encode to handle special characters
-              DIFF_ENCODED=$(echo "$FILE_CONTENT" | base64 -w 0)
-              echo "DIFF_$SAFE_NAME=$DIFF_ENCODED" >> $GITHUB_OUTPUT
-            fi
-          done
-
-      # ============================================================
-      # ANALYSIS LOGIC - Adjust severity based on project needs
-      # ============================================================
-      - name: Analyze PR for breaking changes
-        if: steps.should-run.outputs.RUN == 'true'
-        id: analysis
-        run: |
-          echo "### Dependabot PR Analysis" >> $GITHUB_STEP_SUMMARY
-
-          PR_TITLE="${{ steps.changed-files.outputs.PR_TITLE }}"
-          PR_NUMBER="${{ steps.should-run.outputs.PR_NUMBER }}"
-          PR_USER="${{ steps.changed-files.outputs.PR_USER }}"
-          echo "- **PR**: #$PR_NUMBER" >> $GITHUB_STEP_SUMMARY
-          echo "- **Title**: $PR_TITLE" >> $GITHUB_STEP_SUMMARY
-          echo "- **User**: @$PR_USER" >> $GITHUB_STEP_SUMMARY
-
-          CHANGED="${{ steps.changed-files.outputs.CHANGED_FILES }}"
-          echo "- **Changed**: '$CHANGED'" >> $GITHUB_STEP_SUMMARY
-
-          if [ -z "$CHANGED" ]; then
-            echo "- **Impact**: Low - No dependency files changed" >> $GITHUB_STEP_SUMMARY
-            echo "impact=low" >> $GITHUB_OUTPUT
-            echo "status=No dependency files modified." >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "impact=medium" >> $GITHUB_OUTPUT
-
-          # ============================================================
-          # MODIFY: Update severity patterns based on your conventions
-          # The PR title determines the severity level
-          # ============================================================
-          if echo "$PR_TITLE" | grep -qi "security"; then
-            echo "status=Security update - Review carefully before merging" >> $GITHUB_OUTPUT
-          elif echo "$PR_TITLE" | grep -qiE "(major|breaking)"; then
-            echo "impact=high" >> $GITHUB_OUTPUT
-            echo "status=Major version bump - Test thoroughly before merging" >> $GITHUB_OUTPUT
-          elif echo "$PR_TITLE" | grep -qiE "(minor|feature)"; then
-            echo "impact=low" >> $GITHUB_OUTPUT
-            echo "status=Minor/feature update - Usually safe to merge" >> $GITHUB_OUTPUT
-          elif echo "$PR_TITLE" | grep -qiE "(patch|fix|chore|deps)"; then
-            echo "impact=low" >> $GITHUB_OUTPUT
-            echo "status=Patch/dependency update - Usually safe to merge" >> $GITHUB_OUTPUT
-          else
-            echo "status=Review the changes before merging" >> $GITHUB_OUTPUT
-          fi
-
-          # ============================================================
-          # MODIFY: Add warnings for known problematic packages
-          # ============================================================
-          # Python
-          if echo "$PR_TITLE" | grep -qi "torch\|pytorch"; then
-            echo "::warning::PyTorch update - Verify Python 3.13 for Apple Silicon"
-          fi
-          # Node.js
-          if echo "$PR_TITLE" | grep -qi "node\|npm"; then
-            echo "::warning::Node.js update - Verify compatibility with your Node version"
-          fi
-          # Ruby
-          if echo "$PR_TITLE" | grep -qi "rails\|ruby"; then
-            echo "::warning::Rails/Ruby update - Check for breaking changes"
-          fi
-
-      # ============================================================
-      # POST COMMENT - Usually no need to modify
-      # ============================================================
-      - name: Post analysis comment
-        if: steps.should-run.outputs.RUN == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const impact = '${{ steps.analysis.outputs.impact }}';
-            const status = '${{ steps.analysis.outputs.status }}';
-            const changedFiles = '${{ steps.changed-files.outputs.CHANGED_FILES }}';
-            const prNumber = '${{ steps.should-run.outputs.PR_NUMBER }}';
-            const triggerUser = '${{ steps.should-run.outputs.TRIGGER_USER }}';
-
-            // Get diffs and decode from base64
-            const diffRequirementsTxt = '${{ steps.changed-files.outputs.DIFF_requirements_txt }}' ?
-              Buffer.from('${{ steps.changed-files.outputs.DIFF_requirements_txt }}', 'base64').toString() : '';
-            const diffRequirementsDevTxt = '${{ steps.changed-files.outputs.DIFF_requirements_dev_txt }}' ?
-              Buffer.from('${{ steps.changed-files.outputs.DIFF_requirements_dev_txt }}', 'base64').toString() : '';
-            const diffSetupPy = '${{ steps.changed-files.outputs.DIFF_setup_py }}' ?
-              Buffer.from('${{ steps.changed-files.outputs.DIFF_setup_py }}', 'base64').toString() : '';
-            const diffPyprojectToml = '${{ steps.changed-files.outputs.DIFF_pyproject_toml }}' ?
-              Buffer.from('${{ steps.changed-files.outputs.DIFF_pyproject_toml }}', 'base64').toString() : '';
-
-            let diffContent = '';
-            if (diffRequirementsTxt) {
-              diffContent += '\n\n**requirements.txt**\n```diff\n' + diffRequirementsTxt + '\n```';
-            }
-            if (diffRequirementsDevTxt) {
-              diffContent += '\n\n**requirements-dev.txt**\n```diff\n' + diffRequirementsDevTxt + '\n```';
-            }
-            if (diffSetupPy) {
-              diffContent += '\n\n**setup.py**\n```diff\n' + diffSetupPy + '\n```';
-            }
-            if (diffPyprojectToml) {
-              diffContent += '\n\n**pyproject.toml**\n```diff\n' + diffPyprojectToml + '\n```';
-            }
-
-            const emoji = impact === 'high' ? '🚨' : impact === 'medium' ? '⚠️' : '✅';
-            const marker = '<!-- dependabot-pr-analyzer -->';
-
-            const repoName = context.repo.repo;
-            const commentBody = marker + '\n' +
-              'Hi @' + triggerUser + ',\n\n' +
-              'I analyzed the Dependabot PR #' + prNumber + ' for you.\n\n' +
-              '## Analysis Result ' + emoji + '\n\n' +
-              status + '\n\n' +
-              '**Changed files:** ' + (changedFiles || 'None') +
-              diffContent + '\n\n---\n*Analyzed by GitHub Actions* | Built for ' + repoName;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: parseInt(prNumber),
-            });
-
-            const existingComment = comments.find(c =>
-              c.user.login === 'github-actions[bot]' &&
-              c.body.includes(marker)
-            ) || comments.find(c =>
-              c.user.login === 'github-actions[bot]' &&
-              c.body.includes('I analyzed the Dependabot PR #') &&
-              c.body.includes('*Analyzed by GitHub Actions*')
-            );
-
-            if (existingComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existingComment.id,
-                body: commentBody
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: parseInt(prNumber),
-                body: commentBody
-              });
-            }
-
-      - name: Skip message
-        if: steps.should-run.outputs.RUN != 'true'
-        run: echo "Not a dependabot PR or no trigger comment - skipping analysis"
+  analyze-on-dispatch:
+    uses: libnudget/gon/.github/workflows/gon.yml@main
+    permissions:
+      pull-requests: write
+      contents: read
+    with:
+      pr_number: ${{ github.event.inputs.pr_number }}
+      trigger_user: ${{ github.actor }}
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != ''
